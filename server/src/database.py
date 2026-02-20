@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+# Let legacy imports like `src.database.core` resolve to the package folder too.
+__path__ = [os.path.join(os.path.dirname(__file__), "database")]
+
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")

@@ -1,13 +1,6 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
-from src.recommendation_engine import analyze_policies
 
-router = APIRouter()
+from src.auth.controller import router as auth_router
 
-class UserProfile(BaseModel):
-    age: int
-    budget: int
-
-@router.post("/recommend")
-def recommend(profile: UserProfile):
-    return analyze_policies(profile.age, profile.budget)
+api_router = APIRouter()
+api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])

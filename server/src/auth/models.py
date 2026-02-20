@@ -1,10 +1,88 @@
+from datetime import date
+from typing import Optional
 
-from sqlalchemy import Column, Integer, String
-from src.database.core import Base
+from pydantic import BaseModel, EmailStr, field_validator
 
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String)
-    email = Column(String, unique=True, index=True)
-    password = Column(String)
+
+class RegisterRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    date_of_birth: Optional[date] = None
+
+    @staticmethod
+    def _validate_password_strength(value: str) -> str:
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(char.isupper() for char in value):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(char.isdigit() for char in value):
+            raise ValueError("Password must contain at least one number")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        return cls._validate_password_strength(value)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    remember_me: Optional[bool] = False
+
+
+class AdminLogin(BaseModel):
+    email: EmailStr
+    password: str
+    admin_secret: str
+
+
+class AuthUser(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    role: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    user: AuthUser
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        return RegisterRequest._validate_password_strength(value)
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+class GoogleAuthRequest(BaseModel):
+    access_token: str
+
+
+# Backward compatibility aliases
+UserRegister = RegisterRequest
+UserLogin = LoginRequest

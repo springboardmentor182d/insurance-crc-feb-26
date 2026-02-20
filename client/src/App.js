@@ -1,141 +1,75 @@
 import React from "react";
-import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
-import AdminLogin from "./pages/AdminLogin";
-import ForgotPassword from "./pages/ForgotPassword";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import { ROLES, ROUTES, TOKEN_KEYS } from "./data/constants";
 
+import ActivePolicies   from "./pages/ActivePolicies";
+import AdminDashboard   from "./pages/AdminDashboard";
+import AdminLogin       from "./pages/AdminLogin";
+import BrowsePolicies   from "./pages/BrowsePolicies";
+import DashboardPage    from "./pages/Dashboard";
+import ForgotPassword   from "./pages/ForgotPassword";
+import Home             from "./pages/Home";
+import Login            from "./pages/Login";
+import ManagePolicies   from "./pages/ManagePolicies";
+import Preferences      from "./pages/Preferences";
+import Profile          from "./pages/Profile";
+import Recommendations  from "./pages/Recommendations";
+import Settings         from "./pages/Settings";
+import Signup           from "./pages/Signup";
+import FlaggedClaims    from "./pages/admin/FlaggedClaims";
+import FraudRules       from "./pages/admin/FraudRules";
 
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
   if (!userRaw || userRaw === "undefined") return null;
-  try {
-    return JSON.parse(userRaw);
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(userRaw); } catch { return null; }
 };
-
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const token = localStorage.getItem(TOKEN_KEYS.ACCESS);
-  const user = getStoredUser();
-
+  const user  = getStoredUser();
   if (!token || !user) return <Navigate to={ROUTES.LOGIN} replace />;
   if (adminOnly && user.role !== ROLES.ADMIN) return <Navigate to={ROUTES.DASHBOARD} replace />;
   return children;
 };
 
-
-const UserDashboard = () => {
-  const navigate = useNavigate();
-  const user = getStoredUser();
-
-  const handleLogout = () => {
-    Object.values(TOKEN_KEYS).forEach((key) => localStorage.removeItem(key));
-    navigate(ROUTES.LOGIN);
-  };
-
-  return (
-    <div style={dashboardShellStyle}>
-      <div style={dashboardCardStyle}>
-        <h1 style={{ margin: 0, fontSize: "2rem" }}>Welcome, {user?.name || "User"}</h1>
-        <p style={{ margin: "12px 0 0", color: "#64748b" }}>
-          You are signed in to BimaVerse. The protected dashboard route is active and your auth flow is working.
-        </p>
-        <div style={linkRowStyle}>
-          <Link to={ROUTES.FORGOT_PASSWORD} style={secondaryLinkStyle}>Forgot Password</Link>
-          <button type="button" onClick={handleLogout} style={primaryButtonStyle}>Logout</button>
-        </div>
-      </div>
-    </div>
-  );
+const AdminLoginGuard = ({ children }) => {
+  const token = localStorage.getItem(TOKEN_KEYS.ACCESS);
+  const user  = getStoredUser();
+  if (token && user && user.role === ROLES.ADMIN) return <Navigate to={ROUTES.ADMIN_DASHBOARD} replace />;
+  return children;
 };
-
-
-const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const user = getStoredUser();
-
-  const handleLogout = () => {
-    Object.values(TOKEN_KEYS).forEach((key) => localStorage.removeItem(key));
-    navigate(ROUTES.ADMIN_LOGIN);
-  };
-
-  return (
-    <div style={dashboardShellStyle}>
-      <div style={dashboardCardStyle}>
-        <h1 style={{ margin: 0, fontSize: "2rem" }}>Admin Dashboard</h1>
-        <p style={{ margin: "12px 0 0", color: "#64748b" }}>
-          Signed in as {user?.email || "admin"} with protected admin access.
-        </p>
-        <div style={linkRowStyle}>
-          <Link to={ROUTES.LOGIN} style={secondaryLinkStyle}>Back to user login</Link>
-          <button type="button" onClick={handleLogout} style={primaryButtonStyle}>Logout</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.LOGIN} replace />} />
-        <Route path={ROUTES.LOGIN} element={<Login />} />
+        {/* ── Public ── */}
+        <Route path={ROUTES.HOME}   element={<Home />} />
+        <Route path={ROUTES.LOGIN}  element={<Login />} />
         <Route path={ROUTES.SIGNUP} element={<Signup />} />
         <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
-        <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLogin />} />
-        <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-        <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginGuard><AdminLogin /></AdminLoginGuard>} />
+
+        {/* ── User protected ── */}
+        <Route path={ROUTES.DASHBOARD}       element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path={ROUTES.PROFILE}         element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path={ROUTES.PREFERENCES}     element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
+        <Route path={ROUTES.SETTINGS}        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path={ROUTES.BROWSE_POLICIES} element={<ProtectedRoute><BrowsePolicies /></ProtectedRoute>} />
+        <Route path={ROUTES.ACTIVE_POLICIES} element={<ProtectedRoute><ActivePolicies /></ProtectedRoute>} />
+        <Route path={ROUTES.RECOMMENDATIONS} element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
+
+        {/* ── Admin protected ── */}
+        <Route path={ROUTES.ADMIN_DASHBOARD}    element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/manage-policies"    element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
+        <Route path="/admin/fraud-rules"        element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
+        <Route path="/admin/flagged-claims"     element={<ProtectedRoute adminOnly><FlaggedClaims /></ProtectedRoute>} />
+
+        {/* ── Fallback ── */}
+        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-
-const dashboardShellStyle = {
-  minHeight: "100vh",
-  display: "grid",
-  placeItems: "center",
-  padding: "24px",
-  background: "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
-};
-
-const dashboardCardStyle = {
-  width: "min(100%, 720px)",
-  background: "#ffffff",
-  border: "1px solid #dbe4ff",
-  borderRadius: "24px",
-  padding: "32px",
-  boxShadow: "0 18px 40px rgba(37, 99, 235, 0.12)",
-};
-
-const linkRowStyle = {
-  marginTop: "24px",
-  display: "flex",
-  gap: "12px",
-  alignItems: "center",
-  flexWrap: "wrap",
-};
-
-const primaryButtonStyle = {
-  border: 0,
-  borderRadius: "12px",
-  padding: "12px 18px",
-  background: "#2563eb",
-  color: "#ffffff",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-
-const secondaryLinkStyle = {
-  color: "#1d4ed8",
-  fontWeight: 600,
-  textDecoration: "none",
-};

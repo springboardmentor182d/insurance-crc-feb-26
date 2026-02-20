@@ -1,49 +1,62 @@
-import os
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from src.api import api_router
+from src.database.core import SessionLocal
+from src.database.seeds import seed_fraud_rules
+from src.exceptions import setup_exception_handlers
+from src.logging import setup_logging
+from src.database.core import engine, Base
+# This line creates all tables that are currently imported in your app
+Base.metadata.create_all(bind=engine)
 
-# Import local modules
-from . import models, database
-from .routers.admin import router as admin_router
-from .routers.catalog import router as catalog_router
-from .routers.recommendations import router as recommendations_router
-
-load_dotenv()
-database.init_db()
-
+setup_logging()
 app = FastAPI(
-    title="Insurance CRC Management API",
-    version="1.0.0"
+    title="BimaVerse API",
+    description="Insurance Comparison, Recommendation & Claim Assistant",
+    version="1.0.0",
 )
 
-
-allowed_origins = os.getenv(
-    "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173"
-).split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+setup_exception_handlers(app)
 
 
 @app.on_event("startup")
-async def startup_event():
-    pass
+def startup_db_check():
+    try:
+        with SessionLocal() as session:
+            session.execute(text("SELECT 1"))
+        seed_fraud_rules()
+    except SQLAlchemyError as exc:
+        raise RuntimeError("Database connection failed on startup.") from exc
 
-app.include_router(admin_router)
-app.include_router(catalog_router)
-app.include_router(recommendations_router)
 
-@app.get("/health")
-def health_check():
-    return {"status": "Backend is running"}
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {"status": "ok", "service": "BimaVerse API"}
+
 
 @app.get("/")
-def root():
-    return {"message": "Insurance CRC Management API", "docs": "/docs"}
+async def root():
+    return {"message": "BimaVerse API is running"}
 
+
+# Keep /api/v1 (new client) and root-prefixed routes (backward compatibility)
+app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router)
