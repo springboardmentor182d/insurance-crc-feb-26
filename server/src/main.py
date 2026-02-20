@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from src.api import api_router
+
 
 app = FastAPI()
 
@@ -19,4 +21,6 @@ app.add_middleware(
 @app.get("/health")
 def health_check():
     return {"status": "Backend is running"}
+
+app.include_router(api_router)
 

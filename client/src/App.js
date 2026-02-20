@@ -1,11 +1,14 @@
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import AdminDashboard from "./features/admin/pages/AdminDashboard";
+
 function App() {
   return (
-    <div>
-      <h1>Insurance CRC Project</h1>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Routes>
+    </Router>
   );
 }
 
 export default App;
-
-
