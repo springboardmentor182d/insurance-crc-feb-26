@@ -43,4 +43,9 @@ htmlcov/
 # 🔹 Logs
 ############################
 *.log
-
+server/myenv/
+myenv/
+venv/
+__pycache__/
+*.pyc
+.env

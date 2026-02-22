@@ -1,0 +1,213 @@
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  LayoutDashboard,
+  FileText,
+  GitCompare,
+  Sparkles,
+  ClipboardList,
+  ShieldCheck,
+  User,
+  LogOut,
+  Sliders
+} from "lucide-react";
+
+function Profile() {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetch("http://localhost:8000/users/1")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch user");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setUser(data);
+      })
+      .catch((err) => console.error("Error:", err));
+  }, []);
+
+  if (!user) {
+    return (
+      <div className="p-10 text-lg font-inter">
+        Loading...
+      </div>
+    );
+  }
+
+  const SidebarItem = ({ icon, label, active }) => (
+    <div
+      className={`flex items-center gap-3 px-4 py-2 rounded-card cursor-pointer transition-all duration-200
+        ${
+          active
+            ? "bg-secondary text-white shadow-lg scale-[1.02]"
+            : "text-green-100 hover:bg-secondary/40 hover:translate-x-1"
+        }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </div>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-appbg font-inter">
+
+      {/* Sidebar */}
+      <div className="hidden md:flex w-64 bg-primary text-white flex-col justify-between p-6">
+        <div>
+          <div className="mb-10">
+            <h1 className="text-2xl font-bold">InsureHub</h1>
+            <p className="text-sm text-green-200">Client Portal</p>
+          </div>
+
+          <nav className="space-y-2 text-sm">
+            <SidebarItem icon={<LayoutDashboard size={18} />} label="Dashboard" />
+            <SidebarItem icon={<FileText size={18} />} label="Policies" />
+            <SidebarItem icon={<GitCompare size={18} />} label="Compare" />
+            <SidebarItem icon={<Sparkles size={18} />} label="Recommendations" />
+            <SidebarItem icon={<ClipboardList size={18} />} label="Claims" />
+            <SidebarItem icon={<ShieldCheck size={18} />} label="Active Plan" />
+            <SidebarItem icon={<User size={18} />} label="Profile" active />
+          </nav>
+        </div>
+
+        <div className="text-sm">
+          <p className="mb-4 text-green-200">
+            Logged in as{" "}
+            <span className="font-semibold text-white">
+              {user.name}
+            </span>
+          </p>
+
+          <button className="flex items-center justify-center gap-2 w-full bg-white text-primary py-2 rounded-card font-medium hover:bg-gray-100 transition">
+            <LogOut size={16} />
+            Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 p-6 md:p-10">
+        <h2 className="text-3xl font-bold mb-8">Profile</h2>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+          {/* Left Card */}
+          <div className="lg:col-span-2 bg-white rounded-card shadow-card p-8 transition hover:shadow-xl hover:-translate-y-1">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="bg-lightgreen p-4 rounded-full">
+                <User className="text-standard" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-semibold">
+                  {user.name}
+                </h3>
+                <p className="text-gray-500">
+                  Client Account
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm text-gray-500">Email</label>
+                <div className="bg-gray-100 p-3 rounded-card mt-1">
+                  {user.email}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">Date of Birth</label>
+                <div className="bg-gray-100 p-3 rounded-card mt-1">
+                  {user.dob}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">Income</label>
+                <div className="bg-gray-100 p-3 rounded-card mt-1">
+                  ₹{user.income ? user.income.toLocaleString() : "N/A"}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-500">Risk Level</label>
+                <div className="bg-gray-100 p-3 rounded-card mt-1 capitalize">
+                  {user.risk_level || "N/A"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Cards */}
+          <div className="space-y-6">
+            {/* ===== USER PREFERENCES SUMMARY ===== */}
+<div className="bg-white rounded-card shadow-card p-6">
+
+  <h3 className="font-semibold mb-2">
+    Your Customized Plan
+  </h3>
+
+  {user.recommended_plan ? (
+    <p className="text-green-700 font-semibold">
+      ✅ {user.recommended_plan}
+    </p>
+  ) : (
+    <p className="text-gray-400 text-sm">
+      No AI recommendation generated yet
+    </p>
+  )}
+
+</div>
+
+            <div className="bg-white rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
+              <p className="text-gray-400 text-sm">Total Coverage</p>
+              <h3 className="text-2xl font-bold mt-2">₹15.0L</h3>
+            </div>
+
+            <div className="bg-lightgreen rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
+              <h3 className="font-semibold mb-3">Account Summary</h3>
+              <p>Member Since: 2026</p>
+              <p>Account Type: Client</p>
+              <p className="text-success font-semibold">
+                Verified: Yes
+              </p>
+            </div>
+
+            <div className="bg-white rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
+              <h3 className="font-semibold mb-2">Recent Policies</h3>
+              <p className="text-gray-500 text-sm">
+                No active policies
+              </p>
+            </div>
+
+            {/* Preferences Box */}
+            <div className="bg-white rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Sliders size={18} />
+                <h3 className="font-semibold">Preferences</h3>
+              </div>
+
+              <p className="text-gray-500 text-sm mb-4">
+                Update your risk profile & investment settings
+              </p>
+
+              <button
+                onClick={() => navigate("/preferences")}
+                className="w-full bg-primary text-white py-2 rounded-card hover:bg-secondary transition"
+              >
+                Manage Preferences
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Profile;
