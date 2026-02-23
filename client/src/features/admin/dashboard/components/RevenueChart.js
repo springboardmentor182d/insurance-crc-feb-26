@@ -9,8 +9,8 @@ import{
 } from 'recharts';
  const RevenueChart = ({ data }) => {
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h2 className="text-lg font-semibold mb-4">Revenue & Expenses</h2>
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">Revenue & Expenses</h2>
             <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={data}>
                     <XAxis dataKey="month" />

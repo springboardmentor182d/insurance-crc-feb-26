@@ -10,8 +10,8 @@ const COLORS = ['#2563eb', '#10b981','#f59e0b', '#ef4444',];
 
 const PolicyDistribution = ({ data }) => {
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h2 className="text-lg font-semibold mb-4">Policy Distribution</h2>
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800 mb-6">Policy Distribution</h2>
 
             <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
