@@ -1,12 +1,12 @@
-import AdminLayout from "../../../layout/admin/AdminLayout";
-import { useAdminDashboard } from "../hooks/useAdminDashboard";
-import StatCard from "../components/StatCard";
-import ClaimsChart from "../components/ClaimsChart";
-import RevenueChart from "../components/RevenueChart";
-import PolicyDistribution from "../components/PolicyDistribution";
-import TopAdjusters from "../components/TopAdjusters";
-import RecentActivity from "../components/RecentActivity";
-import ActionCard from "../components/ActionCard";
+import AdminLayout from "../layout/admin/AdminLayout";
+import { useAdminDashboard } from "../features/admin/hooks/useAdminDashboard";
+import StatCard from "../features/admin/components/StatCard";
+import ClaimsChart from "../features/admin/components/ClaimsChart";
+import RevenueChart from "../features/admin/components/RevenueChart";
+import PolicyDistribution from "../features/admin/components/PolicyDistribution";
+import TopAdjusters from "../features/admin/components/TopAdjusters";
+import RecentActivity from "../features/admin/components/RecentActivity";
+import ActionCard from "../features/admin/components/ActionCard";
 import { useNavigate } from "react-router-dom";
 
 
