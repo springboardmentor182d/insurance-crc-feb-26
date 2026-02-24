@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../layout/Sidebar';
-import Toggle from '../components/Toggle';
+import Toggle from '../components/Form/Toggle';
 import Formselect from '../components/Form/Formselect';
 import { getPreferences, updatePreferences } from '../features/preferences/services/preferencesService';
 
