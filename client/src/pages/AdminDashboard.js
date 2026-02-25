@@ -8,8 +8,8 @@ import TopAdjusters from "../features/admin/dashboard/components/TopAdjusters";
 import RecentActivity from "../features/admin/dashboard/components/RecentActivity";
 import ActionCard from "../features/admin/dashboard/components/ActionCard";
 import { useNavigate } from "react-router-dom";
-
-
+import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
+import { HiOutlineChartBar } from "react-icons/hi";
 
 
 const AdminDashboard = () => {
@@ -27,7 +27,7 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-10">
 
         {/* Header */}
         <div className="mb-10">
@@ -40,34 +40,67 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
-          <StatCard title="Total Users" value={stats.totalUsers} />
-          <StatCard title="Active Policies" value={stats.activePolicies} />
-          <StatCard title="Total Claims" value={stats.totalClaims} />
-          <StatCard title="Fraud Detected" value={stats.fraudDetected} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Total Users"
+            value={stats?.totalUsers}
+            growth={stats?.usersGrowth}
+            icon={<FiUsers />}
+            iconBg="bg-blue-100"
+            iconColor="text-blue-600"
+          />
+
+          <StatCard
+            title="Active Policies"
+            value={stats?.activePolicies}
+            growth={stats?.policiesGrowth}
+            icon={<FiFileText />}
+            iconBg="bg-green-100"
+            iconColor="text-green-600"
+          />
+
+          <StatCard
+            title="Total Claims"
+            value={stats?.totalClaims}
+            growth={stats?.claimsGrowth}
+            icon={<FiShield />}
+            iconBg="bg-yellow-100"
+            iconColor="text-yellow-600"
+          />
+
+          <StatCard
+            title="Fraud Detected"
+            value={stats?.fraudDetected}
+            growth={stats?.fraudGrowth}
+            icon={<FiAlertTriangle />}
+            iconBg="bg-red-100"
+            iconColor="text-red-600"
+          />
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <ClaimsChart data={claims} />
           <RevenueChart data={revenue} />
         </div>
 
         {/* Bottom Section */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <PolicyDistribution data={distribution} />
           <TopAdjusters data={adjusters} />
           <RecentActivity data={activity} />
         </div>
 
-      </div>
+      
 
       {/* Action Cards Row */}
+      <div className="mt-5 mb-0">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <ActionCard
           title="Fraud Detection"
           description="Manage fraud rules and review flagged claims"
           color="bg-gradient-to-r from-red-500 to-red-600"
+          icon={<FiShield />}
           onClick={() => navigate("/admin/fraud-rules")}
         />
 
@@ -75,6 +108,7 @@ const AdminDashboard = () => {
           title="Advanced Analytics"
           description="Deep dive into performance metrics"
           color="bg-gradient-to-r from-blue-500 to-indigo-600"
+          icon={<HiOutlineChartBar />}
           onClick={() => navigate("/admin/analytics")}
         />
 
@@ -82,8 +116,11 @@ const AdminDashboard = () => {
           title="Revenue Growth"
           description="+18% increase from last month"
           color="bg-gradient-to-r from-green-500 to-green-600"
+          icon={<FiTrendingUp />}
           onClick={() => navigate("/admin/analytics")}
         />
+      </div>
+      </div>
       </div>
 
 

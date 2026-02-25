@@ -2,14 +2,18 @@ import Sidebar from "./Sidebar";
 
 const AdminLayout = ({ children }) => {
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100">
-      
-      {/* Sidebar */}
-      <Sidebar />
+    <div className="flex h-screen bg-gray-50">
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto px-12 py-10">
-        {children}
+      {/* Sidebar (Fixed Height, No Scroll) */}
+      <div className="w-[235px] bg-white h-full flex flex-col justify-between">
+        <Sidebar />
+      </div>
+
+      {/* Main Content (Scrollable) */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-[1240px] mx-auto px-8 py-8">
+          {children}
+        </div>
       </div>
 
     </div>
