@@ -1,38 +1,232 @@
-.App {
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: #f4f6f9;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.container {
+  width: 1100px;
+  margin: auto;
+  padding: 30px 0;
+}
+
+.header {
+  height: 70px;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid #eee;
+}
+
+.menu {
+  position: absolute;
+  left: 20px;
+  font-size: 22px;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 20px;
+  color: #2563eb;
+}
+
+.page-title {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.icon-box {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: white;
+  font-size: 28px;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+/* PROFILE */
+
+.profile-card {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  padding: 30px;
+  border-radius: 20px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 200px);
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.coverage .tags {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.coverage .tags div {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px 15px;
+  border-radius: 20px;
+}
+
+.match-score {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 20px;
+  border-radius: 15px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+/* TABS */
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.tabs {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.tabs button {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.tabs .active {
+  background: #111827;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+/* RECOMMEND CARD */
+
+.recommend-card {
+  background: white;
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.recommend-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recommend-left {
+  display: flex;
+  gap: 20px;
+}
+
+.recommend-icon {
+  font-size: 28px;
+  background: #f3f4f6;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.match-badge {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.recommend-body {
+  display: flex;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.policy-box {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 15px;
+  width: 350px;
+}
+
+.policy-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.highlight {
+  margin-top: 15px;
+  color: #16a34a;
+  font-weight: bold;
+}
+
+.reasons h4 {
+  margin-bottom: 10px;
+}
+
+.actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
+}
+
+.primary {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.secondary {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: #555;
+}
+
+/* HOW IT WORKS */
+
+.how {
+  margin-top: 50px;
+}
+
+.steps {
+  display: flex;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.step {
+  width: 300px;
+}
+
+.number {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: white;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
