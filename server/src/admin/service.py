@@ -22,9 +22,16 @@ async def get_admin_stats():
     return AdminStatsResponse(
         data=AdminStatsData(
             totalUsers=12458,
+            usersGrowth=12.5,
+
             activePolicies=45823,
+            policiesGrowth=8.2,
+
             totalClaims=2847,
+            claimsGrowth=5.4,
+
             fraudDetected=127,
+            fraudGrowth= -3.1,
         )
     )
 
@@ -89,21 +96,27 @@ async def get_recent_activity():
     activities = [
         RecentActivityItem(
             title="New fraud rule activated",
-            description="High-risk duplicate claim detection enabled",
+            actor="Admin",
             timestamp="2 hours ago",
-            severity="info",
+            severity="fraud",
         ),
         RecentActivityItem(
             title="Claim CLM-2026-045 approved",
-            description="Claim processed successfully",
+            actor="John Smith",
             timestamp="3 hours ago",
-            severity="success",
+            severity="approved",
         ),
         RecentActivityItem(
             title="High-risk claim flagged",
-            description="Suspicious claim amount detected",
+            actor="System",
             timestamp="5 hours ago",
-            severity="warning",
+            severity="flagged",
+        ),
+         RecentActivityItem(
+            title="New policy activated",
+            actor="Jane Doe",
+            timestamp="5 hours ago",
+            severity="info",
         ),
     ]
 
