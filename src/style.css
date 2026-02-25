@@ -1,0 +1,134 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7fc;
+}
+
+/* HEADER */
+
+header {
+    background: linear-gradient(90deg,#1e3a8a,#2563eb);
+    color: white;
+    text-align: center;
+    padding: 30px;
+}
+
+/* CONTAINER */
+
+.container {
+    max-width: 1100px;
+    margin: auto;
+    padding: 20px;
+}
+
+/* CARD */
+
+.card {
+    background: white;
+    padding: 22px;
+    border-radius: 14px;
+    box-shadow: 0 5px 14px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+
+/* INPUTS */
+
+input, select {
+    width: 100%;
+    padding: 11px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+/* BUTTON */
+
+button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    width: 100%;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+.small {
+    margin-top: 10px;
+    padding: 8px;
+    font-size: 13px;
+}
+
+/* SUMMARY */
+
+.summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.summary div {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+}
+
+/* GRID */
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
+    gap: 20px;
+}
+
+/* RECOMMENDATION CARD */
+
+.rec {
+    background: white;
+    padding: 18px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+}
+
+.score {
+    font-weight: bold;
+    margin: 8px 0;
+}
+
+/* TAGS */
+
+.tag {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.red { background: #ef4444; }
+.green { background: #10b981; }
+.orange { background: #f59e0b; }
+
+/* LEFT BORDER TYPES */
+
+.high { border-left: 6px solid #ef4444; }
+.save { border-left: 6px solid #10b981; }
+.upgrade { border-left: 6px solid #f59e0b; }
+
+/* FOOTER */
+
+footer {
+    text-align: center;
+    padding: 25px;
+    color: #666;
+}
