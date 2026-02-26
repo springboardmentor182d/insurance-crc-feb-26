@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from fastapi import APIRouter
 
 router = APIRouter()
@@ -10,7 +9,6 @@ def login():
 @router.post("/signup")
 def signup():
     return {"message": "Signup successful"}
-=======
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -41,4 +39,3 @@ def login(email: str, password: str, db: Session = Depends(get_db)):
 
     token = create_token({"sub": user.email})
     return {"access_token": token}
->>>>>>> main-group-A

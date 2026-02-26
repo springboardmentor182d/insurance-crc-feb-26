@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -12,7 +11,6 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-=======
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,22 +25,16 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
->>>>>>> main-group-A
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-<<<<<<< HEAD
 @app.get("/health")
 def health_check():
     return {"status": "Backend is running"}
-
-=======
 app.include_router(auth_router)
 app.include_router(users_router)
 
 @app.get("/")
 def root():
     return {"message": "FastAPI running"}
->>>>>>> main-group-A
