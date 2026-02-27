@@ -1,13 +1,3 @@
-// function App() {
-//   return (
-//     <div>
-//       <h1>Insurance CRC Project</h1>
-//     </div>
-//   );
-// }
-
-// export default App;
-
 import React, { useState } from 'react';
 import PageContainer from './layout/PageContainer';
 import FromInput from './components/Form/FromInput'; 
