@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()
+from jose import jwt
+from passlib.context import CryptContext
 
 SECRET_KEY = "mysecretkey"
 ALGORITHM = "HS256"
