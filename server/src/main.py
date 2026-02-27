@@ -5,9 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from src.api import api_router
 from src.database.core import SessionLocal
 
-
-app = FastAPI()
-
+app = FastAPI(title="Insurance CRC API", version="1.0.0")
 
 origins = [
     "http://localhost:3000",
