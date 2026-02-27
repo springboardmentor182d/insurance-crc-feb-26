@@ -12,6 +12,12 @@ from .models import (
     RecentActivityItem,
     RecentActivityResponse,
 )
+from src.database.repositories.admin_stats import get_admin_stats_snapshot
+from src.database.repositories.claims_trends import get_claims_trends_snapshot
+from src.database.repositories.policy_distribution import get_policy_distribution_snapshot
+from src.database.repositories.recent_activity import get_recent_activity_snapshot
+from src.database.repositories.revenue import get_revenue_snapshot
+from src.database.repositories.top_adjusters import get_top_adjusters_snapshot
 
 
 # ------------------------
@@ -19,33 +25,15 @@ from .models import (
 # ------------------------
 
 async def get_admin_stats():
-    return AdminStatsResponse(
-        data=AdminStatsData(
-            totalUsers=12458,
-            usersGrowth=12.5,
-
-            activePolicies=45823,
-            policiesGrowth=8.2,
-
-            totalClaims=2847,
-            claimsGrowth=5.4,
-
-            fraudDetected=127,
-            fraudGrowth= -3.1,
-        )
-    )
+    stats = get_admin_stats_snapshot()
+    return AdminStatsResponse(data=AdminStatsData(**stats))
 
 
 # ------------------------
 # Claims Trends
 # ------------------------
 async def get_claims_trends():
-    trends = [
-        ClaimsTrend(month="Jan", approved=180, rejected=40, fraudulent=15),
-        ClaimsTrend(month="Feb", approved=210, rejected=50, fraudulent=18),
-        ClaimsTrend(month="Mar", approved=230, rejected=60, fraudulent=20),
-    ]
-
+    trends = [ClaimsTrend(**row) for row in get_claims_trends_snapshot()]
     return ClaimsTrendsResponse(data=trends)
 
 
@@ -53,12 +41,7 @@ async def get_claims_trends():
 # Revenue Data
 # ------------------------
 async def get_revenue_data():
-    revenue = [
-        RevenuePoint(month="Jan", revenue=120000, expenses=90000),
-        RevenuePoint(month="Feb", revenue=140000, expenses=95000),
-        RevenuePoint(month="Mar", revenue=160000, expenses=100000),
-    ]
-
+    revenue = [RevenuePoint(**row) for row in get_revenue_snapshot()]
     return RevenueResponse(data=revenue)
 
 
@@ -67,12 +50,8 @@ async def get_revenue_data():
 # ------------------------
 async def get_policy_distribution():
     distribution = [
-        PolicyDistributionItem(policyType="Auto", percentage=35, count=350),
-        PolicyDistributionItem(policyType="Home", percentage=28, count=280),
-        PolicyDistributionItem(policyType="Life", percentage=22, count=220),
-        PolicyDistributionItem(policyType="Health", percentage=15, count=150),
+        PolicyDistributionItem(**row) for row in get_policy_distribution_snapshot()
     ]
-
     return PolicyDistributionResponse(data=distribution)
 
 
@@ -80,12 +59,7 @@ async def get_policy_distribution():
 # Top Adjusters
 # ------------------------
 async def get_top_adjusters():
-    adjusters = [
-        TopAdjuster(name="Sarah Johnson", totalClaims=145, approvalRate=92.5, avgProcessingDays=2.3),
-        TopAdjuster(name="Michael Chen", totalClaims=132, approvalRate=89.0, avgProcessingDays=2.8),
-        TopAdjuster(name="Emily Rodriguez", totalClaims=128, approvalRate=94.0, avgProcessingDays=2.1),
-    ]
-
+    adjusters = [TopAdjuster(**row) for row in get_top_adjusters_snapshot()]
     return TopAdjustersResponse(data=adjusters)
 
 
@@ -93,31 +67,5 @@ async def get_top_adjusters():
 # Recent Activity
 # ------------------------
 async def get_recent_activity():
-    activities = [
-        RecentActivityItem(
-            title="New fraud rule activated",
-            actor="Admin",
-            timestamp="2 hours ago",
-            severity="fraud",
-        ),
-        RecentActivityItem(
-            title="Claim CLM-2026-045 approved",
-            actor="John Smith",
-            timestamp="3 hours ago",
-            severity="approved",
-        ),
-        RecentActivityItem(
-            title="High-risk claim flagged",
-            actor="System",
-            timestamp="5 hours ago",
-            severity="flagged",
-        ),
-         RecentActivityItem(
-            title="New policy activated",
-            actor="Jane Doe",
-            timestamp="5 hours ago",
-            severity="info",
-        ),
-    ]
-
+    activities = [RecentActivityItem(**row) for row in get_recent_activity_snapshot()]
     return RecentActivityResponse(data=activities)
