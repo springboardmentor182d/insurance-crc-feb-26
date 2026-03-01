@@ -1,9 +1,9 @@
 from fastapi import APIRouter
-from .models import LoginRequest
 from .service import login_service
 
-router = APIRouter(prefix="/auth")
+router = APIRouter()
 
 @router.post("/login")
-def login(data: LoginRequest):
-    return login_service(data.email)
+def login(data: dict):
+    email = data.get("email")
+    return login_service(email)

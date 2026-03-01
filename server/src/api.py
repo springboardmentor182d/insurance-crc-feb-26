@@ -1,6 +1,6 @@
-from fastapi import APIRouter
-from auth.controller import router as auth_router
+from fastapi import FastAPI
+from src.auth.controller import router as auth_router
 
-api_router = APIRouter()
+app = FastAPI()
 
-api_router.include_router(auth_router)
+app.include_router(auth_router)
