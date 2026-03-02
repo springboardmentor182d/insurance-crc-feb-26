@@ -7,6 +7,7 @@ import PolicyDistribution from "../features/admin/dashboard/components/PolicyDis
 import TopAdjusters from "../features/admin/dashboard/components/TopAdjusters";
 import RecentActivity from "../features/admin/dashboard/components/RecentActivity";
 import ActionCard from "../features/admin/dashboard/components/ActionCard";
+import "../features/admin/dashboard/dashboardColors.css";
 import { useNavigate } from "react-router-dom";
 import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
 import { HiOutlineChartBar } from "react-icons/hi";
@@ -27,9 +28,8 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-10">
+      <div className="admin-dashboard-theme space-y-10">
 
-        {/* Header */}
         <div className="mb-10">
           <h1 className="text-4xl font-semibold text-gray-800">
             Admin Dashboard
@@ -39,7 +39,6 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Users"
@@ -78,55 +77,45 @@ const AdminDashboard = () => {
           />
         </div>
 
-        {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <ClaimsChart data={claims} />
           <RevenueChart data={revenue} />
         </div>
 
-        {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
           <PolicyDistribution data={distribution} />
           <TopAdjusters data={adjusters} />
           <RecentActivity data={activity} />
         </div>
 
-      
+        <div className="mt-5 mb-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <ActionCard
+              title="Fraud Detection"
+              description="Manage fraud rules and review flagged claims"
+              color="admin-action-fraud"
+              icon={<FiShield />}
+              onClick={() => navigate("/admin/fraud-rules")}
+            />
 
-      {/* Action Cards Row */}
-      <div className="mt-5 mb-0">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <ActionCard
-          title="Fraud Detection"
-          description="Manage fraud rules and review flagged claims"
-          color="bg-gradient-to-r from-red-500 to-red-600"
-          icon={<FiShield />}
-          onClick={() => navigate("/admin/fraud-rules")}
-        />
+            <ActionCard
+              title="Advanced Analytics"
+              description="Deep dive into performance metrics"
+              color="admin-action-analytics"
+              icon={<HiOutlineChartBar />}
+              onClick={() => navigate("/admin/analytics")}
+            />
 
-        <ActionCard
-          title="Advanced Analytics"
-          description="Deep dive into performance metrics"
-          color="bg-gradient-to-r from-blue-500 to-indigo-600"
-          icon={<HiOutlineChartBar />}
-          onClick={() => navigate("/admin/analytics")}
-        />
-
-        <ActionCard
-          title="Revenue Growth"
-          description="+18% increase from last month"
-          color="bg-gradient-to-r from-green-500 to-green-600"
-          icon={<FiTrendingUp />}
-          onClick={() => navigate("/admin/analytics")}
-        />
+            <ActionCard
+              title="Revenue Growth"
+              description="+18% increase from last month"
+              color="admin-action-revenue"
+              icon={<FiTrendingUp />}
+              onClick={() => navigate("/admin/analytics")}
+            />
+          </div>
+        </div>
       </div>
-      </div>
-      </div>
-
-
-
-
-
     </AdminLayout>
   );
 };

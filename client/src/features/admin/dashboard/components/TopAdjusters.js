@@ -1,14 +1,11 @@
 import { useNavigate } from "react-router-dom";
 
-
-
-
 const TopAdjusters = ({ data }) => {
   const navigate = useNavigate();
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
+    <div className="admin-surface rounded-3xl p-8 shadow-sm border admin-border-soft flex flex-col h-full">
 
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">
+      <h2 className="text-xl font-semibold admin-text-heading mb-6">
         Top Adjusters
       </h2>
 
@@ -17,22 +14,22 @@ const TopAdjusters = ({ data }) => {
           <div key={index}>
 
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium admin-text-primary">
                 {item.name}
               </h3>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm admin-text-muted">
                 {item.totalClaims} claims
               </span>
             </div>
 
-            <div className="text-sm text-gray-500 mt-2">
+            <div className="text-sm admin-text-subtle mt-2">
               {item.approvalRate}% approval
-              <span className="mx-2">•</span>
+              <span className="mx-2">-</span>
               {item.avgProcessingDays} days avg
             </div>
 
             {index !== data.length - 1 && (
-              <div className="border-t border-gray-100 mt-6"></div>
+              <div className="border-t admin-border-soft mt-6"></div>
             )}
 
           </div>
@@ -42,9 +39,9 @@ const TopAdjusters = ({ data }) => {
       <div className="mt-6 flex justify-center">
         <button
           onClick={() => navigate("/admin/analytics")}
-          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          className="admin-link text-sm font-medium"
         >
-          View All Analytics →
+          View All Analytics <span className="ml-1 text-xl leading-none">&rarr;</span>
         </button>
       </div>
 

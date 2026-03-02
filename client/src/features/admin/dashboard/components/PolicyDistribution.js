@@ -6,19 +6,23 @@ import {
   Tooltip
 } from "recharts";
 
-const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
+const POLICY_COLORS = [
+  "var(--admin-policy-color-1)",
+  "var(--admin-policy-color-2)",
+  "var(--admin-policy-color-3)",
+  "var(--admin-policy-color-4)"
+];
 
-/* 🔹 Custom Tooltip */
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const { policyType, percentage, count } = payload[0].payload;
 
     return (
-      <div className="bg-white border border-gray-200 shadow-md rounded-xl px-4 py-3">
-        <p className="text-sm font-semibold text-gray-800">
+      <div className="admin-surface border admin-border-tooltip shadow-md rounded-xl px-4 py-3">
+        <p className="text-sm font-semibold admin-text-heading">
           {policyType}
         </p>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm admin-text-subtle mt-1">
           {percentage}% ({count} policies)
         </p>
       </div>
@@ -28,7 +32,6 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-/* 🔹 Label Renderer */
 const renderLabel = ({
   name,
   percent,
@@ -40,8 +43,6 @@ const renderLabel = ({
   index
 }) => {
   const RADIAN = Math.PI / 180;
-
-  // Move label closer to pie (keeps it inside container)
   const radius = innerRadius + (outerRadius - innerRadius) * 1.1;
 
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -51,7 +52,7 @@ const renderLabel = ({
     <text
       x={x}
       y={y}
-      fill={COLORS[index]}   
+      fill={POLICY_COLORS[index]}
       textAnchor={x > cx ? "start" : "end"}
       dominantBaseline="central"
       style={{ fontSize: "12px", fontWeight: 500 }}
@@ -63,15 +64,12 @@ const renderLabel = ({
 
 const PolicyDistribution = ({ data }) => {
   return (
-    <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-
-      <h2 className="text-xl font-semibold text-gray-800 mb-6">
+    <div className="admin-surface rounded-3xl p-8 shadow-sm border admin-border-soft">
+      <h2 className="text-xl font-semibold admin-text-heading mb-6">
         Policy Distribution
       </h2>
 
       <div className="flex flex-col items-center">
-
-        {/* Pie Chart */}
         <ResponsiveContainer width={280} height={280}>
           <PieChart>
             <Pie
@@ -83,7 +81,7 @@ const PolicyDistribution = ({ data }) => {
               labelLine={false}
             >
               {data.map((entry, index) => (
-                <Cell key={index} fill={COLORS[index]} />
+                <Cell key={index} fill={POLICY_COLORS[index]} />
               ))}
             </Pie>
 
@@ -91,7 +89,6 @@ const PolicyDistribution = ({ data }) => {
           </PieChart>
         </ResponsiveContainer>
 
-        {/* Legend */}
         <div className="mt-6 w-full space-y-3">
           {data.map((item, index) => (
             <div
@@ -101,13 +98,13 @@ const PolicyDistribution = ({ data }) => {
               <div className="flex items-center gap-3">
                 <div
                   className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: COLORS[index] }}
+                  style={{ backgroundColor: POLICY_COLORS[index] }}
                 />
-                <span className="text-gray-700">
+                <span className="admin-text-secondary">
                   {item.policyType}
                 </span>
               </div>
-              <span className="font-medium text-gray-900">
+              <span className="font-medium admin-text-primary">
                 {item.percentage}%
               </span>
             </div>

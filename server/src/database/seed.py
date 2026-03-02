@@ -35,6 +35,8 @@ def seed_database() -> None:
 
         users = [
             User(
+                first_name="John",
+                last_name="Smith",
                 full_name="John Smith",
                 email="john.smith@example.com",
                 phone="+1-555-1001",
@@ -42,6 +44,8 @@ def seed_database() -> None:
                 created_at=now - timedelta(days=52),
             ),
             User(
+                first_name="Jane",
+                last_name="Doe",
                 full_name="Jane Doe",
                 email="jane.doe@example.com",
                 phone="+1-555-1002",
@@ -49,6 +53,8 @@ def seed_database() -> None:
                 created_at=now - timedelta(days=28),
             ),
             User(
+                first_name="Robert",
+                last_name="Taylor",
                 full_name="Robert Taylor",
                 email="robert.taylor@example.com",
                 phone="+1-555-1003",
@@ -56,6 +62,8 @@ def seed_database() -> None:
                 created_at=now - timedelta(days=14),
             ),
             User(
+                first_name="Priya",
+                last_name="Kumar",
                 full_name="Priya Kumar",
                 email="priya.kumar@example.com",
                 phone="+1-555-1004",

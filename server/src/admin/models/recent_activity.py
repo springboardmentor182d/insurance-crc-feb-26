@@ -1,20 +1,14 @@
 from pydantic import BaseModel
 from typing import List
-from enum import Enum
 
-    
-class RecentActivitySeverity(str, Enum):
-    FRAUD = "fraud"
-    APPROVED = "approved"
-    FLAGGED = "flagged"
-    INFO = "info"
+from src.database.enums.activity import ActivitySeverity
 
 
 class RecentActivityItem(BaseModel):
     title: str
     actor: str
     timestamp: str
-    severity: str
+    severity: ActivitySeverity
 
 
 class RecentActivityResponse(BaseModel):

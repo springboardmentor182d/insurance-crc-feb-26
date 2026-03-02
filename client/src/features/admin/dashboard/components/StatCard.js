@@ -9,9 +9,8 @@ const StatCard = ({
   const isPositive = growth >= 0;
 
   return (
-    <div className="bg-white rounded-3xl p-7 shadow-sm border border-gray-100 hover:shadow-md transition">
+    <div className="admin-surface rounded-3xl p-7 shadow-sm border admin-border-soft hover:shadow-md transition">
 
-      {/* Top Row */}
       <div className="flex items-start justify-between">
 
         <div className={`w-14 h-14 flex items-center justify-center rounded-2xl ${iconBg}`}>
@@ -22,10 +21,10 @@ const StatCard = ({
 
         <div
           className={`flex items-center text-sm font-medium ${
-            isPositive ? "text-green-600" : "text-red-500"
+            isPositive ? "admin-growth-positive" : "admin-growth-negative"
           }`}
         >
-          {isPositive ? "↑" : "↓"}
+          {isPositive ? "\u2191" : "\u2193"}
           <span className="ml-1">
             {Math.abs(growth)}%
           </span>
@@ -33,15 +32,13 @@ const StatCard = ({
 
       </div>
 
-      {/* Value */}
       <div className="mt-6">
-        <h2 className="text-4xl font-bold text-gray-900 tracking-tight">
+        <h2 className="text-4xl font-bold admin-text-primary tracking-tight">
           {value?.toLocaleString()}
         </h2>
       </div>
 
-      {/* Label */}
-      <p className="mt-2 text-gray-500 text-base">
+      <p className="mt-2 admin-text-subtle text-base">
         {title}
       </p>
 
