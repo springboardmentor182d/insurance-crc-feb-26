@@ -1,52 +1,99 @@
-from sqlalchemy.orm import Session
-from src.entities.user import User, UserPreferences
-from src.users.models import ProfileBase, PreferencesBase
 from typing import Optional
 
-def get_user_profile(db: Session, user_id: int) -> Optional[User]:
-    """Get user profile by user ID"""
-    return db.query(User).filter(User.id == user_id).first()
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) -> User:
-    """Update user profile"""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise ValueError("User not found")
-    
-    update_data = profile_data.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(user, field, value)
-    
-    db.commit()
-    db.refresh(user)
-    return user
+from src.entities.user import User, UserPreferences
+from src.users.models import ProfileBase, PreferencesBase
 
-def get_user_preferences(db: Session, user_id: int) -> Optional[UserPreferences]:
-    """Get user preferences by user ID"""
-    preferences = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
-    
-    # Create default preferences if they don't exist
-    if not preferences:
-        preferences = UserPreferences(user_id=user_id)
-        db.add(preferences)
-        db.commit()
-        db.refresh(preferences)
-    
-    return preferences
+from src.auth.models import LoginRequest, RegisterRequest, TokenResponse
 
-def update_user_preferences(db: Session, user_id: int, preferences_data: PreferencesBase) -> UserPreferences:
-    """Update user preferences"""
-    preferences = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
-    
-    if not preferences:
-        # Create new preferences if they don't exist
-        preferences = UserPreferences(user_id=user_id)
-        db.add(preferences)
-    
-    update_data = preferences_data.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(preferences, field, value)
-    
-    db.commit()
-    db.refresh(preferences)
-    return preferences
+
+
+class UserService:
+    @staticmethod
+    async def get_user_profile(
+        db: AsyncSession,
+        user_id: int
+    ) -> Optional[User]:
+        result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def update_user_profile(
+        db: AsyncSession,
+        user_id: int,
+        profile_data: ProfileBase
+    ) -> User:
+        result = await db.execute(
+            select(User).where(User.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise ValueError("User not found")
+
+        update_data = profile_data.dict(exclude_unset=True)
+
+        for field, value in update_data.items():
+            setattr(user, field, value)
+
+        await db.commit()
+        await db.refresh(user)
+        return user
+
+    @staticmethod
+    async def get_user_preferences(
+        db: AsyncSession,
+        user_id: int
+    ) -> UserPreferences:
+        result = await db.execute(
+            select(UserPreferences).where(UserPreferences.user_id == user_id)
+        )
+        preferences = result.scalar_one_or_none()
+
+        if not preferences:
+            preferences = UserPreferences(user_id=user_id)
+            db.add(preferences)
+            await db.commit()
+            await db.refresh(preferences)
+
+        return preferences
+
+    @staticmethod
+    async def update_user_preferences(
+        db: AsyncSession,
+        user_id: int,
+        preferences_data: PreferencesBase
+    ) -> UserPreferences:
+        result = await db.execute(
+            select(UserPreferences).where(UserPreferences.user_id == user_id)
+        )
+        preferences = result.scalar_one_or_none()
+
+        if not preferences:
+            preferences = UserPreferences(user_id=user_id)
+            db.add(preferences)
+
+        update_data = preferences_data.dict(exclude_unset=True)
+
+        for field, value in update_data.items():
+            setattr(preferences, field, value)
+
+        await db.commit()
+        await db.refresh(preferences)
+        return preferences
+
+class AuthService:
+    @staticmethod
+    async def login(db: AsyncSession, data: LoginRequest) -> TokenResponse | None:
+        # TODO: check user in DB, verify password, generate JWT
+        # Return None if invalid credentials
+        return TokenResponse(access_token="dummy-token")
+
+    @staticmethod
+    async def register(db: AsyncSession, data: RegisterRequest) -> TokenResponse:
+        # TODO: create user in DB, hash password, generate JWT
+        return TokenResponse(access_token="dummy-token")

@@ -2,6 +2,11 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict
 from datetime import date, datetime
 
+
+# ─────────────────────────────────────────────
+# Profile Schemas
+# ─────────────────────────────────────────────
+
 class ProfileBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -18,6 +23,7 @@ class ProfileBase(BaseModel):
     company: Optional[str] = None
     insurance_preferences: Optional[Dict[str, bool]] = None
 
+
 class ProfileResponse(ProfileBase):
     id: int
     email: str
@@ -27,6 +33,11 @@ class ProfileResponse(ProfileBase):
 
     class Config:
         from_attributes = True
+
+
+# ─────────────────────────────────────────────
+# Preferences Schemas
+# ─────────────────────────────────────────────
 
 class PreferencesBase(BaseModel):
     email_notifications: Optional[bool] = True
@@ -40,14 +51,15 @@ class PreferencesBase(BaseModel):
     weekly_digest: Optional[bool] = True
     two_factor_auth: Optional[bool] = True
     biometric_login: Optional[bool] = False
-    session_timeout: Optional[str] = '30'
-    preferred_language: Optional[str] = 'en'
-    preferred_currency: Optional[str] = 'USD'
-    timezone: Optional[str] = 'UTC'
-    theme: Optional[str] = 'light'
-    date_format: Optional[str] = 'MM/DD/YYYY'
+    session_timeout: Optional[str] = "30"
+    preferred_language: Optional[str] = "en"
+    preferred_currency: Optional[str] = "USD"
+    timezone: Optional[str] = "UTC"
+    theme: Optional[str] = "light"
+    date_format: Optional[str] = "MM/DD/YYYY"
     share_data_with_partners: Optional[bool] = False
     allow_analytics: Optional[bool] = True
+
 
 class PreferencesResponse(PreferencesBase):
     id: int
@@ -57,3 +69,23 @@ class PreferencesResponse(PreferencesBase):
 
     class Config:
         from_attributes = True
+
+
+# ─────────────────────────────────────────────
+# Compatibility Schemas for Other Modules
+# ─────────────────────────────────────────────
+
+class UserUpdate(ProfileBase):
+    """
+    Used for updating user profile.
+    Inherits all optional fields from ProfileBase.
+    """
+    pass
+
+
+class UserProfileResponse(ProfileResponse):
+    """
+    Alias for ProfileResponse to maintain compatibility
+    with imports from other modules.
+    """
+    pass

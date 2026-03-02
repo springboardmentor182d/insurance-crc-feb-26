@@ -1,62 +1,74 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from src.database.core import get_db
-from src.users.models import ProfileBase, ProfileResponse, PreferencesBase, PreferencesResponse
-from src.users.service import (
-    get_user_profile,
-    update_user_profile,
-    get_user_preferences,
-    update_user_preferences
-)
-from src.auth.jwt import get_current_user_id
+from sqlalchemy.ext.asyncio import AsyncSession
 
-router = APIRouter()
+from src.database.core import get_db
+from src.auth import get_current_user
+from src.users.models import (
+    ProfileBase,
+    ProfileResponse,
+    PreferencesBase,
+    PreferencesResponse,
+)
+from src.users.service import UserService
+
+
+router = APIRouter(tags=["Users"])
+
 
 @router.get("/profile", response_model=ProfileResponse)
-def get_profile(
-    current_user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
+async def get_profile(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Get current user's profile"""
-    user = get_user_profile(db, current_user_id)
+    """Get current user's profile."""
+    user = await UserService.get_user_profile(db, current_user["id"])
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+            detail="User not found",
         )
     return user
 
+
 @router.put("/profile", response_model=ProfileResponse)
-def update_profile(
+async def update_profile(
     profile_data: ProfileBase,
-    current_user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Update current user's profile"""
+    """Update current user's profile."""
     try:
-        user = update_user_profile(db, current_user_id, profile_data)
+        user = await UserService.update_user_profile(
+            db, current_user["id"], profile_data
+        )
         return user
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
+            detail=str(e),
         )
 
+
 @router.get("/preferences", response_model=PreferencesResponse)
-def get_preferences(
-    current_user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
+async def get_preferences(
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Get current user's preferences"""
-    preferences = get_user_preferences(db, current_user_id)
+    """Get current user's preferences."""
+    preferences = await UserService.get_user_preferences(
+        db, current_user["id"]
+    )
     return preferences
 
+
 @router.put("/preferences", response_model=PreferencesResponse)
-def update_preferences(
+async def update_preferences(
     preferences_data: PreferencesBase,
-    current_user_id: int = Depends(get_current_user_id),
-    db: Session = Depends(get_db)
+    current_user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Update current user's preferences"""
-    preferences = update_user_preferences(db, current_user_id, preferences_data)
+    """Update current user's preferences."""
+    preferences = await UserService.update_user_preferences(
+        db, current_user["id"], preferences_data
+    )
     return preferences

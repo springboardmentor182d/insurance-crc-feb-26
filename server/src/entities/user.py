@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Text, J
 from sqlalchemy.sql import func
 from src.database.core import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -62,3 +63,6 @@ class UserPreferences(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+from sqlalchemy import Enum
+role = Column(Enum("user", "admin", name="user_role_enum"), default="user")
