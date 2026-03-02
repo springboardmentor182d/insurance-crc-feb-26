@@ -1,10 +1,6 @@
 from pydantic import BaseModel
 from typing import List
 
-
-
-
-
 class ClaimsTrend(BaseModel):
     month: str
     approved: int
