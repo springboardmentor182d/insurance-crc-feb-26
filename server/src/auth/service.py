@@ -15,6 +15,7 @@ ALGORITHM = "HS256"
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str):
+>>>>>>> GroupA-Feature-PolicyCatalog-Vansh
     return pwd_context.hash(password)
 
 def verify_password(plain, hashed):
