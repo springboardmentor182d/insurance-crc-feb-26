@@ -1,9 +1,8 @@
 import "./App.css";
 import { useState } from "react";
-import axios from "axios";
 import { FcGoogle } from "react-icons/fc";
 import { FaPhoneAlt } from "react-icons/fa";
-
+import { loginUser, signupUser } from "./features/authentication/auth/authService";
 function App() {
   const [isLogin, setIsLogin] = useState(true);
 
@@ -14,13 +13,11 @@ function App() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
-  const [modalStep, setModalStep] = useState("input"); // input | otp | message
+  const [modalStep, setModalStep] = useState("input");
   const [modalType, setModalType] = useState("");
   const [modalValue, setModalValue] = useState("");
   const [otp, setOtp] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-
-  const API = "http://127.0.0.1:8000";
 
   const resetForm = () => {
     setName("");
@@ -47,12 +44,9 @@ function App() {
   // ================= LOGIN =================
   const handleLogin = async () => {
     try {
-      const res = await axios.post(`${API}/login`, {
-        email: email.toLowerCase(),
-        password,
-      });
+      const res = await loginUser(email, password);
 
-      localStorage.setItem("token", res.data.access_token);
+      localStorage.setItem("token", res.access_token);
 
       setModalTitle("Login Status");
       setModalMessage("Login Successful!");
@@ -79,11 +73,7 @@ function App() {
     }
 
     try {
-      await axios.post(`${API}/signup`, {
-        name,
-        email: email.toLowerCase(),
-        password,
-      });
+      await signupUser(name, email, password);
 
       setModalTitle("Signup Status");
       setModalMessage("Account Created Successfully!");
@@ -107,9 +97,7 @@ function App() {
     }
   };
 
-  // ================= MODAL CONTINUE =================
   const handleModalContinue = () => {
-
     if (modalStep === "input") {
       if (!modalValue) return;
 
@@ -250,7 +238,6 @@ function App() {
         </div>
       </div>
 
-      {/* UNIVERSAL MODAL */}
       {modalOpen && (
         <div className="modal-overlay">
           <div className="modal-box">
