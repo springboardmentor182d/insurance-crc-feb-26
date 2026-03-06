@@ -14,12 +14,14 @@ import {
     Edit2,
     Shield,
     Globe,
+    DollarSign,
 
     MessageSquare,
     Smartphone,
     Eye,
     EyeOff,
     CheckCircle,
+
 
 } from 'lucide-react';
 
@@ -32,22 +34,74 @@ export default function Settings() {
 
     /* ================= PROFILE STATE ================= */
 
-    const sampleUser = {
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+1 (555) 123-4567',
-        dob: '1990-05-15',
-        address: '123 Main Street, New York, NY 10001',
-        occupation: 'Software Engineer',
-    };
 
-    const [profile, setProfile] = useState(sampleUser);
+
+    const [profile, setProfile] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        dob: '',
+        address: '',
+        occupation: ''
+    });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Later connect backend
-        setProfile(sampleUser);
-    }, []);
+        const fetchProfile = async () => {
+            try {
+                const response = await fetch("http://127.0.0.1:8000/users/profile");
+                const data = await response.json();
 
+                setProfile({
+                    name: data.name,
+                    email: data.email || '',
+                    phone: data.phone || '',
+                    dob: data.dob || '',
+                    address: data.address || '',
+                    occupation: data.occupation || ''
+                });
+
+                if (data.preferences) {
+
+                    // Notifications
+                    if (data.preferences.notifications) {
+                        setEmailNotifications(
+                            data.preferences.notifications.email || emailNotifications
+                        );
+
+                        setSmsNotifications(
+                            data.preferences.notifications.sms || smsNotifications
+                        );
+
+                        setPushNotifications(
+                            data.preferences.notifications.push || pushNotifications
+                        );
+                    }
+
+                    // Privacy
+                    if (data.preferences.privacy) {
+                        setPrivacySettings(data.preferences.privacy);
+                    }
+
+                    // Display
+                    if (data.preferences.display) {
+                        setDisplayPreferences(data.preferences.display);
+                    }
+
+                    if (data.preferences.insurance) {
+                        setInsurancePreferences(data.preferences.insurance);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error loading profile:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
     const initials = profile.name
         ? profile.name
             .split(' ')
@@ -57,22 +111,41 @@ export default function Settings() {
         : 'U';
 
     /* ================= PREFERENCES STATE ================= */
+    // ================= SAVE PROFILE =================
 
-    const [emailNotify, setEmailNotify] = useState(true);
-    const [smsNotify, setSmsNotify] = useState(true);
-    const [theme, setTheme] = useState('light');
+    const saveAll = async () => {
+        try {
+            await fetch("http://127.0.0.1:8000/users/profile", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: profile.name,
+                    phone: profile.phone,
+                    address: profile.address,
+                    occupation: profile.occupation,
+                    dob: profile.dob
+                })
+            });
+            // Apply theme after saving
 
-    const saveAll = () => {
-        console.log(profile, { emailNotify, smsNotify, theme });
-        setIsEditing(false);
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
+
+            setIsEditing(false);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+
+        } catch (error) {
+            console.error("Error saving profile:", error);
+        }
     };
 
-    // Success message
+    // ================= SUCCESS MESSAGE =================
+
     const [saveMessage, setSaveMessage] = useState(false);
 
-    // Notification Preferences
+    // ================= NOTIFICATION PREFERENCES =================
+
     const [emailNotifications, setEmailNotifications] = useState({
         policyUpdates: true,
         claimStatus: true,
@@ -96,7 +169,8 @@ export default function Settings() {
         promotions: false,
     });
 
-    // Privacy Settings
+    // ================= PRIVACY =================
+
     const [privacySettings, setPrivacySettings] = useState({
         profileVisibility: 'private',
         shareDataWithPartners: false,
@@ -104,7 +178,8 @@ export default function Settings() {
         showOnlineStatus: false,
     });
 
-    // Display Preferences
+    // ================= DISPLAY =================
+
     const [displayPreferences, setDisplayPreferences] = useState({
         language: 'English',
         timezone: 'America/New_York',
@@ -113,20 +188,60 @@ export default function Settings() {
         theme: 'light',
     });
 
-    // Insurance Preferences
+    // ================= INSURANCE =================
+
     const [insurancePreferences, setInsurancePreferences] = useState({
-        interestedPolicies: ['Health', 'Auto', 'Life'],
+        interestedPolicies: ['Health', 'Auto', 'Home', 'Life', 'Travel', 'Business'],
         autoRenewal: true,
         paperlessBilling: true,
         preferredPaymentMethod: 'credit_card',
     });
 
-    const policyTypes = ['Health', 'Auto', 'Home', 'Life', 'Travel', 'Business'];
+    // ================= SAVE PREFERENCES =================
 
-    const handleSavePreferences = () => {
-        setSaveMessage(true);
-        setTimeout(() => setSaveMessage(false), 3000);
+    const handleSavePreferences = async () => {
+        try {
+            await fetch("http://127.0.0.1:8000/users/preferences", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    notifications: {
+                        email: emailNotifications,
+                        sms: smsNotifications,
+                        push: pushNotifications
+                    },
+                    privacy: privacySettings,
+                    display: displayPreferences,
+                    insurance: insurancePreferences
+                })
+            });
+
+            // save locally
+            localStorage.setItem("appLanguage", displayPreferences.language);
+            localStorage.setItem("appTheme", displayPreferences.theme);
+
+            // apply theme
+            document.documentElement.classList.remove("light", "dark");
+            document.documentElement.classList.add(displayPreferences.theme);
+
+            // apply language attribute
+            document.documentElement.lang = displayPreferences.language;
+
+            setSaveMessage(true);
+
+        } catch (error) {
+            console.error("Error saving preferences:", error);
+        }
     };
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <p className="text-lg font-medium">Loading profile...</p>
+            </div>
+        );
+    }
     return (
         <div className="min-h-screen bg-gray-100">
             <Sidebar
@@ -272,9 +387,19 @@ export default function Settings() {
                         </>
                     )}
 
-                    {/* ================= PREFERENCES ================= */}
                     {activeTab === 'preferences' && (
-                        <div className="space-y-6">
+                        <div className="space-y-10">
+
+                            {/* Page Header */}
+                            <div className="flex items-center gap-3">
+                                <Palette className="w-8 h-8 text-purple-600" />
+                                <div>
+                                    <h1 className="text-2xl font-bold">Preferences</h1>
+                                    <p className="text-gray-600">
+                                        Manage your account preferences and settings
+                                    </p>
+                                </div>
+                            </div>
 
                             {saveMessage && (
                                 <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
@@ -285,65 +410,120 @@ export default function Settings() {
                                 </div>
                             )}
 
-                            {/* Notification Preferences */}
-                            <div className="bg-white p-6 rounded-2xl shadow">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <Bell className="w-6 h-6 text-purple-600" />
-                                    <h2 className="text-xl font-bold">Notification Preferences</h2>
+                            {/* ================= NOTIFICATION PREFERENCES ================= */}
+                            <div className="bg-white p-6 rounded-2xl shadow space-y-8">
+
+                                <div className="flex items-center gap-3">
+                                    <Bell className="w-6 h-6 text-indigo-600" />
+                                    <div>
+                                        <h2 className="text-xl font-bold">Notification Preferences</h2>
+                                        <p className="text-gray-600 text-sm">
+                                            Choose how you want to be notified
+                                        </p>
+                                    </div>
                                 </div>
 
-                                {Object.entries(emailNotifications).map(([key, value]) => (
-                                    <label key={key} className="flex justify-between mb-3">
-                                        <span>
-                                            {key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())}
-                                        </span>
-                                        <input
-                                            type="checkbox"
-                                            checked={value}
-                                            onChange={(e) =>
-                                                setEmailNotifications({
-                                                    ...emailNotifications,
-                                                    [key]: e.target.checked,
-                                                })
-                                            }
-                                        />
-                                    </label>
-                                ))}
+                                {/* Email */}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Mail className="w-5 h-5 text-pink-500" />
+                                        <h3 className="font-semibold">Email Notifications</h3>
+                                    </div>
+
+                                    {Object.entries(emailNotifications).map(([key, value]) => (
+                                        <label key={key} className="flex justify-between items-center mb-2">
+                                            <span className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                                            <input
+                                                type="checkbox"
+                                                checked={value}
+                                                onChange={(e) =>
+                                                    setEmailNotifications({
+                                                        ...emailNotifications,
+                                                        [key]: e.target.checked
+                                                    })
+                                                }
+                                            />
+                                        </label>
+                                    ))}
+                                </div>
+
+                                {/* SMS */}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Smartphone className="w-5 h-5 text-blue-500" />
+                                        <h3 className="font-semibold">SMS Notifications</h3>
+                                    </div>
+
+                                    {Object.entries(smsNotifications).map(([key, value]) => (
+                                        <label key={key} className="flex justify-between items-center mb-2">
+                                            <span className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                                            <input
+                                                type="checkbox"
+                                                checked={value}
+                                                onChange={(e) =>
+                                                    setSmsNotifications({
+                                                        ...smsNotifications,
+                                                        [key]: e.target.checked
+                                                    })
+                                                }
+                                            />
+                                        </label>
+                                    ))}
+                                </div>
+
+                                {/* Push */}
+                                <div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <MessageSquare className="w-5 h-5 text-green-500" />
+                                        <h3 className="font-semibold">Push Notifications</h3>
+                                    </div>
+
+                                    {Object.entries(pushNotifications).map(([key, value]) => (
+                                        <label key={key} className="flex justify-between items-center mb-2">
+                                            <span className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                                            <input
+                                                type="checkbox"
+                                                checked={value}
+                                                onChange={(e) =>
+                                                    setPushNotifications({
+                                                        ...pushNotifications,
+                                                        [key]: e.target.checked
+                                                    })
+                                                }
+                                            />
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
 
-                            {/* Privacy Settings */}
-                            {/* ================= Privacy & Security ================= */}
+                            {/* ================= PRIVACY ================= */}
                             <div className="bg-white p-6 rounded-2xl shadow space-y-6">
 
-                                {/* Header */}
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-                                        <Shield className="w-6 h-6 text-white" />
-                                    </div>
+                                    <Shield className="w-6 h-6 text-red-500" />
                                     <div>
-                                        <h2 className="text-xl font-bold text-gray-900">
-                                            Privacy & Security
-                                        </h2>
-                                        <p className="text-sm text-gray-600">
+                                        <h2 className="text-xl font-bold">Privacy & Security</h2>
+                                        <p className="text-gray-600 text-sm">
                                             Control your data and privacy settings
                                         </p>
                                     </div>
                                 </div>
 
-                                {/* Profile Visibility */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    <label className="block mb-2 font-medium flex items-center gap-2">
+                                        <Eye className="w-4 h-4 text-gray-500" />
                                         Profile Visibility
                                     </label>
+
                                     <select
                                         value={privacySettings.profileVisibility}
                                         onChange={(e) =>
                                             setPrivacySettings({
                                                 ...privacySettings,
-                                                profileVisibility: e.target.value,
+                                                profileVisibility: e.target.value
                                             })
                                         }
-                                        className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                        className="w-full border rounded-lg px-4 py-2"
                                     >
                                         <option value="public">Public</option>
                                         <option value="private">Private</option>
@@ -351,116 +531,240 @@ export default function Settings() {
                                     </select>
                                 </div>
 
-                                {/* Share Data */}
-                                <label className="flex items-start justify-between gap-4 cursor-pointer">
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Share Data with Partners
-                                        </p>
-                                        <p className="text-sm text-gray-600">
-                                            Allow us to share anonymized data with insurance partners
-                                        </p>
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        checked={privacySettings.shareDataWithPartners}
-                                        onChange={(e) =>
-                                            setPrivacySettings({
-                                                ...privacySettings,
-                                                shareDataWithPartners: e.target.checked,
-                                            })
-                                        }
-                                        className="w-5 h-5 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                                    />
-                                </label>
-
-                                {/* Allow Analytics */}
-                                <label className="flex items-start justify-between gap-4 cursor-pointer">
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Allow Analytics
-                                        </p>
-                                        <p className="text-sm text-gray-600">
-                                            Help us improve by collecting usage analytics
-                                        </p>
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        checked={privacySettings.allowAnalytics}
-                                        onChange={(e) =>
-                                            setPrivacySettings({
-                                                ...privacySettings,
-                                                allowAnalytics: e.target.checked,
-                                            })
-                                        }
-                                        className="w-5 h-5 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                                    />
-                                </label>
-
-                                {/* Show Online Status */}
-                                <label className="flex items-start justify-between gap-4 cursor-pointer">
-                                    <div>
-                                        <p className="font-medium text-gray-900">
-                                            Show Online Status
-                                        </p>
-                                        <p className="text-sm text-gray-600">
-                                            Let others see when you're online
-                                        </p>
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        checked={privacySettings.showOnlineStatus}
-                                        onChange={(e) =>
-                                            setPrivacySettings({
-                                                ...privacySettings,
-                                                showOnlineStatus: e.target.checked,
-                                            })
-                                        }
-                                        className="w-5 h-5 mt-1 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
-                                    />
-                                </label>
-
-                            </div>
-                            {/* Theme Selection */}
-                            <div className="bg-white p-6 rounded-2xl shadow">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <Palette className="w-6 h-6 text-green-600" />
-                                    <h2 className="text-xl font-bold">Theme</h2>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    {['light', 'dark', 'auto'].map(t => (
-                                        <button
-                                            key={t}
-                                            onClick={() =>
-                                                setDisplayPreferences({
-                                                    ...displayPreferences,
-                                                    theme: t,
+                                {["shareDataWithPartners", "allowAnalytics", "showOnlineStatus"].map((key) => (
+                                    <label key={key} className="flex justify-between items-center">
+                                        <span className="capitalize flex items-center gap-2">
+                                            <EyeOff className="w-4 h-4 text-gray-400" />
+                                            {key.replace(/([A-Z])/g, ' $1')}
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            checked={privacySettings[key]}
+                                            onChange={(e) =>
+                                                setPrivacySettings({
+                                                    ...privacySettings,
+                                                    [key]: e.target.checked
                                                 })
                                             }
-                                            className={`px-6 py-2 rounded-lg border ${displayPreferences.theme === t
-                                                ? 'bg-purple-600 text-white'
-                                                : ''
-                                                }`}
-                                        >
-                                            {t}
-                                        </button>
-                                    ))}
+                                        />
+                                    </label>
+                                ))}
+                            </div>
+
+                            {/* ================= DISPLAY ================= */}
+                            <div className="bg-white p-6 rounded-2xl shadow space-y-6">
+
+                                <div className="flex items-center gap-3">
+                                    <Globe className="w-6 h-6 text-teal-600" />
+                                    <div>
+                                        <h2 className="text-xl font-bold">Display Preferences</h2>
+                                        <p className="text-gray-600 text-sm">
+                                            Customize how information is displayed
+                                        </p>
+                                    </div>
+                                </div>
+
+
+                                {/* Language */}
+                                <div>
+                                    <label className="block mb-2 font-medium flex items-center gap-2">
+                                        <Globe className="w-4 h-4 text-blue-500" />
+                                        Language
+                                    </label>
+
+                                    <select
+                                        value={displayPreferences.language}
+                                        onChange={(e) =>
+                                            setDisplayPreferences({
+                                                ...displayPreferences,
+                                                language: e.target.value
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-4 py-2"
+                                    >
+                                        <option value="en">English</option>
+                                        <option value="hi">Hindi</option>
+                                        <option value="te">Telugu</option>
+                                    </select>
+                                </div>
+
+                                {/* Timezone */}
+                                <div>
+                                    <label className="block mb-2 font-medium flex items-center gap-2">
+                                        <MapPin className="w-4 h-4 text-green-500" />
+                                        Timezone
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={displayPreferences.timezone}
+                                        onChange={(e) =>
+                                            setDisplayPreferences({
+                                                ...displayPreferences,
+                                                timezone: e.target.value
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-4 py-2"
+                                    />
+                                </div>
+
+                                {/* Date Format */}
+                                <div>
+                                    <label className="block mb-2 font-medium flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-purple-500" />
+                                        Date Format
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={displayPreferences.dateFormat}
+                                        onChange={(e) =>
+                                            setDisplayPreferences({
+                                                ...displayPreferences,
+                                                dateFormat: e.target.value
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-4 py-2"
+                                    />
+                                </div>
+
+                                {/* Currency */}
+                                <div>
+                                    <label className="block mb-2 font-medium flex items-center gap-2">
+                                        <DollarSign className="w-4 h-4 text-yellow-500" />
+                                        Currency
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={displayPreferences.currency}
+                                        onChange={(e) =>
+                                            setDisplayPreferences({
+                                                ...displayPreferences,
+                                                currency: e.target.value
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-4 py-2"
+                                    />
+                                </div>
+
+
+                                <div>
+                                    <label className="block mb-2 font-medium">Theme</label>
+                                    <div className="flex gap-4">
+                                        {['light', 'dark', 'auto'].map(t => (
+                                            <button
+                                                key={t}
+                                                onClick={() =>
+                                                    setDisplayPreferences({
+                                                        ...displayPreferences,
+                                                        theme: t
+                                                    })
+                                                }
+                                                className={`px-4 py-2 rounded-lg border ${displayPreferences.theme === t
+                                                    ? 'bg-purple-600 text-white'
+                                                    : ''
+                                                    }`}
+                                            >
+                                                {t}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            {/* ================= INSURANCE PREFERENCES ================= */}
+                            < div className="bg-white p-6 rounded-2xl shadow space-y-6">
+                                <div>
+                                    <h2 className="text-xl font-bold">Insurance Preferences</h2>
+                                    <p className="text-gray-600 text-sm">
+                                        Manage your insurance-related preferences
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block mb-2 font-medium">
+                                        Policy Types You're Interested In
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {['Health', 'Auto', 'Home', 'Life', 'Travel', 'Business'].map(type => (
+                                            <label key={type} className="flex items-center gap-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={insurancePreferences.interestedPolicies.includes(type)}
+                                                    onChange={(e) => {
+                                                        const updated = e.target.checked
+                                                            ? [...insurancePreferences.interestedPolicies, type]
+                                                            : insurancePreferences.interestedPolicies.filter(t => t !== type);
+
+                                                        setInsurancePreferences({
+                                                            ...insurancePreferences,
+                                                            interestedPolicies: updated
+                                                        });
+                                                    }}
+                                                />
+                                                {type}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {["autoRenewal", "paperlessBilling"].map((key) => (
+                                    <label key={key} className="flex justify-between">
+                                        <span>{key.replace(/([A-Z])/g, ' $1')}</span>
+                                        <input
+                                            type="checkbox"
+                                            checked={insurancePreferences[key]}
+                                            onChange={(e) =>
+                                                setInsurancePreferences({
+                                                    ...insurancePreferences,
+                                                    [key]: e.target.checked
+                                                })
+                                            }
+                                        />
+                                    </label>
+                                ))}
+
+                                <div>
+                                    <label className="block mb-2 font-medium">
+                                        Preferred Payment Method
+                                    </label>
+                                    <select
+                                        value={insurancePreferences.preferredPaymentMethod}
+                                        onChange={(e) =>
+                                            setInsurancePreferences({
+                                                ...insurancePreferences,
+                                                preferredPaymentMethod: e.target.value
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-4 py-2"
+                                    >
+                                        <option value="credit_card">Credit Card</option>
+                                        <option value="debit_card">Debit Card</option>
+                                        <option value="upi">UPI</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            <button
-                                onClick={handleSavePreferences}
-                                className="w-full h-14 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-medium flex items-center justify-center gap-2"
-                            >
-                                <Save className="w-5 h-5" />
-                                Save All Preferences
-                            </button>
+                            {/* Buttons */}
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={handleSavePreferences}
+                                    className="flex-1 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl py-3 font-medium"
+                                >
+                                    Save All Preferences
+                                </button>
+
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="flex-1 border rounded-xl py-3 font-medium"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+
                         </div>
-                    )}
-                </main>
-            </div>
-        </div>
+                    )
+                    }
+                </main >
+            </div >
+        </div >
     );
 }
 
