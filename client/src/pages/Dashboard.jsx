@@ -8,39 +8,6 @@ import {
 
 import { FiSearch, FiBell, FiDownload, FiFilter } from "react-icons/fi";
 
-/* DATA */
-
-const revenueData = [
-  { m: "Jan", v: 35000 },
-  { m: "Feb", v: 42000 },
-  { m: "Mar", v: 39000 },
-  { m: "Apr", v: 48000 },
-  { m: "May", v: 45000 },
-  { m: "Jun", v: 52000 }
-];
-
-const radarData = [
-  { subject: "Claims", A: 95 },
-  { subject: "Customer", A: 85 },
-  { subject: "Fraud", A: 80 },
-  { subject: "Automation", A: 88 },
-  { subject: "Accuracy", A: 92 }
-];
-
-const pieData = [
-  { name: "Health", value: 987, color: "#EC4899" },
-  { name: "Life", value: 789, color: "#8B5CF6" },
-  { name: "Auto", value: 621, color: "#F472B6" },
-  { name: "Home", value: 450, color: "#A78BFA" }
-];
-
-const claimsData = [
-  { name: "Approved", v: 240, fill: "#10B981" },
-  { name: "Pending", v: 35, fill: "#F59E0B" },
-  { name: "Processing", v: 50, fill: "#3B82F6" },
-  { name: "Rejected", v: 20, fill: "#EF4444" }
-];
-
 /* MAIN */
 
 export default function Dashboard() {
@@ -48,20 +15,46 @@ export default function Dashboard() {
      active_policies: 0,
      total_claims: 0,
      monthly_revenue: 0,
-     satisfaction: 0
+     satisfaction: 0,
+     revenue_data: [],
+     radar_data: [],
+     pie_data: [],
+     claims_data: [],
+     top_performers: [],
+     top_stats: [],
+     kpi_growth: {
+       active_policies: "0%",
+       total_claims: "0%",
+       monthly_revenue: "0%",
+       satisfaction: "0%"
+     }
    });
+   
+   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/stats")
-       .then(res => res.json())
+    fetch(`${process.env.REACT_APP_API_BASE_URL || "http://localhost:8000"}/api/dashboard-data`)
+       .then(res => {
+         if (!res.ok) throw new Error("API HTTP Error: " + res.status);
+         return res.json();
+       })
        .then(data => {
          console.log("API DATA:", data);
          setStats(data);
        })
-       .catch(err => console.error("API Error:", err));
+       .catch(err => {
+         console.error("API Error:", err);
+         setErrorMsg(err.toString());
+       });
   }, []);
+  
   return (
     <div className="flex min-h-screen bg-[#F4F2F8]">
+      {errorMsg && (
+        <div className="fixed top-0 left-0 w-full bg-red-600 text-white p-3 z-50 text-center font-bold shadow-md">
+          ⚠️ Fetch Error: {errorMsg}
+        </div>
+      )}
 
       {/* SIDEBAR */}
       <div className="w-64 bg-white p-6 shadow-xl">
@@ -122,14 +115,7 @@ export default function Dashboard() {
 
         {/* TOP STATS */}
         <div className="grid grid-cols-6 gap-4">
-          {[
-            ["✅ Approved Today", "42", "green"],
-            ["⏳ Pending", "23", "yellow"],
-            ["⚙️ Processing", "34", "blue"],
-            ["🎯 Accuracy", "98%", "purple"],
-            ["⏱️ Avg Response", "2.4h", "pink"],
-            ["❌ Rejected", "12", "red"]
-          ].map((s, i) => (
+          {stats.top_stats.map((s, i) => (
             <Stat key={i} {...s} />
           ))}
         </div>
@@ -137,10 +123,10 @@ export default function Dashboard() {
         {/* KPI CARDS */}
         <div className="grid grid-cols-4 gap-6 mt-8">
           {[
-            ["🛡", "Active Policies", stats.active_policies, "12.5%"],
-            ["📄", "Total Claims", stats.total_claims, "8.2%"],
-            ["💰", "Monthly Revenue", "$" + stats.monthly_revenue, "15.3%"],
-            ["📈", "Satisfaction Score", stats.satisfaction + "%", "2.1%"]
+            ["🛡", "Active Policies", stats.active_policies, stats.kpi_growth?.active_policies || "0%"],
+            ["📄", "Total Claims", stats.total_claims, stats.kpi_growth?.total_claims || "0%"],
+            ["💰", "Monthly Revenue", "$" + stats.monthly_revenue, stats.kpi_growth?.monthly_revenue || "0%"],
+            ["📈", "Satisfaction Score", stats.satisfaction + "%", stats.kpi_growth?.satisfaction || "0%"]
           ].map((d, i) => (
             <Kpi key={i} {...d} />
           ))}
@@ -162,7 +148,7 @@ export default function Dashboard() {
             </div>
 
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={revenueData}>
+              <LineChart data={stats.revenue_data}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="m" />
                 <YAxis />
@@ -175,7 +161,7 @@ export default function Dashboard() {
           <div className="bg-white p-6 rounded-2xl shadow">
             <h3 className="font-semibold mb-4">🎯 Performance Metrics</h3>
             <ResponsiveContainer height={300}>
-              <RadarChart data={radarData}>
+              <RadarChart data={stats.radar_data}>
                 <PolarGrid />
                 <PolarAngleAxis dataKey="subject" />
                 <PolarRadiusAxis />
@@ -194,15 +180,15 @@ export default function Dashboard() {
 
             <ResponsiveContainer height={250}>
               <PieChart>
-                <Pie data={pieData} dataKey="value" innerRadius={60}>
-                  {pieData.map((p, i) => <Cell key={i} fill={p.color} />)}
+                <Pie data={stats.pie_data} dataKey="value" innerRadius={60}>
+                  {stats.pie_data.map((p, i) => <Cell key={i} fill={p.color} />)}
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
 
             {/* ✅ COLOR LEGEND FIX */}
             <div className="grid grid-cols-2 gap-3 mt-4">
-              {pieData.map((p, i) => (
+              {stats.pie_data.map((p, i) => (
                 <div key={i} className="flex justify-between bg-gray-100 px-4 py-2 rounded-lg">
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full" style={{ background: p.color }} />
@@ -218,31 +204,26 @@ export default function Dashboard() {
           <div className="bg-white p-6 rounded-2xl shadow">
             <h3 className="font-semibold mb-4">📊 Claims Status</h3>
             <ResponsiveContainer height={250}>
-              <BarChart data={claimsData}>
+              <BarChart data={stats.claims_data}>
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="v">
-                  {claimsData.map((c, i) => <Cell key={i} fill={c.fill} />)}
+                  {stats.claims_data.map((c, i) => <Cell key={i} fill={c.fill} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
 
             <div className="mt-4 bg-purple-50 p-4 rounded-xl text-center">
               <div className="text-gray-600">Total Processed</div>
-              <div className="text-xl font-bold">314 claims</div>
+              <div className="text-xl font-bold">{stats.total_claims} claims</div>
             </div>
           </div>
 
           {/* TOP PERFORMERS */}
           <div className="bg-white p-6 rounded-2xl shadow">
             <h3 className="font-semibold mb-4">🏆 Top Performers</h3>
-            {[
-              ["Premium Health Plus","342 sales","$102,300","+18%"],
-              ["Life Guardian Pro","289 sales","$86,700","+15%"],
-              ["Auto Shield Elite","234 sales","$62,400","+22%"],
-              ["Home Secure Premium","198 sales","$59,400","+12%"]
-            ].map((p,i)=>(
+            {stats.top_performers.map((p,i)=>(
               <div key={i} className="flex justify-between items-center bg-gray-50 p-4 mb-3 rounded-xl">
                 <div>
                   <p className="font-medium">{p[0]}</p>
