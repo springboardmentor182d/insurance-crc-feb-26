@@ -1,27 +1,27 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.database.core import Base, engine
+from src.users.controller import router as users_router
 from src.auth.controller import router as auth_router
 
 app = FastAPI()
 
-# ===== CORS (Frontend connection) =====
+# create tables
+Base.metadata.create_all(bind=engine)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React frontend
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ===== Test route =====
+app.include_router(users_router)
+app.include_router(auth_router)
+
+
 @app.get("/")
 def home():
-    return {"message": "Backend running"}
-
-@app.get("/test")
-def test():
-    return {"status": "connected"}
-
-# ===== Auth Routes =====
-app.include_router(auth_router)
+    return {"message": "FastAPI server running"}

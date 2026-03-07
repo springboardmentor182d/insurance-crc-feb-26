@@ -1,65 +1,114 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const LoginForm = () => {
+
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
-    const res = await fetch("http://127.0.0.1:8000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email }),
-    });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-    const data = await res.json();
+  const baseURL = process.env.REACT_APP_BASE_URL;
 
-    if (data.role === "admin") {
-      navigate("/admin-dashboard");
+  const handleLogin = async (e) => {
+  e.preventDefault();
+
+  const response = await fetch(`${baseURL}/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email: email,
+      password: password,
+    }),
+  });
+
+  const data = await response.json();
+
+  if (response.ok) {
+
+    // ADMIN CHECK
+    if (data.email === "admin@gmail.com") {
+      window.location.href = "/admin-dashboard";
     } else {
-      navigate("/user-dashboard");
+      window.location.href = "/user-dashboard";
     }
+
+  } else {
+    alert("Login failed");
+  }
+};
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${baseURL}/auth/google`;
   };
 
   return (
+
     <div className="auth-container">
 
-      {/* LOGO */}
-      <div className="logo">
-        <span className="logo-box">I</span>
-        <h2>InsureHub</h2>
-      </div>
+      <div className="left-panel">
 
-      {/* CARD */}
-      <div className="login-card">
-        <h1>Welcome back</h1>
-        <p>Sign in to your account to continue</p>
+        <h1>InsureHub</h1>
 
-        <label>Email</label>
-        <input
-          type="email"
-          placeholder="john.doe@example.com"
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <label>Password</label>
-        <input
-          type="password"
-          placeholder="••••••••"
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button onClick={handleLogin}>Sign in</button>
+        <h2>Protect What Matters Most</h2>
 
         <p>
-          Don’t have an account? <Link to="/signup">Sign up</Link>
+          Compare policies, get personalized recommendations,
+          and manage claims seamlessly.
         </p>
+
       </div>
+
+
+      <div className="right-panel">
+
+        <h2>Welcome Back</h2>
+
+        <p>Sign in to access your account</p>
+
+        <form onSubmit={handleLogin}>
+
+          <input
+            type="email"
+            placeholder="Enter email"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
+          />
+
+          <input
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e)=>setPassword(e.target.value)}
+          />
+
+          <button type="submit">
+            Sign In
+          </button>
+
+        </form>
+
+        <p style={{textAlign:"center"}}>or continue with</p>
+
+        <button className="google-btn" onClick={handleGoogleLogin}>
+          Sign in with Google
+        </button>
+
+        <p className="signup-text">
+          Don't have an account?
+          <span onClick={()=>navigate("/signup")}>
+            Sign up
+          </span>
+        </p>
+
+      </div>
+
     </div>
+
   );
-}
+
+};
 
 export default LoginForm;

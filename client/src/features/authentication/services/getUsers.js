@@ -1,11 +1,20 @@
-export const loginUser = async (email) => {
-  const res = await fetch("http://127.0.0.1:8000/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email }),
-  });
+const baseURL = process.env.REACT_APP_BASE_URL;
 
-  return await res.json();
+export const getUsers = async () => {
+  try {
+
+    const response = await fetch(`${baseURL}/users`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    const data = await response.json();
+
+    return data;
+
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
 };

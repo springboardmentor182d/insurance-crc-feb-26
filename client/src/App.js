@@ -1,22 +1,27 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-import LoginForm from "./features/authentication/components/LoginForm";
-import SignForm from "./features/authentication/components/SignForm";
-
-import UserDashboard from "./pages/UserDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginForm />} />
-        <Route path="/signup" element={<SignForm />} />
-        <Route path="/user-dashboard" element={<UserDashboard />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      </Routes>
-    </BrowserRouter>
-  );
+
+return (
+
+<Router>
+
+<Routes>
+
+<Route path="/" element={<Login />} />
+
+<Route path="/signup" element={<Signup />} />
+
+</Routes>
+
+</Router>
+
+);
+
 }
 
 export default App;
