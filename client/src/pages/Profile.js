@@ -11,23 +11,23 @@ import {
   LogOut,
   Sliders
 } from "lucide-react";
+import apiClient from "../utils/apiClient";
 
 function Profile() {
+
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:8000/users/1")
+
+    apiClient.get("/users/1")
       .then((res) => {
-        if (!res.ok) {
-          throw new Error("Failed to fetch user");
-        }
-        return res.json();
+        setUser(res.data);
       })
-      .then((data) => {
-        setUser(data);
-      })
-      .catch((err) => console.error("Error:", err));
+      .catch((err) => {
+        console.error("Error fetching user:", err);
+      });
+
   }, []);
 
   if (!user) {
@@ -45,7 +45,8 @@ function Profile() {
           active
             ? "bg-secondary text-white shadow-lg scale-[1.02]"
             : "text-green-100 hover:bg-secondary/40 hover:translate-x-1"
-        }`}
+        }
+      `}
     >
       {icon}
       <span>{label}</span>
@@ -57,7 +58,9 @@ function Profile() {
 
       {/* Sidebar */}
       <div className="hidden md:flex w-64 bg-primary text-white flex-col justify-between p-6">
+
         <div>
+
           <div className="mb-10">
             <h1 className="text-2xl font-bold">InsureHub</h1>
             <p className="text-sm text-green-200">Client Portal</p>
@@ -72,9 +75,11 @@ function Profile() {
             <SidebarItem icon={<ShieldCheck size={18} />} label="Active Plan" />
             <SidebarItem icon={<User size={18} />} label="Profile" active />
           </nav>
+
         </div>
 
         <div className="text-sm">
+
           <p className="mb-4 text-green-200">
             Logged in as{" "}
             <span className="font-semibold text-white">
@@ -86,21 +91,26 @@ function Profile() {
             <LogOut size={16} />
             Logout
           </button>
+
         </div>
+
       </div>
 
       {/* Main Content */}
       <div className="flex-1 p-6 md:p-10">
+
         <h2 className="text-3xl font-bold mb-8">Profile</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* Left Card */}
+          {/* LEFT PROFILE CARD */}
           <div className="lg:col-span-2 bg-white rounded-card shadow-card p-8 transition hover:shadow-xl hover:-translate-y-1">
+
             <div className="flex items-center gap-4 mb-6">
               <div className="bg-lightgreen p-4 rounded-full">
                 <User className="text-standard" />
               </div>
+
               <div>
                 <h3 className="text-2xl font-semibold">
                   {user.name}
@@ -112,6 +122,7 @@ function Profile() {
             </div>
 
             <div className="space-y-6">
+
               <div>
                 <label className="text-sm text-gray-500">Email</label>
                 <div className="bg-gray-100 p-3 rounded-card mt-1">
@@ -139,35 +150,39 @@ function Profile() {
                   {user.risk_level || "N/A"}
                 </div>
               </div>
+
             </div>
           </div>
 
-          {/* Right Cards */}
+          {/* RIGHT SIDEBAR CARDS */}
           <div className="space-y-6">
-            {/* ===== USER PREFERENCES SUMMARY ===== */}
-<div className="bg-white rounded-card shadow-card p-6">
 
-  <h3 className="font-semibold mb-2">
-    Your Customized Plan
-  </h3>
+            {/* AI PLAN */}
+            <div className="bg-white rounded-card shadow-card p-6">
 
-  {user.recommended_plan ? (
-    <p className="text-green-700 font-semibold">
-      ✅ {user.recommended_plan}
-    </p>
-  ) : (
-    <p className="text-gray-400 text-sm">
-      No AI recommendation generated yet
-    </p>
-  )}
+              <h3 className="font-semibold mb-2">
+                Your Customized Plan
+              </h3>
 
-</div>
+              {user.recommended_plan ? (
+                <p className="text-green-700 font-semibold">
+                  ✅ {user.recommended_plan}
+                </p>
+              ) : (
+                <p className="text-gray-400 text-sm">
+                  No AI recommendation generated yet
+                </p>
+              )}
 
+            </div>
+
+            {/* COVERAGE */}
             <div className="bg-white rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
               <p className="text-gray-400 text-sm">Total Coverage</p>
               <h3 className="text-2xl font-bold mt-2">₹15.0L</h3>
             </div>
 
+            {/* ACCOUNT SUMMARY */}
             <div className="bg-lightgreen rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
               <h3 className="font-semibold mb-3">Account Summary</h3>
               <p>Member Since: 2026</p>
@@ -177,6 +192,7 @@ function Profile() {
               </p>
             </div>
 
+            {/* POLICIES */}
             <div className="bg-white rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
               <h3 className="font-semibold mb-2">Recent Policies</h3>
               <p className="text-gray-500 text-sm">
@@ -184,8 +200,9 @@ function Profile() {
               </p>
             </div>
 
-            {/* Preferences Box */}
+            {/* PREFERENCES */}
             <div className="bg-white rounded-card shadow-card p-6 transition hover:shadow-xl hover:-translate-y-1">
+
               <div className="flex items-center gap-2 mb-2">
                 <Sliders size={18} />
                 <h3 className="font-semibold">Preferences</h3>
@@ -201,6 +218,7 @@ function Profile() {
               >
                 Manage Preferences
               </button>
+
             </div>
 
           </div>

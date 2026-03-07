@@ -9,10 +9,9 @@ import {
   GraduationCap,
   Activity,
 } from "lucide-react";
+import apiClient from "../utils/apiClient";
 
 function Preferences() {
-  /* eslint-disable no-unused-vars */
-
   const navigate = useNavigate();
 
   const [selectedFor, setSelectedFor] = useState("");
@@ -23,81 +22,68 @@ function Preferences() {
   const [existingPolicy, setExistingPolicy] = useState("no");
   const [medical, setMedical] = useState("");
 
-  /* ✅ AI RESULT STATE */
   const [aiPlan, setAiPlan] = useState(null);
   const [loadingAI, setLoadingAI] = useState(false);
 
   /* ================= FETCH USER ================= */
   useEffect(() => {
-    fetch("http://localhost:8000/users/1")
-      .then((res) => res.json())
-      .then((data) => {
+    apiClient.get("/users/1")
+      .then((res) => {
+        const data = res.data;
         setRiskLevel(data.risk_level || "medium");
         setIncome(data.income || "");
-      });
+      })
+      .catch((err) => console.error("FETCH ERROR:", err));
   }, []);
 
   /* ================= SAVE ================= */
- const handleSave = async () => {
-  try {
+  const handleSave = async () => {
+    try {
 
-    const res = await fetch(
-      `http://127.0.0.1:8000/users/1/preferences?income=${income}&risk_level=medium`,
-      {
-        method: "PUT",
-      }
-    );
+      await apiClient.put(
+        `/users/1/preferences?income=${income}&risk_level=${riskLevel}`
+      );
 
-    if (!res.ok) {
-      throw new Error("Backend error");
+      alert("Preferences Saved ✅");
+      navigate("/profile");
+
+    } catch (error) {
+      console.error("SAVE ERROR:", error);
+      alert("Backend not reachable ❌");
     }
-
-    alert("Preferences Saved ✅");
-    navigate("/profile");
-
-  } catch (error) {
-    console.error("SAVE ERROR:", error);
-    alert("Backend not reachable ❌");
-  }
-};
+  };
 
   /* ================= AI GENERATE ================= */
-const generateAIPlan = async () => {
-  try {
-    setLoadingAI(true);
+  const generateAIPlan = async () => {
+    try {
+      setLoadingAI(true);
 
-    const response = await fetch(
-      "http://127.0.0.1:8000/ai/recommendation",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      const response = await apiClient.post(
+        "/ai/recommendation",
+        {
           selectedFor,
           selectedType,
           riskLevel,
           income: Number(income)
-        })
-      }
-    );
+        }
+      );
 
-    const result = await response.json();
+      const result = response.data;
 
-    console.log("AI RESPONSE 👉", result);   // ⭐ IMPORTANT
+      setAiPlan({
+        plan: result.plan,
+        strategy: result.strategy,
+        suggested_coverage: result.suggested_coverage,
+        message: result.message
+      });
 
-    setAiPlan({
-      plan: result.plan,
-      strategy: result.strategy,
-      suggested_coverage: result.suggested_coverage
-    });
+    } catch (err) {
+      console.error("AI ERROR:", err);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
 
-  } catch (err) {
-    console.error("AI ERROR:", err);
-  } finally {
-    setLoadingAI(false);
-  }
-};
   /* ================= OPTION CARD ================= */
   const OptionCard = ({ label, icon, selected, onClick }) => (
     <div
@@ -120,7 +106,6 @@ const generateAIPlan = async () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-6">
-
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-10">
 
         {/* ================= LEFT FORM ================= */}
@@ -248,7 +233,7 @@ const generateAIPlan = async () => {
             />
           </div>
 
-          {/* ✅ BUTTONS */}
+          {/* BUTTONS */}
           <div className="flex gap-4">
 
             <button
@@ -265,9 +250,10 @@ const generateAIPlan = async () => {
             >
               Save Preferences
             </button>
+
           </div>
 
-          {/* ✅ AI RESULT CARD */}
+          {/* AI RESULT */}
           {aiPlan && (
             <div className="bg-green-50 border border-green-300 p-6 rounded-xl shadow">
               <h3 className="font-semibold text-lg mb-2">
@@ -289,7 +275,7 @@ const generateAIPlan = async () => {
 
         </div>
 
-        {/* ================= STICKY SUMMARY ================= */}
+        {/* SUMMARY */}
         <div className="hidden lg:block">
           <div className="sticky top-10">
             <div className="bg-white p-6 rounded-xl shadow">
