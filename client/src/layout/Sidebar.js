@@ -1,9 +1,18 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
   const location = useLocation();
-  const [policiesOpen, setPoliciesOpen] = useState(false);
+
+  // Keep Policies submenu open whenever we are on any /policies route
+  const isPoliciesRoute = location.pathname.startsWith('/policies');
+  const [policiesOpen, setPoliciesOpen] = useState(isPoliciesRoute);
+
+  useEffect(() => {
+    if (isPoliciesRoute) {
+      setPoliciesOpen(true);
+    }
+  }, [isPoliciesRoute]);
 
   const menuItems = [
     { path: '/', label: 'Dashboard', icon: '📊' },
@@ -23,7 +32,12 @@ const Sidebar = () => {
     { path: '/preferences', label: 'Preferences', icon: '⚙️' },
   ];
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    if (path === '/policies') {
+      return isPoliciesRoute;
+    }
+    return location.pathname === path;
+  };
 
   return (
     <div className="w-64 bg-white h-screen fixed left-0 top-0 shadow-lg flex flex-col">
