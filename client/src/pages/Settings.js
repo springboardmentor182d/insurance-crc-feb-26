@@ -15,11 +15,14 @@ import {
     Shield,
     Globe,
     DollarSign,
+
     MessageSquare,
     Smartphone,
     Eye,
     EyeOff,
     CheckCircle,
+
+
 } from 'lucide-react';
 
 export default function Settings() {
