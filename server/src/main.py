@@ -4,7 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.api import api_router
-from src.database.core import AsyncSessionLocal
+from src.database.core import SessionLocal
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
 
@@ -28,10 +28,10 @@ setup_exception_handlers(app)
 
 
 @app.on_event("startup")
-async def startup_db_check():
+def startup_db_check():
     try:
-        async with AsyncSessionLocal() as session:
-            await session.execute(text("SELECT 1"))
+        with SessionLocal() as session:
+            session.execute(text("SELECT 1"))
     except SQLAlchemyError as exc:
         raise RuntimeError("Database connection failed on startup.") from exc
 
@@ -46,4 +46,4 @@ async def root():
     return {"message": "BimaVerse API is running"}
 
 
-app.include_router(api_router)
+app.include_router(api_router, prefix="/api/v1")

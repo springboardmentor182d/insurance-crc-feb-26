@@ -1,10 +1,12 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from typing import Generator
 
-# Load .env from project root
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
+
+# Load .env file from project root
 env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=env_path)
 
@@ -14,28 +16,36 @@ def _build_database_url() -> str:
     if explicit_url:
         return explicit_url
 
-    user     = os.getenv("POSTGRES_USER",     "postgres")
-    password = os.getenv("POSTGRES_PASSWORD", "password")
+    user     = os.getenv("POSTGRES_USER",     "bimaverse_user")
+    password = os.getenv("POSTGRES_PASSWORD", "bimaverse_pass")
     host     = os.getenv("POSTGRES_HOST",     "localhost")
     port     = os.getenv("POSTGRES_PORT",     "5432")
     database = os.getenv("POSTGRES_DB",       "bimaverse")
 
-    return f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
+    return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
 
 
 DATABASE_URL = _build_database_url()
 
-engine = create_async_engine(DATABASE_URL, echo=True, pool_pre_ping=True)
-AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+Base = declarative_base()
 
 
-class Base(DeclarativeBase):
-    pass
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+def create_tables() -> None:
+    import src.database.models 
+    Base.metadata.create_all(bind=engine)
