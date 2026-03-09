@@ -1,108 +1,137 @@
+from datetime import datetime, timedelta
 from typing import Optional
-
-from sqlalchemy import select
+import jwt
+import bcrypt
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
-from src.entities.user import User, UserPreferences
-from src.users.models import ProfileBase, PreferencesBase
-from src.auth.models import LoginRequest, RegisterRequest, TokenResponse
+from src.auth.models import UserRegister, UserLogin, AdminLogin, TokenResponse
+
+SECRET_KEY = "your-secret-key-change-in-production"
+REFRESH_SECRET_KEY = "your-refresh-secret-key-change-in-production"
+ALGORITHM = "HS256"
+ACCESS_EXPIRE_MIN = 30
+REFRESH_EXPIRE_DAYS = 7
+ADMIN_SECRET = "bimaverse-admin-2026"
 
 
-def _merge_full_name(first_name: Optional[str], last_name: Optional[str], fallback: str) -> str:
-    parts = [part.strip() for part in [first_name, last_name] if part and part.strip()]
-    return " ".join(parts) if parts else fallback
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
-class UserService:
+def verify_password(plain: str, hashed: str) -> bool:
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
 
-    @staticmethod
-    async def get_user_profile(
-        db: AsyncSession,
-        user_id: int
-    ) -> Optional[User]:
-        result = await db.execute(
-            select(User).where(User.id == user_id)
-        )
-        return result.scalar_one_or_none()
 
-    @staticmethod
-    async def update_user_profile(
-        db: AsyncSession,
-        user_id: int,
-        profile_data: ProfileBase
-    ) -> User:
-        result = await db.execute(
-            select(User).where(User.id == user_id)
-        )
-        user = result.scalar_one_or_none()
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    payload = {**data, "exp": datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_EXPIRE_MIN)), "type": "access"}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-        if not user:
-            raise ValueError("User not found")
 
-        update_data = profile_data.dict(exclude_unset=True)
+def create_refresh_token(data: dict) -> str:
+    payload = {**data, "exp": datetime.utcnow() + timedelta(days=REFRESH_EXPIRE_DAYS), "type": "refresh"}
+    return jwt.encode(payload, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 
-        for field, value in update_data.items():
-            setattr(user, field, value)
 
-        # Merge full_name from first_name + last_name if present
-        user.full_name = _merge_full_name(user.first_name, user.last_name, user.full_name)
+def decode_access_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "access":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
-        await db.commit()
-        await db.refresh(user)
-        return user
 
-    @staticmethod
-    async def get_user_preferences(
-        db: AsyncSession,
-        user_id: int
-    ) -> UserPreferences:
-        result = await db.execute(
-            select(UserPreferences).where(UserPreferences.user_id == user_id)
-        )
-        preferences = result.scalar_one_or_none()
-
-        if not preferences:
-            preferences = UserPreferences(user_id=user_id)
-            db.add(preferences)
-            await db.commit()
-            await db.refresh(preferences)
-
-        return preferences
-
-    @staticmethod
-    async def update_user_preferences(
-        db: AsyncSession,
-        user_id: int,
-        preferences_data: PreferencesBase
-    ) -> UserPreferences:
-        result = await db.execute(
-            select(UserPreferences).where(UserPreferences.user_id == user_id)
-        )
-        preferences = result.scalar_one_or_none()
-
-        if not preferences:
-            preferences = UserPreferences(user_id=user_id)
-            db.add(preferences)
-
-        update_data = preferences_data.dict(exclude_unset=True)
-
-        for field, value in update_data.items():
-            setattr(preferences, field, value)
-
-        await db.commit()
-        await db.refresh(preferences)
-        return preferences
+def decode_refresh_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise HTTPException(status_code=401, detail="Invalid token type")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token has expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
 
 
 class AuthService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
-    @staticmethod
-    async def login(db: AsyncSession, data: LoginRequest) -> TokenResponse | None:
-        # TODO: check user in DB, verify password, generate JWT
-        # Return None if invalid credentials
-        return TokenResponse(access_token="dummy-token")
+    async def register(self, data: UserRegister) -> TokenResponse:
+        exists = await self.db.execute(
+            text("SELECT id FROM users WHERE email = :email"), {"email": data.email}
+        )
+        if exists.fetchone():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
-    @staticmethod
-    async def register(db: AsyncSession, data: RegisterRequest) -> TokenResponse:
-        # TODO: create user in DB, hash password, generate JWT
-        return TokenResponse(access_token="dummy-token")
+        result = await self.db.execute(
+            text("""
+                INSERT INTO users (name, email, password, dob, role, created_at)
+                VALUES (:name, :email, :password, :dob, 'user', NOW())
+                RETURNING id, name, email, role
+            """),
+            {
+                "name": data.name,
+                "email": data.email,
+                "password": hash_password(data.password),
+                "dob": data.date_of_birth
+            }
+        )
+        await self.db.commit()
+        return self._make_tokens(result.fetchone())
+
+    async def login(self, data: UserLogin) -> TokenResponse:
+        result = await self.db.execute(
+            text("SELECT id, name, email, password, role FROM users WHERE email = :email"),
+            {"email": data.email}
+        )
+        user = result.fetchone()
+        if not user or not verify_password(data.password, user.password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+        if user.role == "admin":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please use the admin login portal")
+        return self._make_tokens(user)
+
+    async def admin_login(self, data: AdminLogin) -> TokenResponse:
+        if data.admin_secret != ADMIN_SECRET:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid admin secret key")
+
+        result = await self.db.execute(
+            text("SELECT id, name, email, password, role FROM users WHERE email = :email AND role = 'admin'"),
+            {"email": data.email}
+        )
+        user = result.fetchone()
+        if not user or not verify_password(data.password, user.password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin credentials")
+
+        await self.db.execute(
+            text("INSERT INTO admin_logs (admin_id, action, target_type, target_id, timestamp) VALUES (:id, 'LOGIN', 'user', :id, NOW())"),
+            {"id": user.id}
+        )
+        await self.db.commit()
+        return self._make_tokens(user, admin=True)
+
+    async def refresh(self, refresh_token: str) -> TokenResponse:
+        payload = decode_refresh_token(refresh_token)
+        result = await self.db.execute(
+            text("SELECT id, name, email, role FROM users WHERE id = :id"),
+            {"id": int(payload["sub"])}
+        )
+        user = result.fetchone()
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        return self._make_tokens(user)
+
+    def _make_tokens(self, user, admin: bool = False) -> TokenResponse:
+        data = {"sub": str(user.id), "email": user.email, "role": user.role}
+        expiry = timedelta(hours=8) if admin else None
+        return TokenResponse(
+            access_token=create_access_token(data, expiry),
+            refresh_token=create_refresh_token(data),
+            user={"id": user.id, "name": user.name, "email": user.email, "role": user.role}
+        )

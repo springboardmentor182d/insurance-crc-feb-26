@@ -5,6 +5,10 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from src.api import api_router
 from src.database.core import AsyncSessionLocal
+from src.exceptions import setup_exception_handlers
+from src.logging import setup_logging
+
+setup_logging()
 
 app = FastAPI(
     title="BimaVerse API",
@@ -19,6 +23,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+setup_exception_handlers(app)
 
 
 @app.on_event("startup")

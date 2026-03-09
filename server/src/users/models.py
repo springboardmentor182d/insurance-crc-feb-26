@@ -1,91 +1,48 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict
-from datetime import date, datetime
+from pydantic import BaseModel, EmailStr, field_validator
+from typing import Optional
+from datetime import date
 
 
-# ─────────────────────────────────────────────
-# Profile Schemas
-# ─────────────────────────────────────────────
-
-class ProfileBase(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
+class RegisterRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
     date_of_birth: Optional[date] = None
-    gender: Optional[str] = None
-    address: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    zip_code: Optional[str] = None
-    country: Optional[str] = None
-    occupation: Optional[str] = None
-    company: Optional[str] = None
-    insurance_preferences: Optional[Dict[str, bool]] = None
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain at least one number")
+        return v
 
 
-class ProfileResponse(ProfileBase):
-    id: int
-    email: str
-    is_active: bool
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    remember_me: Optional[bool] = False
 
 
-# ─────────────────────────────────────────────
-# Preferences Schemas
-# ─────────────────────────────────────────────
-
-class PreferencesBase(BaseModel):
-    email_notifications: Optional[bool] = True
-    sms_notifications: Optional[bool] = False
-    push_notifications: Optional[bool] = True
-    claim_updates: Optional[bool] = True
-    policy_renewals: Optional[bool] = True
-    payment_reminders: Optional[bool] = True
-    marketing_emails: Optional[bool] = False
-    promotional_emails: Optional[bool] = False
-    weekly_digest: Optional[bool] = True
-    two_factor_auth: Optional[bool] = True
-    biometric_login: Optional[bool] = False
-    session_timeout: Optional[str] = "30"
-    preferred_language: Optional[str] = "en"
-    preferred_currency: Optional[str] = "USD"
-    timezone: Optional[str] = "UTC"
-    theme: Optional[str] = "light"
-    date_format: Optional[str] = "MM/DD/YYYY"
-    share_data_with_partners: Optional[bool] = False
-    allow_analytics: Optional[bool] = True
+class AdminLogin(BaseModel):
+    email: EmailStr
+    password: str
+    admin_secret: str
 
 
-class PreferencesResponse(PreferencesBase):
-    id: int
-    user_id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
 
 
-# ─────────────────────────────────────────────
-# Compatibility Schemas for Other Modules
-# ─────────────────────────────────────────────
-
-class UserUpdate(ProfileBase):
-    """
-    Used for updating user profile.
-    Inherits all optional fields from ProfileBase.
-    """
-    pass
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 
-class UserProfileResponse(ProfileResponse):
-    """
-    Alias for ProfileResponse to maintain compatibility
-    with imports from other modules.
-    """
-    pass
+# Backward compatibility aliases
+UserRegister = RegisterRequest
+UserLogin = LoginRequest
