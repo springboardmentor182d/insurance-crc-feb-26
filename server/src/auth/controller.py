@@ -5,7 +5,7 @@ from src.database.core import get_db
 from src.auth.service import AuthService
 from src.auth.models import LoginRequest, RegisterRequest, AdminLogin, TokenResponse, RefreshTokenRequest
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(tags=["Auth"])
 
 @router.post("/register", response_model=TokenResponse)
 async def register(

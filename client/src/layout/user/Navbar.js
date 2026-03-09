@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { TOKEN_KEYS, ROUTES } from "../data/constants";
-import { logoutUser } from "../features/authentication/services/getUsers";
+import { TOKEN_KEYS, ROUTES } from "../../data/constants";
+import { logoutUser } from "../../features/authentication/services/getUsers";
 
 const Navbar = () => {
   const navigate = useNavigate();

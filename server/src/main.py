@@ -1,14 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import APIRouter
-from src.auth.controller import router as auth_router
-api_router = APIRouter(prefix="/api/v1")  
-api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])
-from src.api import api_router
-from src.exceptions import setup_exception_handlers
-from src.logging import setup_logging
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
-setup_logging()
+from src.api import api_router
+from src.database.core import AsyncSessionLocal
 
 app = FastAPI(
     title="BimaVerse API",
@@ -24,19 +20,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-setup_exception_handlers(app)
-app.include_router(api_router)
+
+@app.on_event("startup")
+async def startup_db_check():
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:
+        raise RuntimeError("Database connection failed on startup.") from exc
 
 
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok", "service": "BimaVerse API"}
 
+
 @app.get("/")
 async def root():
     return {"message": "BimaVerse API is running"}
-from fastapi import APIRouter
-from src.users.controller import router as users_router
 
-api_router = APIRouter(prefix="/api/v1")
-api_router.include_router(users_router)
+
+app.include_router(api_router)

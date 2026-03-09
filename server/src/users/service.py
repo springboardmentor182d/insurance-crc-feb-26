@@ -5,12 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.entities.user import User, UserPreferences
 from src.users.models import ProfileBase, PreferencesBase
-
 from src.auth.models import LoginRequest, RegisterRequest, TokenResponse
 
 
+def _merge_full_name(first_name: Optional[str], last_name: Optional[str], fallback: str) -> str:
+    parts = [part.strip() for part in [first_name, last_name] if part and part.strip()]
+    return " ".join(parts) if parts else fallback
+
 
 class UserService:
+
     @staticmethod
     async def get_user_profile(
         db: AsyncSession,
@@ -39,6 +43,9 @@ class UserService:
 
         for field, value in update_data.items():
             setattr(user, field, value)
+
+        # Merge full_name from first_name + last_name if present
+        user.full_name = _merge_full_name(user.first_name, user.last_name, user.full_name)
 
         await db.commit()
         await db.refresh(user)
@@ -86,7 +93,9 @@ class UserService:
         await db.refresh(preferences)
         return preferences
 
+
 class AuthService:
+
     @staticmethod
     async def login(db: AsyncSession, data: LoginRequest) -> TokenResponse | None:
         # TODO: check user in DB, verify password, generate JWT
