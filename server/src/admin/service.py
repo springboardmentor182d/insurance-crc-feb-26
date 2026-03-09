@@ -1,60 +1,70 @@
-from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
-from src.entities.user import User
-from src.auth.jwt import create_access_token
+import bcrypt
+
 from src.auth.models import RegisterRequest, AdminLogin
+from src.auth.service import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-ADMIN_SECRET = "admin-secret-key"
-
-
-def hash_password(password: str):
-    return pwd_context.hash(password)
-
-
-def verify_password(password: str, hashed: str):
-    return pwd_context.verify(password, hashed)
+ADMIN_SECRET = "bimaverse-admin-2026"
 
 
-def admin_signup(data: RegisterRequest, db: Session):
-
-    existing_user = db.query(User).filter(User.email == data.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    new_admin = User(
-        email=data.email,
-        hashed_password=hash_password(data.password),
-        first_name=data.name,
-        role="admin"
+async def admin_signup(data: RegisterRequest, db: AsyncSession):
+    exists = await db.execute(
+        text("SELECT id FROM users WHERE email = :email"),
+        {"email": data.email}
     )
+    if exists.fetchone():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered"
+        )
 
-    db.add(new_admin)
-    db.commit()
-    db.refresh(new_admin)
-
+    await db.execute(
+        text("""
+            INSERT INTO users (name, email, password, role, created_at)
+            VALUES (:name, :email, :password, 'admin', NOW())
+        """),
+        {
+            "name": data.name,
+            "email": data.email,
+            "password": hash_password(data.password),
+        }
+    )
+    await db.commit()
     return {"message": "Admin created successfully"}
 
 
-def admin_login(data: AdminLogin, db: Session):
-
+async def admin_login(data: AdminLogin, db: AsyncSession):
     if data.admin_secret != ADMIN_SECRET:
-        raise HTTPException(status_code=403, detail="Invalid admin secret")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid admin secret"
+        )
 
-    user = db.query(User).filter(User.email == data.email).first()
+    result = await db.execute(
+        text("SELECT id, name, email, password, role FROM users WHERE email = :email AND role = 'admin'"),
+        {"email": data.email}
+    )
+    user = result.fetchone()
 
-    if not user or not verify_password(data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user or not verify_password(data.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
 
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Not an admin")
-
-    token = create_access_token({"sub": user.id})
+    token_data = {"sub": str(user.id), "email": user.email, "role": user.role}
 
     return {
-        "access_token": token,
-        "token_type": "bearer"
+        "access_token": create_access_token(token_data),
+        "refresh_token": create_refresh_token(token_data),
+        "token_type": "bearer",
+        "user": {"id": user.id, "g": user.name, "email": user.email, "role": user.role}
     }
