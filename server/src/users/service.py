@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from src.entities.user import User, UserPreferences
+from src.database.models.users import User
+from src.database.models.user_preferences import UserPreferences
 from src.users.models import ProfileBase, PreferencesBase
 from typing import Optional
 
