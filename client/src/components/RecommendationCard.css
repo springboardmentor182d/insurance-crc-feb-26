@@ -1,0 +1,34 @@
+.policy-card {
+  background: white;
+  border: 1px solid #E0E4E8;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.top-label { color: #00C853; font-weight: 700; font-size: 12px; margin-bottom: 12px; }
+
+.card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.category-pill { background: #E8F5E9; color: #1B5E20; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+.plan-title { font-size: 20px; margin: 8px 0 4px; color: #1A1C1E; }
+.plan-provider { color: #666; font-size: 14px; margin: 0; }
+
+.match-percent { display: block; font-size: 24px; font-weight: 800; color: #00C853; text-align: right; }
+.match-text { font-size: 12px; color: #666; display: block; text-align: right; }
+
+.match-bar-bg { height: 8px; background: #F0F2F5; border-radius: 10px; margin: 16px 0; overflow: hidden; }
+.match-bar-fill { height: 100%; background: #00C853; border-radius: 10px; }
+
+.why-box { background: #F1F8F1; padding: 16px; border-radius: 8px; margin-bottom: 24px; }
+.why-title { font-size: 12px; color: #1B5E20; font-weight: 700; margin: 0 0 4px; }
+.why-body { font-size: 14px; color: #333; margin: 0; }
+
+.info-grid { display: grid; grid-template-columns: repeat(4, 1fr); margin-bottom: 24px; border-bottom: 1px solid #EEE; padding-bottom: 24px; }
+.info-item label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+.info-item p { font-weight: 700; font-size: 16px; margin: 0; }
+.green-stat { color: #00C853; }
+
+.feature-tag { border: 1px solid #1B5E20; color: #1B5E20; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-right: 8px; margin-bottom: 16px; display: inline-block; }
+
+.select-btn { width: 100%; background: #00C853; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 16px; }

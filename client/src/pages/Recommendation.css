@@ -1,0 +1,83 @@
+:root {
+  --primary-green: #1B5E20;
+  --light-green: #E8F5E9;
+  --text-gray: #666;
+  --border-radius: 12px;
+}
+
+.recommendations-container {
+  padding: 2rem;
+  background-color: #fcfcfc;
+}
+
+.recommendation-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.top-recommendation {
+  border: 2px solid var(--primary-green);
+}
+
+.badge-top {
+  color: var(--primary-green);
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.progress-bar-container {
+  height: 8px;
+  background: #eee;
+  border-radius: 4px;
+  margin: 1rem 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background: #00C853; /* Bright green from Figma */
+  border-radius: 4px;
+}
+
+.recommendation-reason {
+  background-color: #f1f8f1;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 1.5rem 0;
+}
+
+.select-plan-btn {
+  width: 100%;
+  background-color: var(--primary-green);
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.select-plan-btn:hover {
+  background-color: #144d18;
+}
+
+/* Feature Pills */
+.feature-pill {
+  border: 1px solid var(--primary-green);
+  color: var(--primary-green);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  margin-right: 8px;
+}
