@@ -5,6 +5,7 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Sidebar from "./layout/Sidebar";
 import Navbar from "./layout/Navbar";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import PolicyCatalog from "./pages/PolicyCatalog";
 import { Routes, Route } from "react-router-dom";
 import Recommendation from "./pages/Recommendation";
@@ -33,6 +34,10 @@ function App() {
       </div>
     </Router>
   );
+      <Routes>
+        <Route path="/" element={<h2>Welcome to Insurance Dashboard</h2>} />
+        <Route path="/policies" element={<PolicyCatalog />} />
+      </Routes>
   );
 }
 
