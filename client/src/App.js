@@ -8,9 +8,6 @@ import Signup     from "./pages/Signup";
 import AdminLogin from "./pages/AdminLogin";
 import Settings   from "./pages/Settings";
 
-/* ─────────────────────────────────────────────
-   Safe JSON Parse Utility (prevents crashes)
-───────────────────────────────────────────── */
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
 
@@ -163,7 +160,23 @@ export default function App() {
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+         <Route
+  path={ROUTES.PROFILE}
+  element={
+    <ProtectedRoute>
+      <Profile />
+    </ProtectedRoute>
+  }
+/>
 
+<Route
+  path={ROUTES.PREFERENCES}
+  element={
+    <ProtectedRoute>
+      <Preferences />
+    </ProtectedRoute>
+  }
+/>
       </Routes>
     </BrowserRouter>
   );
