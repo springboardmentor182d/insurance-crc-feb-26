@@ -1,38 +1,153 @@
-.App {
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f3f4f6;
+}
+
+.app {
+  display: flex;
+}
+
+.sidebar {
+  width: 240px;
+  background: white;
+  padding: 20px;
+  height: 100vh;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 20px;
+  margin-bottom: 30px;
+  color: #8e44ad;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 12px 0;
+  cursor: pointer;
+  color: #444;
+}
+
+.sidebar li.active {
+  background: linear-gradient(to right, #ff4da6, #7b4dff);
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.main {
+  flex: 1;
+  padding: 20px 40px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logout-btn {
+  background: #ff4da6;
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-left: 10px;
+}
+
+.hero {
+  background: linear-gradient(to right, #ff4da6, #7b4dff);
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+  margin: 20px 0;
+}
+
+.hero-tags span {
+  margin-right: 20px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.match {
+  background: #27ae60;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+}
+
+.card-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.card-info div {
+  flex: 1;
+}
+
+.purple {
+  color: #7b4dff;
+}
+
+.savings-box {
+  background: #e8f5e9;
+  padding: 10px;
+  border-radius: 10px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.savings-box h4 {
+  color: #27ae60;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.features {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 20px;
+  gap: 10px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.card-buttons {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  margin-top: 20px;
+  gap: 15px;
+}
+
+.view-btn {
+  flex: 1;
+  background: linear-gradient(to right, #ff4da6, #7b4dff);
+  border: none;
   color: white;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.compare-btn {
+  flex: 1;
+  background: white;
+  border: 2px solid #7b4dff;
+  color: #7b4dff;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
 }
