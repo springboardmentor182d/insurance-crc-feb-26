@@ -1,14 +1,15 @@
-
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AdminDashboard from "./features/admin/pages/AdminDashboard";
 
 function App() {
   return (
-    <div>
-      <h1>Internship Project</h1>
-      <Signup />
-      <Login />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<h1>Insurance CRC Project</h1>} />
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
