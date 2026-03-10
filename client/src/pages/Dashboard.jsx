@@ -4,21 +4,25 @@ import {
   FiPlusCircle, FiUser, FiSliders, FiLogOut 
 } from "react-icons/fi";
 
+import { useNavigate } from "react-router-dom";
+
 /* MAIN */
 
 export default function Dashboard() {
+   const navigate = useNavigate();
    const [stats, setStats] = useState({
      total_policies: 0,
      active_claims: 0,
      recommended_policies: 0,
      claim_status: "-",
-     recent_policies: []
+     recent_policies: [],
+     recent_claims: []
    });
    
    const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
-    fetch(`${process.env.REACT_APP_API_BASE_URL || "http://localhost:8000"}/api/dashboard-data`)
+    fetch(`${import.meta.env.VITE_BASE_URL || "http://localhost:8000"}/api/dashboard-data`)
        .then(res => {
          if (!res.ok) throw new Error("API HTTP Error: " + res.status);
          return res.json();
@@ -96,69 +100,118 @@ export default function Dashboard() {
               <FiUser className="text-gray-500" />
               <span className="text-sm font-medium text-gray-600">John Doe</span>
             </div>
-            <button className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-medium shadow-md shadow-indigo-200 hover:opacity-90 transition-opacity">
+            <button 
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-medium shadow-md shadow-indigo-200 hover:opacity-90 transition-opacity"
+              onClick={() => {
+                localStorage.removeItem("token");
+                navigate("/");
+              }}
+            >
               Logout
             </button>
           </div>
         </div>
 
         {/* KPI CARDS */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-3 gap-6 mb-8">
           <KpiCard icon="🛡️" title="Total Policies" value={stats.total_policies || 8} color="blue" />
           <KpiCard icon="🕒" title="Active Claims" value={stats.active_claims || 2} color="red" />
           <KpiCard icon="📈" title="Recommended Policies" value={stats.recommended_policies || 5} color="green" />
-          <KpiCard icon="✅" title="Claim Status" value={stats.claim_status || "Approved"} color="purple" isText />
         </div>
 
-        {/* RECENT POLICIES TABLE */}
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-50 mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-gray-800">Recent Policies</h3>
-            <button 
-              className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-6 py-2.5 rounded-full text-sm font-medium shadow-md shadow-purple-200 hover:opacity-90 transition-opacity"
-              onClick={() => alert("Add New Policy clicked!")}
-            >
-              Add New Policy
-            </button>
-          </div>
+        {/* DATA TABLES */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
           
-          <div className="w-full">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-gray-400 text-sm border-b border-gray-100">
-                  <th className="pb-4 font-medium">Provider</th>
-                  <th className="pb-4 font-medium">Type</th>
-                  <th className="pb-4 font-medium">Coverage</th>
-                  <th className="pb-4 font-medium text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(stats.recent_policies || []).map((policy, idx) => (
-                  <tr key={idx} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 text-sm font-medium text-gray-700">{policy.provider}</td>
-                    <td className="py-4 text-sm text-gray-500">{policy.type}</td>
-                    <td className="py-4 text-sm font-medium text-gray-700">{policy.coverage}</td>
-                    <td className="py-4 text-sm text-right">
-                      <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${
-                        policy.status === "Active" 
-                          ? "bg-green-100 text-green-600" 
-                          : "bg-gray-100 text-gray-600"
-                      }`}>
-                        {policy.status}
-                      </span>
-                    </td>
+          {/* RECENT POLICIES TABLE */}
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-50 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-800">Recent Policies</h3>
+              <button 
+                className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-5 py-2 rounded-full text-xs font-medium shadow-md shadow-purple-200 hover:opacity-90 transition-opacity"
+                onClick={() => alert("Add New Policy clicked!")}
+              >
+                + Add Policy
+              </button>
+            </div>
+            
+            <div className="w-full flex-1 overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-gray-400 text-sm border-b border-gray-100">
+                    <th className="pb-4 font-medium pr-4">Provider</th>
+                    <th className="pb-4 font-medium pr-4">Type</th>
+                    <th className="pb-4 font-medium text-right">Coverage</th>
                   </tr>
-                ))}
-                {(!stats.recent_policies || stats.recent_policies.length === 0) && (
-                  <tr>
-                    <td colSpan="4" className="py-8 text-center text-gray-400 text-sm">
-                      No recent policies found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {(stats.recent_policies || []).map((policy, idx) => (
+                    <tr key={idx} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                      <td className="py-4 text-sm font-medium text-gray-700 pr-4">{policy.provider}</td>
+                      <td className="py-4 text-sm text-gray-500 pr-4">{policy.type}</td>
+                      <td className="py-4 text-sm font-medium text-gray-700 text-right">{policy.coverage}</td>
+                    </tr>
+                  ))}
+                  {(!stats.recent_policies || stats.recent_policies.length === 0) && (
+                    <tr>
+                      <td colSpan="3" className="py-8 text-center text-gray-400 text-sm">
+                        No recent policies found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* ACTIVE CLAIMS TABLE */}
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-50 flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-800">Active Claims</h3>
+              <button 
+                className="bg-purple-50 text-purple-600 px-4 py-2 rounded-full text-xs font-bold hover:bg-purple-100 transition-colors"
+                onClick={() => alert("View All Claims")}
+              >
+                View All
+              </button>
+            </div>
+            
+            <div className="w-full flex-1 overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-gray-400 text-sm border-b border-gray-100">
+                    <th className="pb-4 font-medium pr-4">Claim ID</th>
+                    <th className="pb-4 font-medium pr-4">Date</th>
+                    <th className="pb-4 font-medium text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(stats.recent_claims || []).map((claim, idx) => (
+                    <tr key={idx} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
+                      <td className="py-4 text-sm font-bold text-gray-800 pr-4">{claim.id}</td>
+                      <td className="py-4 text-sm text-gray-500 pr-4">{claim.date}</td>
+                      <td className="py-4 text-sm text-right">
+                        <span className={`inline-block px-3 py-1 text-[11px] font-bold tracking-wide rounded-full text-center ${
+                          claim.status === "Approved" 
+                            ? "bg-green-100 text-green-700" 
+                            : "bg-orange-100 text-orange-700"
+                        }`}>
+                          {claim.status.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!stats.recent_claims || stats.recent_claims.length === 0) && (
+                    <tr>
+                      <td colSpan="3" className="py-8 text-center text-gray-400 text-sm">
+                        No active claims found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
 
         {/* BOTTOM ACTION CARDS */}

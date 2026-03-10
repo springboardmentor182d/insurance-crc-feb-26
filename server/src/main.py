@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List
 
 from src.database.core import Base, engine, SessionLocal
@@ -13,6 +14,12 @@ app = FastAPI()
 
 # Create tables automatically
 Base.metadata.create_all(bind=engine)
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE dashboard_data ADD COLUMN recent_claims JSON"))
+except Exception:
+    pass
 
 
 # Database dependency
@@ -52,11 +59,23 @@ def get_dashboard_data(db: Session = Depends(get_db)):
                 {"provider": "HealthGuard Insurance", "type": "Health Insurance", "coverage": "$100,000", "status": "Active"},
                 {"provider": "AutoSecure Plus", "type": "Auto Insurance", "coverage": "$50,000", "status": "Active"},
                 {"provider": "HomeProtect Premium", "type": "Home Insurance", "coverage": "$300,000", "status": "Active"}
+            ],
+            recent_claims=[
+                {"id": "CLM-2024-089", "type": "Auto Incident", "date": "Oct 12, 2024", "status": "Processing"},
+                {"id": "CLM-2024-102", "type": "Health Checkup", "date": "Sep 28, 2024", "status": "Approved"}
             ]
         )
         db.add(dashboard)
         db.commit()
-        db.refresh(dashboard)
+        
+    if dashboard and not dashboard.recent_claims:
+        dashboard.recent_claims = [
+            {"id": "CLM-2024-089", "type": "Auto Incident", "date": "Oct 12, 2024", "status": "Processing"},
+            {"id": "CLM-2024-102", "type": "Health Checkup", "date": "Sep 28, 2024", "status": "Approved"}
+        ]
+        db.commit()
+
+    db.refresh(dashboard)
 
     return {
         "active_policies": total_users,
@@ -64,7 +83,8 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         "active_claims": dashboard.active_claims,
         "recommended_policies": dashboard.recommended_policies,
         "claim_status": dashboard.claim_status,
-        "recent_policies": dashboard.recent_policies
+        "recent_policies": dashboard.recent_policies,
+        "recent_claims": dashboard.recent_claims
     }
 
 

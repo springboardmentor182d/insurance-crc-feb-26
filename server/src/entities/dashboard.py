@@ -11,3 +11,4 @@ class DashboardData(Base):
     claim_status: Column[str] = Column(String, default="Approved")
     
     recent_policies: Column[list[dict]] = Column(JSON, nullable=False)
+    recent_claims: Column[list[dict]] = Column(JSON, nullable=True)
