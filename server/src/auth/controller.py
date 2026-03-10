@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from src.database.core import get_db
 from src.auth.service import AuthService
@@ -7,34 +7,39 @@ from src.auth.models import LoginRequest, RegisterRequest, AdminLogin, TokenResp
 
 router = APIRouter(tags=["Auth"])
 
+
 @router.post("/register", response_model=TokenResponse)
-async def register(
+def register(
     data: RegisterRequest,
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).register(data)
+    return AuthService(db).register(data)
+
 
 @router.post("/login", response_model=TokenResponse)
-async def login(
+def login(
     data: LoginRequest,
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).login(data)
+    return AuthService(db).login(data)
+
 
 @router.post("/admin/login", response_model=TokenResponse)
-async def admin_login(
+def admin_login(
     data: AdminLogin,
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).admin_login(data)
+    return AuthService(db).admin_login(data)
+
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh(
+def refresh(
     data: RefreshTokenRequest,
-    db: AsyncSession = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).refresh(data.refresh_token)
+    return AuthService(db).refresh(data.refresh_token)
+
 
 @router.post("/logout", status_code=204)
-async def logout():
+def logout():
     return None

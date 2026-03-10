@@ -1,9 +1,10 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
-from datetime import date, datetime
+from datetime import date
+
 
 class RegisterRequest(BaseModel):
-    name: str     
+    name: str
     email: EmailStr
     password: str
     date_of_birth: Optional[date] = None
@@ -19,23 +20,28 @@ class RegisterRequest(BaseModel):
             raise ValueError("Password must contain at least one number")
         return v
 
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
     remember_me: Optional[bool] = False
+
 
 class AdminLogin(BaseModel):
     email: EmailStr
     password: str
     admin_secret: str
 
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
 
+
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
 
 # Backward compatibility aliases
 UserRegister = RegisterRequest

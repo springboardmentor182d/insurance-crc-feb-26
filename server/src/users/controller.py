@@ -1,45 +1,66 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from src.database.core import get_db
-from src.auth.service import AuthService
-from src.auth.models import LoginRequest, RegisterRequest, AdminLogin, TokenResponse, RefreshTokenRequest
+from src.users.models import ProfileBase, ProfileResponse, PreferencesBase, PreferencesResponse
+from src.users.service import (
+    get_user_profile,
+    update_user_profile,
+    get_user_preferences,
+    update_user_preferences,
+)
+from src.auth.jwt import get_current_user_id
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter()
 
 
-@router.post("/register", response_model=TokenResponse)
-async def register(
-    data: RegisterRequest,
-    db: AsyncSession = Depends(get_db)
+@router.get("/profile", response_model=ProfileResponse)
+def get_profile(
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).register(data)
+    """Get current user's profile"""
+    user = get_user_profile(db, current_user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return user
 
 
-@router.post("/login", response_model=TokenResponse)
-async def login(
-    data: LoginRequest,
-    db: AsyncSession = Depends(get_db)
+@router.put("/profile", response_model=ProfileResponse)
+def update_profile(
+    profile_data: ProfileBase,
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).login(data)
+    """Update current user's profile"""
+    try:
+        user = update_user_profile(db, current_user_id, profile_data)
+        return user
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
 
 
-@router.post("/admin/login", response_model=TokenResponse)
-async def admin_login(
-    data: AdminLogin,
-    db: AsyncSession = Depends(get_db)
+@router.get("/preferences", response_model=PreferencesResponse)
+def get_preferences(
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).admin_login(data)
+    """Get current user's preferences"""
+    preferences = get_user_preferences(db, current_user_id)
+    return preferences
 
 
-@router.post("/refresh", response_model=TokenResponse)
-async def refresh(
-    data: RefreshTokenRequest,
-    db: AsyncSession = Depends(get_db)
+@router.put("/preferences", response_model=PreferencesResponse)
+def update_preferences(
+    preferences_data: PreferencesBase,
+    current_user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
 ):
-    return await AuthService(db).refresh(data.refresh_token)
-
-
-@router.post("/logout", status_code=204)
-async def logout():
-    return None
+    preferences = update_user_preferences(db, current_user_id, preferences_data)
+    return preferences

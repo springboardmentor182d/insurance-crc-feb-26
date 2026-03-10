@@ -4,9 +4,10 @@ from typing import Generator
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import declarative_base
 
-# Load .env file from project root
+# Load .env from project root
 env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=env_path)
 
@@ -14,7 +15,8 @@ load_dotenv(dotenv_path=env_path)
 def _build_database_url() -> str:
     explicit_url = os.getenv("DATABASE_URL")
     if explicit_url:
-        return explicit_url
+        # Replace asyncpg with psycopg2 if needed
+        return explicit_url.replace("asyncpg", "psycopg2").replace("postgresql+psycopg2", "postgresql+psycopg2")
 
     user     = os.getenv("POSTGRES_USER",     "bimaverse_user")
     password = os.getenv("POSTGRES_PASSWORD", "bimaverse_pass")
@@ -47,5 +49,5 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def create_tables() -> None:
-    import src.database.models 
+    import src.database.models  # noqa: F401
     Base.metadata.create_all(bind=engine)

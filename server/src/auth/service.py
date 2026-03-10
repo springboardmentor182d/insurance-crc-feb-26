@@ -3,10 +3,10 @@ from typing import Optional
 import jwt
 import bcrypt
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import text
 
-from src.auth.models import UserRegister, UserLogin, AdminLogin, TokenResponse  # Aliases work
+from src.auth.models import UserRegister, UserLogin, AdminLogin, TokenResponse
 
 SECRET_KEY = "your-secret-key-change-in-production"
 REFRESH_SECRET_KEY = "your-refresh-secret-key-change-in-production"
@@ -15,20 +15,24 @@ ACCESS_EXPIRE_MIN = 30
 REFRESH_EXPIRE_DAYS = 7
 ADMIN_SECRET = "bimaverse-admin-2026"
 
-# ── Helpers ───────────────────────────────────────────────
+
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
+
 def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
+
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     payload = {**data, "exp": datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_EXPIRE_MIN)), "type": "access"}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
+
 def create_refresh_token(data: dict) -> str:
     payload = {**data, "exp": datetime.utcnow() + timedelta(days=REFRESH_EXPIRE_DAYS), "type": "refresh"}
     return jwt.encode(payload, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
+
 
 def decode_access_token(token: str) -> dict:
     try:
@@ -41,6 +45,7 @@ def decode_access_token(token: str) -> dict:
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+
 def decode_refresh_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
@@ -52,72 +57,70 @@ def decode_refresh_token(token: str) -> dict:
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-# ── Service ───────────────────────────────────────────────
+
 class AuthService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: Session):
         self.db = db
 
-    async def register(self, data: UserRegister) -> TokenResponse:
-        exists = await self.db.execute(
-            text("SELECT id FROM users WHERE email = :email"), {"email": data.email}
-        )
-        if exists.fetchone():
+    def register(self, data: UserRegister) -> TokenResponse:
+        exists = self.db.execute(
+            text("SELECT id FROM users WHERE email = :email"),
+            {"email": data.email}
+        ).fetchone()
+        if exists:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
-        result = await self.db.execute(
+        result = self.db.execute(
             text("""
                 INSERT INTO users (name, email, password, dob, role, created_at)
                 VALUES (:name, :email, :password, :dob, 'user', NOW())
                 RETURNING id, name, email, role
             """),
             {
-                "name": data.name,              # ✅ Fixed: data.name
+                "name": data.name,
                 "email": data.email,
                 "password": hash_password(data.password),
-                "dob": data.date_of_birth       # ✅ Fixed: data.date_of_birth
+                "dob": data.date_of_birth
             }
-        )
-        await self.db.commit()
-        return self._make_tokens(result.fetchone())
+        ).fetchone()
+        self.db.commit()
+        return self._make_tokens(result)
 
-    async def login(self, data: UserLogin) -> TokenResponse:
-        result = await self.db.execute(
+    def login(self, data: UserLogin) -> TokenResponse:
+        user = self.db.execute(
             text("SELECT id, name, email, password, role FROM users WHERE email = :email"),
             {"email": data.email}
-        )
-        user = result.fetchone()
+        ).fetchone()
         if not user or not verify_password(data.password, user.password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
         if user.role == "admin":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please use the admin login portal")
         return self._make_tokens(user)
 
-    async def admin_login(self, data: AdminLogin) -> TokenResponse:
+    def admin_login(self, data: AdminLogin) -> TokenResponse:
         if data.admin_secret != ADMIN_SECRET:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid admin secret key")
 
-        result = await self.db.execute(
+        user = self.db.execute(
             text("SELECT id, name, email, password, role FROM users WHERE email = :email AND role = 'admin'"),
             {"email": data.email}
-        )
-        user = result.fetchone()
+        ).fetchone()
         if not user or not verify_password(data.password, user.password):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin credentials")
 
-        await self.db.execute(
+        self.db.execute(
             text("INSERT INTO admin_logs (admin_id, action, target_type, target_id, timestamp) VALUES (:id, 'LOGIN', 'user', :id, NOW())"),
             {"id": user.id}
         )
-        await self.db.commit()
+        self.db.commit()
         return self._make_tokens(user, admin=True)
 
-    async def refresh(self, refresh_token: str) -> TokenResponse:
+    def refresh(self, refresh_token: str) -> TokenResponse:
         payload = decode_refresh_token(refresh_token)
-        result = await self.db.execute(
+        user = self.db.execute(
             text("SELECT id, name, email, role FROM users WHERE id = :id"),
             {"id": int(payload["sub"])}
-        )
-        user = result.fetchone()
+        ).fetchone()
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         return self._make_tokens(user)
