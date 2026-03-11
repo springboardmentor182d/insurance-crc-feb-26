@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Insurance Pro Dashboard</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>InsurePro</h2>
+
+<ul>
+<li>Dashboard</li>
+<li>Policies</li>
+<li>Claims</li>
+<li>Customers</li>
+<li>Reports</li>
+</ul>
+
+</div>
+
+
+<div class="main">
+
+<div class="navbar">
+<h1>Dashboard Overview</h1>
+</div>
+
+
+<div class="kpi-cards">
+
+<div class="card">
+<h3>Total Policies</h3>
+<p id="total"></p>
+</div>
+
+<div class="card">
+<h3>Active Policies</h3>
+<p id="active"></p>
+</div>
+
+<div class="card">
+<h3>Claims</h3>
+<p id="claims"></p>
+</div>
+
+<div class="card">
+<h3>Revenue</h3>
+<p id="revenue"></p>
+</div>
+
+</div>
+
+
+<div class="charts">
+
+<canvas id="lineChart"></canvas>
+
+<canvas id="pieChart"></canvas>
+
+</div>
+
+
+<div class="table-section">
+
+<h2>Recent Policies</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>ID</th>
+<th>Customer</th>
+<th>Type</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="policyTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
