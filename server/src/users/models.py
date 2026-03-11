@@ -12,6 +12,7 @@ class ProfileBase(BaseModel):
     last_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
+    date_of_birth: Optional[date] = None
     gender: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
