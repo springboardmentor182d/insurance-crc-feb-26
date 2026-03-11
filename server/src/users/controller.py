@@ -62,5 +62,6 @@ def update_preferences(
     current_user_id: int = Depends(get_current_user_id),
     db: Session = Depends(get_db)
 ):
+    """Update current user's preferences"""
     preferences = update_user_preferences(db, current_user_id, preferences_data)
     return preferences
