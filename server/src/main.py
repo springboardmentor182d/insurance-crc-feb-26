@@ -49,33 +49,15 @@ def get_dashboard_data(db: Session = Depends(get_db)):
     dashboard = db.query(DashboardData).first()
     
     if not dashboard:
-        # Seed the DB if it's completely empty so it works out of the box
-        dashboard = DashboardData(
-            total_policies=8,
-            active_claims=2,
-            recommended_policies=5,
-            claim_status="Approved",
-            recent_policies=[
-                {"provider": "HealthGuard Insurance", "type": "Health Insurance", "coverage": "$100,000", "status": "Active"},
-                {"provider": "AutoSecure Plus", "type": "Auto Insurance", "coverage": "$50,000", "status": "Active"},
-                {"provider": "HomeProtect Premium", "type": "Home Insurance", "coverage": "$300,000", "status": "Active"}
-            ],
-            recent_claims=[
-                {"id": "CLM-2024-089", "type": "Auto Incident", "date": "Oct 12, 2024", "status": "Processing"},
-                {"id": "CLM-2024-102", "type": "Health Checkup", "date": "Sep 28, 2024", "status": "Approved"}
-            ]
-        )
-        db.add(dashboard)
-        db.commit()
-        
-    if dashboard and not dashboard.recent_claims:
-        dashboard.recent_claims = [
-            {"id": "CLM-2024-089", "type": "Auto Incident", "date": "Oct 12, 2024", "status": "Processing"},
-            {"id": "CLM-2024-102", "type": "Health Checkup", "date": "Sep 28, 2024", "status": "Approved"}
-        ]
-        db.commit()
-
-    db.refresh(dashboard)
+        return {
+            "active_policies": total_users,
+            "total_policies": 0,
+            "active_claims": 0,
+            "recommended_policies": 0,
+            "claim_status": "-",
+            "recent_policies": [],
+            "recent_claims": []
+        }
 
     return {
         "active_policies": total_users,

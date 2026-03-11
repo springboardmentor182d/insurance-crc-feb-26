@@ -98,7 +98,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm cursor-pointer hover:bg-gray-50">
               <FiUser className="text-gray-500" />
-              <span className="text-sm font-medium text-gray-600">John Doe</span>
+              <span className="text-sm font-medium text-gray-600">Active User</span>
             </div>
             <button 
               className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-medium shadow-md shadow-indigo-200 hover:opacity-90 transition-opacity"
@@ -114,9 +114,9 @@ export default function Dashboard() {
 
         {/* KPI CARDS */}
         <div className="grid grid-cols-3 gap-6 mb-8">
-          <KpiCard icon="🛡️" title="Total Policies" value={stats.total_policies || 8} color="blue" />
-          <KpiCard icon="🕒" title="Active Claims" value={stats.active_claims || 2} color="red" />
-          <KpiCard icon="📈" title="Recommended Policies" value={stats.recommended_policies || 5} color="green" />
+          <KpiCard icon="🛡️" title="Total Policies" value={stats.total_policies} color="blue" />
+          <KpiCard icon="🕒" title="Active Claims" value={stats.active_claims} color="red" />
+          <KpiCard icon="📈" title="Recommended Policies" value={stats.recommended_policies} color="green" />
         </div>
 
         {/* DATA TABLES */}
