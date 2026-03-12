@@ -1,11 +1,21 @@
-import React from 'react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { ROUTES } from "../data/constants";
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Insurance CRC Project</h1>
-        <p className="text-gray-600">Welcome to the Insurance CRC application</p>
+    <div style={{ padding: "60px 40px", fontFamily: "Outfit, sans-serif", textAlign: "center" }}>
+      <h1 style={{ fontSize: 40, color: "#1a47d1", marginBottom: 16 }}>BimaVerse</h1>
+      <p style={{ fontSize: 18, color: "#6b7280", marginBottom: 32 }}>
+        Insurance Comparison, Recommendation & Claim Assistant
+      </p>
+      <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
+        <Link to={ROUTES.LOGIN} style={{ padding: "12px 28px", background: "#1a47d1", color: "white", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>
+          Sign In
+        </Link>
+        <Link to={ROUTES.SIGNUP} style={{ padding: "12px 28px", border: "2px solid #1a47d1", color: "#1a47d1", borderRadius: 8, textDecoration: "none", fontWeight: 600 }}>
+          Get Started
+        </Link>
       </div>
     </div>
   );

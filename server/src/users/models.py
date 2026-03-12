@@ -2,6 +2,11 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, Dict
 from datetime import date, datetime
 
+
+# ─────────────────────────────────────────────
+# Profile Schemas
+# ─────────────────────────────────────────────
+
 class ProfileBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -18,6 +23,7 @@ class ProfileBase(BaseModel):
     company: Optional[str] = None
     insurance_preferences: Optional[Dict[str, bool]] = None
 
+
 class ProfileResponse(ProfileBase):
     id: int
     email: str
@@ -27,6 +33,11 @@ class ProfileResponse(ProfileBase):
 
     class Config:
         from_attributes = True
+
+
+# ─────────────────────────────────────────────
+# Preferences Schemas
+# ─────────────────────────────────────────────
 
 class PreferencesBase(BaseModel):
     email_notifications: Optional[bool] = True
@@ -48,6 +59,7 @@ class PreferencesBase(BaseModel):
     date_format: Optional[str] = 'MM/DD/YYYY'
     share_data_with_partners: Optional[bool] = False
     allow_analytics: Optional[bool] = True
+
 
 class PreferencesResponse(PreferencesBase):
     id: int

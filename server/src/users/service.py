@@ -11,12 +11,10 @@ def _merge_full_name(first_name: Optional[str], last_name: Optional[str], fallba
 
 
 def get_user_profile(db: Session, user_id: int) -> Optional[User]:
-    """Get user profile by user ID"""
     return db.query(User).filter(User.id == user_id).first()
 
 
 def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) -> User:
-    """Update user profile"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise ValueError("User not found")
@@ -40,7 +38,6 @@ def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) ->
 
 
 def get_user_preferences(db: Session, user_id: int) -> Optional[UserPreferences]:
-    """Get user preferences by user ID"""
     preferences = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
 
     if not preferences:
@@ -53,7 +50,6 @@ def get_user_preferences(db: Session, user_id: int) -> Optional[UserPreferences]
 
 
 def update_user_preferences(db: Session, user_id: int, preferences_data: PreferencesBase) -> UserPreferences:
-    """Update user preferences"""
     preferences = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
 
     if not preferences:
