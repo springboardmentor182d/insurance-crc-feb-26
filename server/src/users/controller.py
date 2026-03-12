@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from src.database.core import get_db
 from src.users.models import ProfileBase, ProfileResponse, PreferencesBase, PreferencesResponse
 from src.users.service import (
     get_user_profile,
     update_user_profile,
     get_user_preferences,
-    update_user_preferences
+    update_user_preferences,
 )
 from src.auth.jwt import get_current_user_id
 
 router = APIRouter()
+
 
 @router.get("/profile", response_model=ProfileResponse)
 def get_profile(
@@ -25,6 +27,7 @@ def get_profile(
             detail="User not found"
         )
     return user
+
 
 @router.put("/profile", response_model=ProfileResponse)
 def update_profile(
@@ -42,6 +45,7 @@ def update_profile(
             detail=str(e)
         )
 
+
 @router.get("/preferences", response_model=PreferencesResponse)
 def get_preferences(
     current_user_id: int = Depends(get_current_user_id),
@@ -50,6 +54,7 @@ def get_preferences(
     """Get current user's preferences"""
     preferences = get_user_preferences(db, current_user_id)
     return preferences
+
 
 @router.put("/preferences", response_model=PreferencesResponse)
 def update_preferences(
