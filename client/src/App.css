@@ -1,0 +1,175 @@
+/* Page */
+.recommendation-page {
+  padding: 30px;
+  background: #f4f7f5;
+}
+
+/* Header */
+.page-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.ai-icon {
+  width: 45px;
+  height: 45px;
+  background: #e6f4ea;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  font-size: 20px;
+  color: #1b5e20;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.page-header p {
+  margin: 4px 0 0;
+  color: gray;
+}
+
+/* Card */
+.rec-card {
+  background: white;
+  border-radius: 14px;
+  padding: 25px;
+  margin-bottom: 25px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  border: 1px solid #e0e0e0;
+}
+
+/* Top Card Highlight */
+.top-card {
+  border: 2px solid #1b5e20;
+}
+
+.top-badge {
+  color: #1b5e20;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* Header */
+.rec-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category {
+  background: #e8f5e9;
+  color: #1b5e20;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.provider {
+  color: gray;
+  font-size: 14px;
+}
+
+/* Match Score */
+.match-score {
+  text-align: right;
+}
+
+.match-score h2 {
+  margin: 0;
+  color: #1b5e20;
+  font-size: 28px;
+}
+
+/* Progress Bar */
+.progress-bar {
+  height: 8px;
+  background: #eee;
+  border-radius: 10px;
+  margin: 15px 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #1b5e20;
+  border-radius: 10px;
+}
+
+/* Why Box */
+.why-box {
+  background: #e6f4ea;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.why-title {
+  font-size: 13px;
+  color: gray;
+  margin-bottom: 5px;
+}
+
+/* Details */
+.rec-details {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.rec-details p {
+  font-size: 13px;
+  color: gray;
+  margin: 0;
+}
+
+.risk-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.risk-badge.low {
+  background: #e8f5e9;
+  color: #1b5e20;
+}
+
+.risk-badge.medium {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Features */
+.feature-tags {
+  margin-bottom: 15px;
+}
+
+.feature-tags span {
+  background: #e8f5e9;
+  color: #1b5e20;
+  padding: 6px 12px;
+  border-radius: 20px;
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+/* Button */
+.select-btn {
+  width: 100%;
+  padding: 12px;
+  background: #1b5e20;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.select-btn:hover {
+  background: #145a18;
+}

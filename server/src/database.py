@@ -1,9 +1,9 @@
-
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
 # Get PostgreSQL database URL from environment variable
@@ -35,11 +35,34 @@ engine = create_engine(
     echo=False            # Set to True for SQL query debugging
 )
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+# Create session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# Create base class for declarative models
 Base = declarative_base()
+
 
 def get_db():
     """
     Database dependency for FastAPI endpoints.
     Creates a new database session for each request and closes it after.
     """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def init_db():
+    """
+    Initialize PostgreSQL database and create all tables.
+    This should be called when starting the application.
+    """
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("✅ PostgreSQL database initialized successfully")
+    except Exception as e:
+        print(f"❌ Error initializing PostgreSQL database: {str(e)}")
+        raise
+
