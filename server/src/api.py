@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from src.auth.controller import router as auth_router
 from src.users.controller import router as users_router
-from src.browse_policies.controller import router as policies_router
+from src.policies.controller import router as policies_router
 from src.active_policies.controller import router as active_policies_router
 
 api_router = APIRouter()

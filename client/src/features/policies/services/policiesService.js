@@ -19,3 +19,8 @@ export const fetchActivePoliciesSummary = async () => {
   return response.data;
 };
 
+export const createExternalActivePolicy = async (payload) => {
+  const response = await apiClient.post('/api/policies/active/external', payload);
+  return response.data;
+};
+

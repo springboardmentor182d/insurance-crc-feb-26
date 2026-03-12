@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../layout/Sidebar';
-import { fetchActivePolicies, fetchActivePoliciesSummary } from '../features/policies/services/policiesService';
+import {
+  fetchActivePolicies,
+  fetchActivePoliciesSummary,
+  createExternalActivePolicy,
+} from '../features/policies/services/policiesService';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDate } from '../utils/formatDate';
 
@@ -201,6 +205,21 @@ const ActivePolicies = () => {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showExternalModal, setShowExternalModal] = useState(false);
+  const [externalSubmitting, setExternalSubmitting] = useState(false);
+  const [externalError, setExternalError] = useState(null);
+  const [externalForm, setExternalForm] = useState({
+    policyName: '',
+    policyType: 'AUTO',
+    insuranceProvider: '',
+    policyNumber: '',
+    annualPremium: '',
+    coverageAmount: '',
+    deductible: '',
+    startDate: '',
+    endDate: '',
+    notes: '',
+  });
 
   const loadData = async () => {
     try {
@@ -258,6 +277,86 @@ const ActivePolicies = () => {
     loadData();
   }, []);
 
+  const parseNumber = (value) => {
+    if (!value) return null;
+    const numeric = String(value).replace(/[^0-9.]/g, '');
+    if (!numeric) return null;
+    return Number(numeric);
+  };
+
+  const handleExternalChange = (e) => {
+    const { name, value } = e.target;
+    setExternalForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleExternalSubmit = async (e) => {
+    e.preventDefault();
+    setExternalError(null);
+    setExternalSubmitting(true);
+
+    try {
+      const payload = {
+        policy_number: externalForm.policyNumber,
+        category: externalForm.policyType,
+        insurer_name: externalForm.insuranceProvider,
+        product_name: externalForm.policyName,
+        premium_annual: parseNumber(externalForm.annualPremium) ?? 0,
+        coverage_amount: parseNumber(externalForm.coverageAmount) ?? 0,
+        deductible_amount: parseNumber(externalForm.deductible),
+        start_date: externalForm.startDate,
+        end_date: externalForm.endDate,
+        tags: externalForm.notes || null,
+        warning_text: null,
+      };
+
+      const created = await createExternalActivePolicy(payload);
+
+      // Refresh from backend if possible
+      await loadData();
+
+      // Fallback update in case backend is using demo data
+      if (!created || !created.id) {
+        const fallbackPolicy = {
+          id: Date.now(),
+          policyNumber: externalForm.policyNumber,
+          status: 'Active',
+          category: externalForm.policyType,
+          insurerName: externalForm.insuranceProvider,
+          productName: externalForm.policyName,
+          premiumAnnual: parseNumber(externalForm.annualPremium) ?? 0,
+          coverageAmount: parseNumber(externalForm.coverageAmount) ?? 0,
+          deductibleAmount: parseNumber(externalForm.deductible),
+          startDate: externalForm.startDate,
+          endDate: externalForm.endDate,
+          isExpiringSoon: false,
+          warningText: null,
+        };
+        setPolicies((prev) => [...prev, fallbackPolicy]);
+      }
+
+      setShowExternalModal(false);
+      setExternalForm({
+        policyName: '',
+        policyType: 'AUTO',
+        insuranceProvider: '',
+        policyNumber: '',
+        annualPremium: '',
+        coverageAmount: '',
+        deductible: '',
+        startDate: '',
+        endDate: '',
+        notes: '',
+      });
+    } catch (err) {
+      setExternalError(err.response?.data?.detail || 'Failed to add external policy');
+    } finally {
+      setExternalSubmitting(false);
+    }
+  };
+
   if (loading && policies.length === 0) {
     return (
       <div className="flex h-screen">
@@ -280,9 +379,19 @@ const ActivePolicies = () => {
       <div className="flex-1 ml-64 overflow-y-auto">
         <div className="max-w-6xl mx-auto p-8">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">My Active Policies</h1>
-            <p className="text-gray-600 text-sm">View and manage your insurance policies</p>
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-1">My Active Policies</h1>
+              <p className="text-gray-600 text-sm">View and manage your insurance policies</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowExternalModal(true)}
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+            >
+              <span className="text-lg mr-1">+</span>
+              Add External Policy
+            </button>
           </div>
 
           {/* Summary cards */}
@@ -332,6 +441,205 @@ const ActivePolicies = () => {
           </div>
         </div>
       </div>
+
+      {/* Add External Policy Modal */}
+      {showExternalModal && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">Add External Policy</h2>
+              <button
+                type="button"
+                onClick={() => setShowExternalModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleExternalSubmit} className="px-6 py-4 space-y-6">
+              {/* Policy information */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-4">Policy Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Policy Name *</label>
+                    <input
+                      type="text"
+                      name="policyName"
+                      value={externalForm.policyName}
+                      onChange={handleExternalChange}
+                      required
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Comprehensive Auto Coverage"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Policy Type *</label>
+                    <select
+                      name="policyType"
+                      value={externalForm.policyType}
+                      onChange={handleExternalChange}
+                      required
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="AUTO">Auto Insurance</option>
+                      <option value="HOME">Home Insurance</option>
+                      <option value="LIFE">Life Insurance</option>
+                      <option value="HEALTH">Health Insurance</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Insurance Provider *</label>
+                    <input
+                      type="text"
+                      name="insuranceProvider"
+                      value={externalForm.insuranceProvider}
+                      onChange={handleExternalChange}
+                      required
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="SafeDrive Insurance"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Policy Number *</label>
+                    <input
+                      type="text"
+                      name="policyNumber"
+                      value={externalForm.policyNumber}
+                      onChange={handleExternalChange}
+                      required
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="AUTO-2024-5678"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Annual Premium *</label>
+                    <input
+                      type="text"
+                      name="annualPremium"
+                      value={externalForm.annualPremium}
+                      onChange={handleExternalChange}
+                      required
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="$850/year"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Coverage Amount *</label>
+                    <input
+                      type="text"
+                      name="coverageAmount"
+                      value={externalForm.coverageAmount}
+                      onChange={handleExternalChange}
+                      required
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="$250,000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Deductible</label>
+                    <input
+                      type="text"
+                      name="deductible"
+                      value={externalForm.deductible}
+                      onChange={handleExternalChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="$500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Start Date *</label>
+                      <input
+                        type="date"
+                        name="startDate"
+                        value={externalForm.startDate}
+                        onChange={handleExternalChange}
+                        required
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">End Date *</label>
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={externalForm.endDate}
+                        onChange={handleExternalChange}
+                        required
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional notes */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Additional Notes</label>
+                <textarea
+                  name="notes"
+                  value={externalForm.notes}
+                  onChange={handleExternalChange}
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Any additional information about this policy..."
+                />
+              </div>
+
+              {/* Upload section (UI only for now) */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">Upload Policy Documents</h3>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl px-4 py-6 text-center bg-gray-50">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Drag and drop policy documents here, or click to select
+                  </p>
+                  <p className="text-xs text-gray-400 mb-4">PDF, JPG, PNG (Max 10MB each)</p>
+                  <label className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 cursor-pointer">
+                    Select Files
+                    <input type="file" multiple className="hidden" />
+                  </label>
+                </div>
+                <div className="mt-3 rounded-xl bg-blue-50 px-4 py-3 text-xs text-gray-700 text-left">
+                  <p className="font-medium mb-1">Recommended documents:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li>Policy declaration page</li>
+                    <li>Coverage details</li>
+                    <li>Premium schedule</li>
+                    <li>Terms and conditions</li>
+                  </ul>
+                </div>
+              </div>
+
+              {externalError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-xs">
+                  {externalError}
+                </div>
+              )}
+
+              {/* Modal footer */}
+              <div className="flex items-center justify-end gap-3 pt-2 pb-4">
+                <button
+                  type="button"
+                  onClick={() => setShowExternalModal(false)}
+                  className="px-4 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
+                  disabled={externalSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={externalSubmitting}
+                  className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {externalSubmitting ? 'Adding...' : 'Add Policy'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
