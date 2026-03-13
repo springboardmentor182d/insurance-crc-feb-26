@@ -7,7 +7,7 @@ function DashboardHome() {
     { title: "Total Users", value: "1,248", change: "+12%", path: "/users" },
     { title: "Active Policies", value: "3,456", change: "+8%", path: "/policies" },
     { title: "Pending Claims", value: "89", change: "-3%", path: "/claims" },
-    { title: "Revenue", value: "$2.4M", change: "+15%", path: "/analytics" },
+    { title: "Fraud Alerts", value: "12", change: "+5%", path: "/analytics" },
   ];
 
   const quickActions = [
