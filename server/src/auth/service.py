@@ -2,7 +2,7 @@
 from passlib.context import CryptContext
 from jose import jwt
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,11 +19,11 @@ def verify_password(plain, hashed):
     return pwd_context.verify(plain, hashed)
 
 def create_access_token(data: dict):
-    expire = datetime.utcnow() + timedelta(minutes=30)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=30)
     data.update({"exp": expire})
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 def create_refresh_token(data: dict):
-    expire = datetime.utcnow() + timedelta(days=7)
+    expire = datetime.now(timezone.utc) + timedelta(days=7)
     data.update({"exp": expire})
     return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)

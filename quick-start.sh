@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Quick Start Script for Admin Dashboard
-# This script helps you start both backend and frontend quickly
+# Quick Start Script for Insurance CRC
+# Prepares backend/frontend dependencies and prints exact run commands.
 
 echo "=========================================="
 echo "  Insurance CRC Admin Dashboard"
@@ -31,14 +31,14 @@ echo "🔧 Setting up Backend..."
 cd server
 
 # Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
+if [ ! -d ".venv" ]; then
     echo "Creating virtual environment..."
-    python3 -m venv venv
+    python3 -m venv .venv
 fi
 
 # Activate virtual environment
 echo "Activating virtual environment..."
-source venv/bin/activate
+source .venv/bin/activate
 
 # Install dependencies
 echo "Installing backend dependencies..."
@@ -69,12 +69,15 @@ echo ""
 echo "To start the application:"
 echo ""
 echo "1. Backend (Terminal 1):"
-echo "   cd server/src"
-echo "   uvicorn main:app --reload"
+echo "   cd server"
+echo "   source .venv/bin/activate"
+echo "   # Set real DB credentials first in server/.env or terminal env vars"
+echo "   uvicorn src.main:app --reload --host 0.0.0.0 --port 8000"
 echo ""
 echo "2. Frontend (Terminal 2):"
 echo "   cd client"
+echo "   export REACT_APP_BASE_URL=http://localhost:8000"
 echo "   npm start"
 echo ""
-echo "Then visit: http://localhost:3000/admin"
+echo "Then visit: http://localhost:3000"
 echo ""

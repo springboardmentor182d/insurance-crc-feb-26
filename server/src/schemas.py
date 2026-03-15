@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 from typing import Optional, Dict, List
 from datetime import datetime
 
@@ -15,9 +15,7 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     id: int
     status: str
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FraudRuleBase(BaseModel):
@@ -40,9 +38,7 @@ class FraudRuleUpdate(BaseModel):
 
 class FraudRuleResponse(FraudRuleBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ClaimBase(BaseModel):
@@ -61,17 +57,13 @@ class ClaimCreate(ClaimBase):
 
 class ClaimResponse(ClaimBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ClaimStatsResponse(BaseModel):
     month: str
     claims: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OverviewStats(BaseModel):
@@ -130,9 +122,7 @@ class PolicyUpdate(BaseModel):
 
 class PolicyResponse(PolicyBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Recommendation Schemas
@@ -172,9 +162,7 @@ class RecommendationUpdate(BaseModel):
 
 class RecommendationResponse(RecommendationBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecommendationListResponse(BaseModel):
@@ -200,9 +188,7 @@ class ActivityLogCreate(ActivityLogBase):
 class ActivityLogResponse(ActivityLogBase):
     id: int
     timestamp: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecentActivityResponse(BaseModel):

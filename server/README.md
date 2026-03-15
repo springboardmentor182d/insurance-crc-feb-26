@@ -139,7 +139,7 @@ pylint src/
 If you were previously using SQLite:
 1. Export existing data (if needed)
 2. Set up PostgreSQL using the guide above
-3. The application will auto-create tables and populate sample data on first run
+3. The application will auto-create tables on first run. No sample or fake data is populated automatically.
 
 ---
 

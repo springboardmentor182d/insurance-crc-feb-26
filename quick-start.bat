@@ -1,6 +1,6 @@
 @echo off
-REM Quick Start Script for Admin Dashboard (Windows)
-REM This script helps you start both backend and frontend quickly
+REM Quick Start Script for Insurance CRC (Windows)
+REM Prepares backend/frontend dependencies and prints exact run commands.
 
 echo ==========================================
 echo   Insurance CRC Admin Dashboard
@@ -32,14 +32,14 @@ echo Setting up Backend...
 cd server
 
 REM Create virtual environment if it doesn't exist
-if not exist "venv\" (
+if not exist ".venv\" (
     echo Creating virtual environment...
-    python -m venv venv
+    python -m venv .venv
 )
 
 REM Activate virtual environment and install dependencies
 echo Installing backend dependencies...
-call venv\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 pip install -r requirements.txt
 
 echo.
@@ -67,14 +67,17 @@ echo.
 echo To start the application:
 echo.
 echo 1. Backend (Terminal 1):
-echo    cd server\src
-echo    uvicorn main:app --reload
+echo    cd server
+echo    .\.venv\Scripts\Activate.ps1
+echo    ^(Set real DB credentials first in server\.env or terminal env vars^)
+echo    uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 echo.
 echo 2. Frontend (Terminal 2):
 echo    cd client
+echo    set REACT_APP_BASE_URL=http://localhost:8000
 echo    npm start
 echo.
-echo Then visit: http://localhost:3000/admin
+echo Then visit: http://localhost:3000
 echo.
 
 cd ..
