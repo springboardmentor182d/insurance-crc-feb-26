@@ -7,7 +7,8 @@ from dotenv import load_dotenv
 
 from alembic import context
 from src.database.core import Base, DATABASE_URL
-import src.database.models  # noqa: F401
+import src.database.admin_dashboard.models  # noqa: F401
+import src.database.manage_policies.models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
