@@ -1,24 +1,26 @@
-﻿from sqlalchemy.orm import Session
-from src.database.admin_dashboard.models.users import User
-from src.database.admin_dashboard.models.user_preferences import UserPreferences
-from src.users.models import ProfileBase, PreferencesBase
 from typing import Optional
+
+from sqlalchemy.orm import Session
+
+from src.database.admin_dashboard.models.user_preferences import UserPreferences
+from src.database.admin_dashboard.models.users import User
+from src.users.models import PreferencesBase, ProfileBase
 
 
 def _merge_full_name(
-    first_name: Optional[str], last_name: Optional[str], fallback: str
+    first_name: Optional[str],
+    last_name: Optional[str],
+    fallback: str,
 ) -> str:
     parts = [part.strip() for part in [first_name, last_name] if part and part.strip()]
     return " ".join(parts) if parts else fallback
 
 
 def get_user_profile(db: Session, user_id: int) -> Optional[User]:
-    """Get user profile by user ID"""
     return db.query(User).filter(User.id == user_id).first()
 
 
 def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) -> User:
-    """Update user profile"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise ValueError("User not found")
@@ -42,7 +44,6 @@ def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) ->
 
 
 def get_user_preferences(db: Session, user_id: int) -> Optional[UserPreferences]:
-    """Get user preferences by user ID"""
     preferences = (
         db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
     )
@@ -57,9 +58,10 @@ def get_user_preferences(db: Session, user_id: int) -> Optional[UserPreferences]
 
 
 def update_user_preferences(
-    db: Session, user_id: int, preferences_data: PreferencesBase
+    db: Session,
+    user_id: int,
+    preferences_data: PreferencesBase,
 ) -> UserPreferences:
-    """Update user preferences"""
     preferences = (
         db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
     )

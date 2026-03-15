@@ -1,75 +1,173 @@
-﻿from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 import os
 from typing import Optional
+
+from fastapi import HTTPException, status
 from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from src.database.core import get_db
-from src.database.admin_dashboard.models.users import User
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
+from src.auth.jwt import create_access_token, verify_token
+from src.auth.models import AdminLogin, LoginRequest, RegisterRequest, TokenResponse
+from src.database.admin_dashboard.models.users import User, UserRole
+
+REFRESH_SECRET_KEY = os.getenv(
+    "JWT_REFRESH_SECRET_KEY", "your-refresh-secret-key-change-this-in-production"
+)
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-
-security = HTTPBearer()
-
-
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Create a JWT access token"""
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+REFRESH_EXPIRE_DAYS = int(os.getenv("JWT_REFRESH_EXPIRE_DAYS", "7"))
+ADMIN_SECRET = os.getenv("ADMIN_SECRET", "bimaverse-admin-2026")
 
 
-def verify_token(token: str) -> Optional[dict]:
-    """Verify and decode a JWT token"""
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        return None
+def _role_as_frontend_value(role: object) -> str:
+    value = getattr(role, "value", str(role)).lower()
+    if value == "customer":
+        return "user"
+    return value
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db),
-) -> User:
-    """Get current authenticated user from JWT token"""
-    token = credentials.credentials
+def _user_name(user: User) -> str:
+    if getattr(user, "full_name", None):
+        return user.full_name
+
+    first_name = (getattr(user, "first_name", "") or "").strip()
+    last_name = (getattr(user, "last_name", "") or "").strip()
+    combined = " ".join(part for part in [first_name, last_name] if part)
+    return combined or user.email
+
+
+def create_refresh_token(data: dict) -> str:
+    payload = {
+        **data,
+        "exp": datetime.utcnow() + timedelta(days=REFRESH_EXPIRE_DAYS),
+        "type": "refresh",
+    }
+    return jwt.encode(payload, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_access_token(token: str) -> dict:
     payload = verify_token(token)
-
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid token",
         )
+    return payload
 
-    user_id: int = payload.get("sub")
-    if user_id is None:
+
+def decode_refresh_token(token: str) -> dict:
+    try:
+        payload = jwt.decode(token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token type",
+            )
+        return payload
+    except JWTError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Invalid refresh token",
+        ) from exc
+
+
+class AuthService:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def register(self, data: RegisterRequest) -> TokenResponse:
+        exists = self.db.query(User).filter(User.email == data.email).first()
+        if exists:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered",
+            )
+
+        full_name = data.name.strip()
+        first_name, _, remaining = full_name.partition(" ")
+        last_name = remaining.strip() or None
+
+        user = User(
+            email=data.email,
+            first_name=first_name or None,
+            last_name=last_name,
+            full_name=full_name,
+            role=UserRole.CUSTOMER,
         )
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
 
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
+        return self._make_tokens(user)
+
+    def login(self, data: LoginRequest) -> TokenResponse:
+        user = self.db.query(User).filter(User.email == data.email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
+
+        if _role_as_frontend_value(user.role) == "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please use the admin login portal",
+            )
+
+        return self._make_tokens(user)
+
+    def admin_login(self, data: AdminLogin) -> TokenResponse:
+        if data.admin_secret != ADMIN_SECRET:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid admin secret key",
+            )
+
+        user = self.db.query(User).filter(User.email == data.email).first()
+        if not user or _role_as_frontend_value(user.role) != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin credentials",
+            )
+
+        return self._make_tokens(user, admin=True)
+
+    def refresh(self, refresh_token: str) -> TokenResponse:
+        payload = decode_refresh_token(refresh_token)
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token payload",
+            )
+
+        user = self.db.query(User).filter(User.id == int(user_id)).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        return self._make_tokens(user)
+
+    def _make_tokens(self, user: User, admin: bool = False) -> TokenResponse:
+        user_role = _role_as_frontend_value(user.role)
+        token_payload = {
+            "sub": user.id,
+            "email": user.email,
+            "role": user_role,
+        }
+
+        access_expiry: Optional[timedelta] = timedelta(hours=8) if admin else None
+        access_token = create_access_token(token_payload, access_expiry)
+        refresh_token = create_refresh_token(token_payload)
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user={
+                "id": user.id,
+                "name": _user_name(user),
+                "email": user.email,
+                "role": user_role,
+            },
         )
-
-    return user
-
-
-def get_current_user_id(current_user: User = Depends(get_current_user)) -> int:
-    """Get current user ID from authenticated user"""
-    return current_user.id

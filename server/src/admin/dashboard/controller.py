@@ -1,5 +1,11 @@
-from fastapi import APIRouter
-from .service import (
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from src.database.core import get_db
+from src.auth.models import RegisterRequest, AdminLogin
+from src.admin.dashboard.service import (
+    admin_signup,
+    admin_login,
     get_admin_stats,
     get_claims_trends,
     get_revenue_data,
@@ -7,7 +13,7 @@ from .service import (
     get_top_adjusters,
     get_recent_activity,
 )
-from .models import (
+from src.admin.dashboard.models import (
     AdminStatsResponse,
     ClaimsTrendsResponse,
     RevenueResponse,
@@ -19,6 +25,24 @@ from .models import (
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
+# ─── Auth Routes ─────────────────────────────
+@router.post("/signup")
+def signup(
+    data: RegisterRequest,
+    db: Session = Depends(get_db)
+):
+    return admin_signup(data, db)
+
+
+@router.post("/login")
+def login(
+    data: AdminLogin,
+    db: Session = Depends(get_db)
+):
+    return admin_login(data, db)
+
+
+# ─── Dashboard Routes ────────────────────────
 @router.get("/stats", response_model=AdminStatsResponse)
 async def stats():
     return await get_admin_stats()

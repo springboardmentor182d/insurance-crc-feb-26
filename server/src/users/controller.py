@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from src.database.core import get_db
 from src.users.models import (
     ProfileBase,
@@ -43,6 +44,7 @@ def update_profile(
         return user
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
 
 
 @router.get("/preferences", response_model=PreferencesResponse)

@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict
 from datetime import date, datetime
+from typing import Dict, Optional
+
+from pydantic import BaseModel, EmailStr
 
 
 class ProfileBase(BaseModel):

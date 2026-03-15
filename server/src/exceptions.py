@@ -1,12 +1,28 @@
-﻿from fastapi import APIRouter
-from src.auth.controller import router as auth_router
-from src.admin.dashboard.controller import router as admin_router
-from src.users.controller import router as users_router
-from src.admin.manage_policies.controller import router as policies_router
+import logging
 
-api_router = APIRouter()
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
-api_router.include_router(auth_router, prefix="/auth", tags=["Auth"])
-api_router.include_router(admin_router)
-api_router.include_router(users_router, prefix="/users", tags=["Users"])
-api_router.include_router(policies_router, prefix="/admin", tags=["Admin Policies"])
+logger = logging.getLogger(__name__)
+
+
+def setup_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(RequestValidationError)
+    async def validation_error_handler(request: Request, exc: RequestValidationError):
+        errors = [
+            {"field": " -> ".join(str(loc) for loc in e["loc"]), "message": e["msg"]}
+            for e in exc.errors()
+        ]
+        return JSONResponse(
+            status_code=422,
+            content={"detail": "Validation error", "errors": errors},
+        )
+
+    @app.exception_handler(Exception)
+    async def general_exception_handler(request: Request, exc: Exception):
+        logger.error("Unhandled error: %s", exc, exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
+        )

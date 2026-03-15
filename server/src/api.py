@@ -1,8 +1,9 @@
 from fastapi import APIRouter
-from src.auth.controller import router as auth_router
+
 from src.admin.dashboard.controller import router as admin_router
-from src.users.controller import router as users_router
 from src.admin.manage_policies.controller import router as policies_router
+from src.auth.controller import router as auth_router
+from src.users.controller import router as users_router
 
 api_router = APIRouter()
 

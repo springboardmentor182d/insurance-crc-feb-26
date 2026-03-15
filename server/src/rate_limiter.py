@@ -1,37 +1,29 @@
-﻿from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
-from src.api import api_router
-from src.database.core import SessionLocal
+import asyncio
+from collections import defaultdict
+from datetime import datetime, timedelta
 
-app = FastAPI(title="Insurance CRC API", version="1.0.0")
+from fastapi import HTTPException, Request, status
 
-origins = [
-    "http://localhost:3000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+_request_counts: dict[str, list[datetime]] = defaultdict(list)
+_lock = asyncio.Lock()
 
 
-@app.on_event("startup")
-def startup_db_check():
-    try:
-        with SessionLocal() as session:
-            session.execute(text("SELECT 1"))
-    except SQLAlchemyError as exc:
-        raise RuntimeError("Database connection failed on startup.") from exc
+async def rate_limit(
+    request: Request,
+    max_requests: int = 10,
+    window_seconds: int = 60,
+) -> None:
+    client_ip = request.client.host if request.client else "unknown"
+    now = datetime.utcnow()
+    window_start = now - timedelta(seconds=window_seconds)
 
-
-@app.get("/health")
-def health_check():
-    return {"status": "Backend is running"}
-
-
-app.include_router(api_router)
+    async with _lock:
+        _request_counts[client_ip] = [
+            ts for ts in _request_counts[client_ip] if ts > window_start
+        ]
+        if len(_request_counts[client_ip]) >= max_requests:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Too many requests. Max {max_requests} per {window_seconds}s.",
+            )
+        _request_counts[client_ip].append(now)

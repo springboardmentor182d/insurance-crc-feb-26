@@ -1,75 +1,57 @@
-﻿from datetime import datetime, timedelta
-import os
+from datetime import date
 from typing import Optional
-from jose import JWTError, jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.orm import Session
-from src.database.core import get_db
-from src.database.admin_dashboard.models.users import User
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
-ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-
-security = HTTPBearer()
+from pydantic import BaseModel, EmailStr, field_validator
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """Create a JWT access token"""
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+class RegisterRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    date_of_birth: Optional[date] = None
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        if len(value) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(char.isupper() for char in value):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not any(char.isdigit() for char in value):
+            raise ValueError("Password must contain at least one number")
+        return value
 
 
-def verify_token(token: str) -> Optional[dict]:
-    """Verify and decode a JWT token"""
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        return None
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+    remember_me: Optional[bool] = False
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db),
-) -> User:
-    """Get current authenticated user from JWT token"""
-    token = credentials.credentials
-    payload = verify_token(token)
-
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user_id: int = payload.get("sub")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return user
+class AdminLogin(BaseModel):
+    email: EmailStr
+    password: str
+    admin_secret: str
 
 
-def get_current_user_id(current_user: User = Depends(get_current_user)) -> int:
-    """Get current user ID from authenticated user"""
-    return current_user.id
+class AuthUser(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    role: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    user: AuthUser
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
+# Backward compatibility aliases
+UserRegister = RegisterRequest
+UserLogin = LoginRequest
