@@ -8,6 +8,7 @@ import Profile from "./pages/Profile";
 import Preferences from "./pages/Preferences";
 import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/AdminDashboard";
+import ManagePolicies from "./pages/ManagePolicies";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/preferences" element={<Preferences />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/manage-policies" element={<ManagePolicies />} />
       </Routes>
     </Router>
   );

@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-
 # Load .env file from project root
 env_path = Path(__file__).resolve().parents[2] / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -30,11 +29,7 @@ DATABASE_URL = _build_database_url()
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
@@ -49,6 +44,7 @@ def get_db() -> Generator[Session, None, None]:
 
 def create_tables() -> None:
     # Ensure all ORM models are registered before create_all
-    import src.database.models  # noqa: F401
+    import src.database.admin_dashboard.models  # noqa: F401
+    import src.database.manage_policies.models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

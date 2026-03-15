@@ -19,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 def startup_db_check():
     try:
@@ -27,9 +28,10 @@ def startup_db_check():
     except SQLAlchemyError as exc:
         raise RuntimeError("Database connection failed on startup.") from exc
 
+
 @app.get("/health")
 def health_check():
     return {"status": "Backend is running"}
 
-app.include_router(api_router)
 
+app.include_router(api_router)

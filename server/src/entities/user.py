@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Date, Text, J
 from sqlalchemy.sql import func
 from src.database.core import Base
 
+
 class User(Base):
     __tablename__ = "users"
 
@@ -25,12 +26,13 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+
 class UserPreferences(Base):
     __tablename__ = "user_preferences"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, nullable=False, unique=True, index=True)
-    
+
     # Notification preferences
     email_notifications = Column(Boolean, default=True)
     sms_notifications = Column(Boolean, default=False)
@@ -41,24 +43,24 @@ class UserPreferences(Base):
     marketing_emails = Column(Boolean, default=False)
     promotional_emails = Column(Boolean, default=False)
     weekly_digest = Column(Boolean, default=True)
-    
+
     # Security preferences
     two_factor_auth = Column(Boolean, default=True)
     biometric_login = Column(Boolean, default=False)
-    session_timeout = Column(String, default='30')
-    
+    session_timeout = Column(String, default="30")
+
     # Communication preferences
-    preferred_language = Column(String, default='en')
-    preferred_currency = Column(String, default='USD')
-    timezone = Column(String, default='UTC')
-    
+    preferred_language = Column(String, default="en")
+    preferred_currency = Column(String, default="USD")
+    timezone = Column(String, default="UTC")
+
     # Display preferences
-    theme = Column(String, default='light')
-    date_format = Column(String, default='MM/DD/YYYY')
-    
+    theme = Column(String, default="light")
+    date_format = Column(String, default="MM/DD/YYYY")
+
     # Privacy preferences
     share_data_with_partners = Column(Boolean, default=False)
     allow_analytics = Column(Boolean, default=True)
-    
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
