@@ -1,11 +1,8 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict
 from datetime import date, datetime
+from typing import Dict, Optional
 
+from pydantic import BaseModel, EmailStr
 
-# ─────────────────────────────────────────────
-# Profile Schemas
-# ─────────────────────────────────────────────
 
 class ProfileBase(BaseModel):
     first_name: Optional[str] = None
@@ -35,10 +32,6 @@ class ProfileResponse(ProfileBase):
         from_attributes = True
 
 
-# ─────────────────────────────────────────────
-# Preferences Schemas
-# ─────────────────────────────────────────────
-
 class PreferencesBase(BaseModel):
     email_notifications: Optional[bool] = True
     sms_notifications: Optional[bool] = False
@@ -51,12 +44,12 @@ class PreferencesBase(BaseModel):
     weekly_digest: Optional[bool] = True
     two_factor_auth: Optional[bool] = True
     biometric_login: Optional[bool] = False
-    session_timeout: Optional[str] = '30'
-    preferred_language: Optional[str] = 'en'
-    preferred_currency: Optional[str] = 'USD'
-    timezone: Optional[str] = 'UTC'
-    theme: Optional[str] = 'light'
-    date_format: Optional[str] = 'MM/DD/YYYY'
+    session_timeout: Optional[str] = "30"
+    preferred_language: Optional[str] = "en"
+    preferred_currency: Optional[str] = "USD"
+    timezone: Optional[str] = "UTC"
+    theme: Optional[str] = "light"
+    date_format: Optional[str] = "MM/DD/YYYY"
     share_data_with_partners: Optional[bool] = False
     allow_analytics: Optional[bool] = True
 

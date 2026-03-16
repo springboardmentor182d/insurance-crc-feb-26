@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from src.admin.service import (
+from src.admin.dashboard.service import (
     get_admin_stats,
     get_claims_trends,
     get_policy_distribution,
@@ -65,7 +65,12 @@ def test_top_adjusters_response_shape(seeded_db) -> None:
 
     assert len(payload["data"]) >= 1
     for row in payload["data"]:
-        assert set(row.keys()) == {"name", "totalClaims", "approvalRate", "avgProcessingDays"}
+        assert set(row.keys()) == {
+            "name",
+            "totalClaims",
+            "approvalRate",
+            "avgProcessingDays",
+        }
 
 
 def test_recent_activity_response_shape(seeded_db) -> None:
