@@ -107,6 +107,6 @@ async def get_recent_claims():
             "type": "Health",
             "date": "2026-01-20",
             "amount": "$850",
-            "status": "Approved"
+            "status": "Resolved"
         }
     ]
