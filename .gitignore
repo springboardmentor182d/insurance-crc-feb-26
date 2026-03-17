@@ -17,20 +17,24 @@ __pycache__/
 node_modules/
 build/
 dist/
+dist-ssr
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.local
 
-############################
-# 🔹 VS Code
-############################
+# Editor directories and files
 .vscode/
-
-############################
-# 🔹 System Files
-############################
+!.vscode/extensions.json
+.idea/
 .DS_Store
-Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 ############################
 # 🔹 Coverage / Testing
@@ -42,5 +46,5 @@ htmlcov/
 ############################
 # 🔹 Logs
 ############################
+logs
 *.log
-
