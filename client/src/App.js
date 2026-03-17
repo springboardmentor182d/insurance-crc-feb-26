@@ -1,3 +1,4 @@
+import { RiDashboardLine, RiFileList3Line, RiStarLine, RiFileWarningLine, RiUserLine, RiSettings4Line } from 'react-icons/ri';
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
 import Profile from "./pages/Profile";
@@ -28,24 +29,26 @@ function App() {
             <span style={{ fontWeight: 700, fontSize: 18, color: "#111827" }}>InsureAI</span>
           </div>
           {[
-            { to: "/", label: "Dashboard" },
-            { to: "/policies", label: "Policies" },
-            { to: "/recommendations", label: "Recommendations" },
-            { to: "/claims", label: "Claims" },
-            { to: "/profile", label: "Profile" },
-            { to: "/preferences", label: "Preferences" },
-          ].map(({ to, label }) => (
-            <NavLink key={to} to={to} end={to === "/"}
-              style={({ isActive }) => ({
-                display: "block", padding: "10px 20px", fontSize: 14, fontWeight: 500,
-                color: isActive ? "#4F46E5" : "#374151",
-                background: isActive ? "#EEF2FF" : "transparent",
-                textDecoration: "none",
-                borderLeft: isActive ? "3px solid #4F46E5" : "3px solid transparent",
-              })}>
-              {label}
-            </NavLink>
-          ))}
+ { to: "/", label: "Dashboard", icon: <RiDashboardLine size={18}/> },
+{ to: "/policies", label: "Policies", icon: <RiFileList3Line size={18}/> },
+{ to: "/recommendations", label: "Recommendations", icon: <RiStarLine size={18}/> },
+{ to: "/claims", label: "Claims", icon: <RiFileWarningLine size={18}/> },
+{ to: "/profile", label: "Profile", icon: <RiUserLine size={18}/> },
+{ to: "/preferences", label: "Preferences", icon: <RiSettings4Line size={18}/> },
+].map(({ to, label, icon }) => (
+  <NavLink key={to} to={to} end={to === "/"}
+    style={({ isActive }) => ({
+      display: "flex", alignItems: "center", gap: "10px",
+      padding: "10px 20px", fontSize: 14, fontWeight: 500,
+      color: isActive ? "#4F46E5" : "#374151",
+      background: isActive ? "#EEF2FF" : "transparent",
+      textDecoration: "none",
+      borderLeft: isActive ? "3px solid #4F46E5" : "3px solid transparent",
+    })}>
+   {icon}
+    {label}
+  </NavLink>
+))}
           <div style={{ marginTop: "auto", padding: "0 20px" }}>
             <button style={{ background: "none", border: "none", color: "#6b7280", fontSize: 14, cursor: "pointer", padding: "10px 0" }}>
               ← Logout

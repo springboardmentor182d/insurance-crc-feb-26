@@ -15,6 +15,12 @@ const Preferences = () => {
     aiRecommendations: true,
     weeklySummary: true,
   });
+  const [toast, setToast] = useState("");
+
+const showToast = (message) => {
+  setToast(message);
+  setTimeout(() => setToast(""), 3000);
+};
 
   const riskOptions = [
     { label: "Low Risk", icon: "🛡️", desc: "Maximum coverage, higher premiums" },
@@ -25,16 +31,16 @@ const Preferences = () => {
   const policyOptions = ["Health", "Life", "Vehicle", "Property", "Travel"];
 
   const getBudgetLabel = () => {
-    if (budget < 33) return "Low Budget";
-    if (budget < 66) return "Medium Budget";
-    return "High Budget";
-  };
+  if (budget < 33) return "Low Budget";
+  if (budget < 66) return "Medium Budget";
+  return "High Budget";
+};
 
   const getBudgetRange = () => {
-    if (budget < 33) return "$100 - $500";
-    if (budget < 66) return "$500 - $1000";
-    return "$1000 - $2000";
-  };
+  const min = Math.round((budget / 100) * 2000);
+  const max = Math.round((budget / 100) * 2000) + 500;
+  return `$${min} - $${max}`;
+};
 
   const togglePolicy = (policy) => {
     setPolicyInterests((prev) =>
@@ -115,17 +121,19 @@ const Preferences = () => {
             <span>High</span>
           </div>
           <input
-            type="range"
-            min="0"
-            max="100"
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-            className="budget-slider"
-          />
+  type="range"
+  min="0"
+  max="100"
+  value={budget}
+  onChange={(e) => setBudget(e.target.value)}
+  className="budget-slider"
+  style={{
+    background: `linear-gradient(to right, #111827 ${budget}%, #e5e7eb ${budget}%)`
+  }}
+/>
           <p className="budget-range">💲 Your preferred monthly premium range: {getBudgetRange()}</p>
         </div>
-
-        <button className="save-btn">Save Insurance Preferences</button>
+        <button className="save-btn" onClick={() => showToast("Insurance preferences saved successfully!")}>Save Insurance Preferences</button>
       </div>
 
       {/* Notification Preferences */}
@@ -158,8 +166,7 @@ const Preferences = () => {
             </div>
           </div>
         ))}
-
-        <button className="save-btn">Save Notification Preferences</button>
+        <button className="save-btn" onClick={() => showToast("Notification preferences saved successfully!")}>Save Notification Preferences</button>
       </div>
 
       {/* Additional Settings */}
@@ -191,7 +198,11 @@ const Preferences = () => {
           </div>
         ))}
       </div>
+      {toast && (
+        <div className="toast">✅ {toast}</div>
+      )}
     </div>
+    
   );
 };
 
