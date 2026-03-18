@@ -91,16 +91,32 @@ const handleAddRule = async () => {
 
     const data = await response.json();
 
-    // Add new rule to rules list
-    setRules([...rules, data.data]);
+    console.log("Created rule:", data);
 
-    setShowModal(false);
+     if (!response.ok) {
+      alert(data.detail || "Server error while creating rule");
+      return;
+    }
 
+    setRules([...rules, data]);
+
+    setNewRule({
+      rule_id: "",
+      rule_name: "",
+      description: "",
+      severity: "Medium",
+      detections: 0,
+      created_date: "",
+      status: "Active",
+    });
+
+    setShowAddRule(false);
+    alert("Rule created successfully");
   } catch (error) {
-    console.error("Error creating rule:", error);
+    console.error("Create rule error:", error);
+    alert("Server error while creating rule");
   }
 };
-
 
 return (
 
@@ -450,22 +466,39 @@ onChange={(e)=>setNewRule({...newRule,rule_name:e.target.value})}
 placeholder="Description"
 onChange={(e)=>setNewRule({...newRule,description:e.target.value})}
 />
-
-<select
-onChange={(e)=>setNewRule({...newRule,severity:e.target.value})}
->
-
-<option>Critical</option>
-<option>High</option>
-<option>Medium</option>
-
-</select>
-
+  <select
+    value={newRule.severity}
+    onChange={(e) => setNewRule({ ...newRule, severity: e.target.value })}
+  >
+    <option value="Critical">Critical</option>
+    <option value="High">High</option>
+    <option value="Medium">Medium</option>
+    <option value="Low">Low</option>
+  </select>
 <input
-type="date"
-onChange={(e)=>setNewRule({...newRule,created_date:e.target.value})}
+  type="number"
+  placeholder="Detections"
+  value={newRule.detections}
+  onChange={(e) =>
+    setNewRule({ ...newRule, detections: Number(e.target.value) })
+  }
 />
 
+<input
+  type="date"
+  value={newRule.created_date}
+  onChange={(e) =>
+    setNewRule({ ...newRule, created_date: e.target.value })
+  }
+/>
+
+<select
+  value={newRule.status}
+  onChange={(e) => setNewRule({ ...newRule, status: e.target.value })}
+>
+  <option value="Active">Active</option>
+  <option value="Inactive">Inactive</option>
+</select>
 <button className="create-btn" onClick={handleAddRule}>
 Create Rule
 </button>

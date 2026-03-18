@@ -6,7 +6,7 @@ from src.database.core import Base, engine
 from src.users.controller import router as users_router
 from src.auth.controller import router as auth_router
 from src.fraud.controller import router as fraud_router
-
+from src.fraud import models
 app = FastAPI()
 
 # create tables
