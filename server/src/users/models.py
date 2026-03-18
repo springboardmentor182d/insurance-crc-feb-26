@@ -54,6 +54,8 @@ class InsurancePreferences(BaseModel):
     autoRenewal: bool
     paperlessBilling: bool
     preferredPaymentMethod: str
+    coverageAmount: Optional[float] = None
+    premiumAmount: Optional[float] = None
 
 
 class UpdatePreferencesRequest(BaseModel):

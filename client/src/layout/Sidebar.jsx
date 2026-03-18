@@ -22,7 +22,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
     const location = useLocation(); // ✅ auto detect active route
 
     const userMenuItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/user-dashboard' },
+        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: FileSearch, label: 'Browse Policies', path: '/browse-policies' },
         { icon: Scale, label: 'Compare Policies', path: '/compare-policies' },
         { icon: Sparkles, label: 'Recommendations', path: '/recommendations' },
@@ -51,10 +51,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
         setSidebarOpen(false);
     };
 
-    const handleLogout = () => {
-        navigate('/login');
-        setSidebarOpen(false);
-    };
+
 
     return (
         <aside
@@ -74,7 +71,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
                 {/* ================= LOGO ================= */}
                 <div className="flex items-center gap-3 mb-10">
                     <img
-                        src="/logo.svg"
+                        src="/logo.png"
                         alt="InsureLogic Logo"
                         className="w-10 h-10 object-contain"
                     />
@@ -110,14 +107,7 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
                     })}
                 </nav>
 
-                {/* ================= LOGOUT ================= */}
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all"
-                >
-                    <LogOut className="w-5 h-5" />
-                    <span className="text-sm font-medium">Logout</span>
-                </button>
+
             </div>
         </aside>
     );

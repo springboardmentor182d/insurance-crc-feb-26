@@ -45,6 +45,14 @@ export default function Settings() {
         occupation: ''
     });
     const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const detectTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        setDisplayPreferences((prev) => ({
+            ...prev,
+            timezone: detectTimezone || "UTC"
+        }));
+    }, []);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -115,7 +123,7 @@ export default function Settings() {
 
     const saveAll = async () => {
         try {
-            await fetch("http://127.0.0.1:8000/users/profile", {
+            await fetch("http://127.0.0.1:8000/users", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json"
@@ -186,6 +194,7 @@ export default function Settings() {
         dateFormat: 'MM/DD/YYYY',
         currency: 'USD',
         theme: 'light',
+
     });
 
     // ================= INSURANCE =================
@@ -195,6 +204,9 @@ export default function Settings() {
         autoRenewal: true,
         paperlessBilling: true,
         preferredPaymentMethod: 'credit_card',
+
+        coverageAmount: '',
+        premiumAmount: ''
     });
 
     // ================= SAVE PREFERENCES =================
@@ -594,8 +606,8 @@ export default function Settings() {
                                         <MapPin className="w-4 h-4 text-green-500" />
                                         Timezone
                                     </label>
-                                    <input
-                                        type="text"
+
+                                    <select
                                         value={displayPreferences.timezone}
                                         onChange={(e) =>
                                             setDisplayPreferences({
@@ -604,17 +616,25 @@ export default function Settings() {
                                             })
                                         }
                                         className="w-full border rounded-lg px-4 py-2"
-                                    />
+                                    >
+                                        <option value="Asia/Kolkata">India (IST)</option>
+                                        <option value="UTC">UTC</option>
+                                        <option value="Asia/Dubai">Dubai</option>
+                                        <option value="Asia/Singapore">Singapore</option>
+                                        <option value="Europe/London">London</option>
+                                        <option value="America/New_York">New York</option>
+                                        <option value="America/Los_Angeles">Los Angeles</option>
+                                        <option value="Australia/Sydney">Sydney</option>
+                                    </select>
                                 </div>
-
                                 {/* Date Format */}
                                 <div>
                                     <label className="block mb-2 font-medium flex items-center gap-2">
                                         <Calendar className="w-4 h-4 text-purple-500" />
                                         Date Format
                                     </label>
-                                    <input
-                                        type="text"
+
+                                    <select
                                         value={displayPreferences.dateFormat}
                                         onChange={(e) =>
                                             setDisplayPreferences({
@@ -623,17 +643,20 @@ export default function Settings() {
                                             })
                                         }
                                         className="w-full border rounded-lg px-4 py-2"
-                                    />
+                                    >
+                                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                    </select>
                                 </div>
-
                                 {/* Currency */}
                                 <div>
                                     <label className="block mb-2 font-medium flex items-center gap-2">
                                         <DollarSign className="w-4 h-4 text-yellow-500" />
                                         Currency
                                     </label>
-                                    <input
-                                        type="text"
+
+                                    <select
                                         value={displayPreferences.currency}
                                         onChange={(e) =>
                                             setDisplayPreferences({
@@ -642,7 +665,11 @@ export default function Settings() {
                                             })
                                         }
                                         className="w-full border rounded-lg px-4 py-2"
-                                    />
+                                    >
+                                        <option value="USD">USD ($)</option>
+                                        <option value="INR">INR (₹)</option>
+                                        <option value="EUR">EUR (€)</option>
+                                    </select>
                                 </div>
 
 
@@ -738,6 +765,54 @@ export default function Settings() {
                                         <option value="credit_card">Credit Card</option>
                                         <option value="debit_card">Debit Card</option>
                                         <option value="upi">UPI</option>
+                                    </select>
+                                </div>
+
+                                {/* Coverage Amount */}
+                                <div>
+                                    <label className="block mb-2 font-medium">
+                                        Coverage Amount
+                                    </label>
+
+                                    <select
+                                        value={insurancePreferences.coverageAmount}
+                                        onChange={(e) =>
+                                            setInsurancePreferences({
+                                                ...insurancePreferences,
+                                                coverageAmount: e.target.value
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-4 py-2"
+                                    >
+                                        <option value="">Select Coverage</option>
+                                        <option value="100000">1 Lakh</option>
+                                        <option value="300000">3 Lakhs</option>
+                                        <option value="500000">5 Lakhs</option>
+                                        <option value="1000000">10 Lakhs</option>
+                                    </select>
+                                </div>
+                                {/* Premium Amount */}
+                                {/* Premium Amount */}
+                                <div>
+                                    <label className="block mb-2 font-medium">
+                                        Premium Amount
+                                    </label>
+
+                                    <select
+                                        value={insurancePreferences.premiumAmount}
+                                        onChange={(e) =>
+                                            setInsurancePreferences({
+                                                ...insurancePreferences,
+                                                premiumAmount: e.target.value
+                                            })
+                                        }
+                                        className="w-full border rounded-lg px-4 py-2"
+                                    >
+                                        <option value="">Select Premium</option>
+                                        <option value="5000">₹5,000 / year</option>
+                                        <option value="10000">₹10,000 / year</option>
+                                        <option value="20000">₹20,000 / year</option>
+                                        <option value="50000">₹50,000 / year</option>
                                     </select>
                                 </div>
                             </div>

@@ -1,5 +1,5 @@
-import { User, LogOut, Menu } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { User, LogOut, Menu } from "lucide-react";
+import { useNavigate } from 'react-router-dom';
 
 export function Navbar({
     setSidebarOpen,

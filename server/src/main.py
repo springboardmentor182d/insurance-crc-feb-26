@@ -8,9 +8,10 @@ from src.database.core import Base, engine, SessionLocal
 from src.entities.user import User
 from src.entities.dashboard import DashboardData
 from src.schemas.user_schema import UserCreate, UserResponse
-
+from src.users.controller import router as user_router
 
 app = FastAPI()
+app.include_router(user_router)
 
 # Create tables automatically
 Base.metadata.create_all(bind=engine)
