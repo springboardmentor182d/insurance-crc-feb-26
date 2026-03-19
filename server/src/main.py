@@ -7,7 +7,9 @@ from typing import List
 from src.database.core import Base, engine, SessionLocal
 from src.entities.user import User
 from src.entities.dashboard import DashboardData
+from src.entities.policy import Policy
 from src.schemas.user_schema import UserCreate, UserResponse
+from src.policies.controller import router as policies_router
 
 
 app = FastAPI()
@@ -39,6 +41,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Register routers
+app.include_router(policies_router)
 
 
 @app.get("/api/dashboard-data")
