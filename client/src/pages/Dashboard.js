@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../utils/apiClient'; // Note the '../' because we are now in the 'pages' folder
-import FromInput from '../components/Form/FromInput'; 
+import FormInput from '../components/Form/FormInput';
 import Formselect from '../components/Form/Formselect'; 
 import {
   FileText, Activity, AlertCircle, CheckCircle,
@@ -147,7 +147,7 @@ function DashboardPage() {
           <button onClick={() => setView('dashboard')} className="flex items-center text-blue-600 mb-8 font-bold text-xs"><ArrowLeft size={16} className="mr-2" /> BACK TO DASHBOARD</button>
           <h2 className="text-3xl font-black text-gray-900 mb-6">File a New Claim</h2>
           <form className="space-y-8">
-            <FromInput label="POLICY IDENTIFICATION" placeholder="e.g. BIMA-4492-X" />
+            <FormInput label="POLICY IDENTIFICATION" placeholder="e.g. BIMA-4492-X" />
             <Formselect label="CLAIM CATEGORY" options={[{ value: 'health', label: 'Health' }, { value: 'auto', label: 'Auto' }]} />
             <button type="button" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg">SUBMIT CLAIM</button>
           </form>
