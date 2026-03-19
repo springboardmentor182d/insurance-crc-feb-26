@@ -1,55 +1,34 @@
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+﻿from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-router = APIRouter()
+from src.auth.models import (
+    AdminLogin,
+    LoginRequest,
+    RefreshTokenRequest,
+    RegisterRequest,
+    TokenResponse,
+)
+from src.auth.service import AuthService
+from src.database.core import get_db
 
-
-# ==============================
-# Request Models
-# ==============================
-
-class SignupRequest(BaseModel):
-    name: str
-    email: str
-    password: str
-
-
-class LoginRequest(BaseModel):
-    email: str
-    password: str
+router = APIRouter(tags=["Auth"])
 
 
-# ==============================
-# Signup API
-# ==============================
-
-@router.post("/signup")
-def signup(user: SignupRequest):
-
-    return {
-        "message": "Signup successful",
-        "user": {
-            "name": user.name,
-            "email": user.email
-        }
-    }
+@router.post("/register", response_model=TokenResponse)
+def register(data: RegisterRequest, db: Session = Depends(get_db)):
+    return AuthService(db).register(data)
 
 
-# ==============================
-# Login API
-# ==============================
+@router.post("/login", response_model=TokenResponse)
+def login(data: LoginRequest, db: Session = Depends(get_db)):
+    return AuthService(db).login(data)
 
-@router.post("/login")
-def login(user: LoginRequest):
 
-    # dummy login check (later connect with database)
-    if user.email == "xfh@gmail.com" and user.password == "suchi32":
-        return {
-            "access_token": "sample-jwt-token",
-            "token_type": "bearer"
-        }
+@router.post("/admin/login", response_model=TokenResponse)
+def admin_login(data: AdminLogin, db: Session = Depends(get_db)):
+    return AuthService(db).admin_login(data)
 
-    raise HTTPException(
-        status_code=401,
-        detail="Invalid email or password"
-    )
+
+@router.post("/refresh", response_model=TokenResponse)
+def refresh(data: RefreshTokenRequest, db: Session = Depends(get_db)):
+    return AuthService(db).refresh(data.refresh_token)

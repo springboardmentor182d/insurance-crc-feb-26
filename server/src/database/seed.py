@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import select
 
 from src.database.core import SessionLocal, create_tables
-from src.database.models import (
+from src.database.admin_dashboard.models import (
     ActivityLog,
     ActivitySeverity,
     ActivityType,
@@ -20,6 +20,7 @@ from src.database.models import (
     User,
     UserRole,
 )
+from src.database.manage_policies.models.policy_profiles import PolicyProfile
 
 
 def seed_database() -> None:
@@ -130,6 +131,42 @@ def seed_database() -> None:
         ]
         session.add_all(policies)
         session.flush()
+
+        policy_profiles = [
+            PolicyProfile(
+                policy_id=policies[0].id,
+                policy_name="Comprehensive Auto Coverage",
+                provider="DriveSecure",
+                deductible_amount=500,
+                description="Collision and liability coverage for personal vehicles.",
+                created_at=now - timedelta(days=58),
+            ),
+            PolicyProfile(
+                policy_id=policies[1].id,
+                policy_name="Family Health Plan",
+                provider="HealthFirst",
+                deductible_amount=2500,
+                description="Comprehensive health insurance for families.",
+                created_at=now - timedelta(days=25),
+            ),
+            PolicyProfile(
+                policy_id=policies[2].id,
+                policy_name="Premium Home Protection",
+                provider="SafeGuard Insurance",
+                deductible_amount=1000,
+                description="Broad home protection for owner-occupied properties.",
+                created_at=now - timedelta(days=40),
+            ),
+            PolicyProfile(
+                policy_id=policies[3].id,
+                policy_name="Secure Life Shield",
+                provider="LifeCare Assurance",
+                deductible_amount=3000,
+                description="Long-term life insurance with fixed annual premium.",
+                created_at=now - timedelta(days=8),
+            ),
+        ]
+        session.add_all(policy_profiles)
 
         claims = [
             Claim(
