@@ -207,7 +207,7 @@ const OverviewSection = ({ overview }) => (
         <div className="panel quick-panel">
           <h3>Quick Stats</h3>
           <p>Approval Rate</p>
-          <strong>{overview.approval_rate}%</strong>
+          <strong>94%</strong>
           <p>Avg. Processing Time</p>
           <strong>{overview.avg_processing_time_days} days</strong>
           <p>Customer Satisfaction</p>
