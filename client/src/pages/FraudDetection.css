@@ -1,0 +1,254 @@
+.fraud-container{
+padding:30px;
+background:#f8fafc;
+min-height:100vh;
+font-family:Arial;
+}
+
+.subtitle{
+color:#6b7280;
+margin-bottom:25px;
+}
+
+.fraud-cards{
+display:flex;
+gap:20px;
+margin-bottom:25px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 8px rgba(0,0,0,0.08);
+width:220px;
+transition:0.2s;
+}
+
+.card:hover{
+transform:translateY(-3px);
+box-shadow:0 6px 15px rgba(0,0,0,0.1);
+}
+
+.card-top{
+display:flex;
+justify-content:space-between;
+margin-bottom:10px;
+}
+
+.icon{
+padding:10px;
+border-radius:8px;
+}
+
+.warning{background:#fde2e2;color:#dc2626;}
+.danger{background:#fee2e2;color:#b91c1c;}
+.success{background:#e6f9ec;color:#16a34a;}
+.shield{background:#e0edff;color:#2563eb;}
+
+.tabs{
+display:flex;
+gap:20px;
+margin-bottom:15px;
+}
+
+.tabs button{
+border:none;
+background:none;
+font-size:15px;
+cursor:pointer;
+}
+
+.active-tab{
+border-bottom:2px solid #2563eb;
+color:#2563eb;
+}
+
+.filters{
+display:flex;
+gap:15px;
+margin-bottom:20px;
+}
+
+.filters input{
+padding:8px;
+border-radius:6px;
+border:1px solid #ddd;
+}
+
+.fraud-table{
+width:100%;
+background:white;
+border-collapse:collapse;
+box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.fraud-table th{
+background:#f3f4f6;
+padding:14px;
+text-align:left;
+}
+
+.fraud-table td{
+padding:16px;
+border-bottom:1px solid #eee;
+}
+
+.policy{
+font-size:12px;
+color:#9ca3af;
+}
+
+.critical{
+background:#fee2e2;
+color:#dc2626;
+padding:6px 12px;
+border-radius:20px;
+}
+
+.high{
+background:#fff3e0;
+color:#ea580c;
+padding:6px 12px;
+border-radius:20px;
+}
+
+.medium{
+background:#fef9c3;
+color:#a16207;
+padding:6px 12px;
+border-radius:20px;
+}
+
+.confidence{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.progress{
+width:120px;
+height:8px;
+background:#e5e7eb;
+border-radius:6px;
+overflow:hidden;
+}
+
+.progress-bar{
+height:100%;
+background:#dc2626;
+transition:width 0.6s ease-in-out;
+}
+
+.rules ul{
+padding-left:15px;
+}
+
+.status{
+padding:6px 12px;
+border-radius:20px;
+font-size:12px;
+}
+
+.status.under-review{background:#e0edff;color:#2563eb;}
+.status.confirmed-fraud{background:#fde2e2;color:#b91c1c;}
+.status.dismissed{background:#e6f9ec;color:#15803d;}
+
+.actions button{
+border:none;
+background:#f3f4f6;
+cursor:pointer;
+font-size:16px;
+margin-right:8px;
+padding:6px 8px;
+border-radius:6px;
+transition:0.2s;
+}
+
+.actions button:hover{
+transform:scale(1.1);
+}
+
+.actions button:nth-child(1){color:#2563eb;}
+.actions button:nth-child(2){color:#dc2626;}
+.actions button:nth-child(3){color:#16a34a;}
+
+.rules-header{
+display:flex;
+justify-content:space-between;
+margin-bottom:15px;
+}
+
+.add-rule{
+background:#2563eb;
+color:white;
+border:none;
+padding:10px 15px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.pagination{
+display:flex;
+justify-content:center;
+align-items:center;
+gap:20px;
+margin-top:20px;
+}
+
+.pagination button{
+padding:8px 15px;
+border:none;
+background:#2563eb;
+color:white;
+border-radius:6px;
+cursor:pointer;
+}
+
+.pagination button:disabled{
+background:#9ca3af;
+cursor:not-allowed;
+}
+
+.modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.5);
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.modal-content{
+background:white;
+padding:30px;
+border-radius:10px;
+display:flex;
+flex-direction:column;
+gap:10px;
+width:350px;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select{
+padding:8px;
+border:1px solid #ccc;
+border-radius:5px;
+}
+
+.modal-content button{
+padding:10px;
+background:#2563eb;
+border:none;
+color:white;
+border-radius:5px;
+cursor:pointer;
+}
+
+.cancel{
+background:#dc2626;
+}
