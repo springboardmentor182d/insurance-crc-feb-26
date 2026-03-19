@@ -25,6 +25,9 @@ DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 if not DATABASE_URL:
 	raise RuntimeError("DATABASE_URL is required and must point to a PostgreSQL database.")
 
+if DATABASE_URL.startswith("postgres://"):
+	DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if not DATABASE_URL.startswith(("postgresql://", "postgresql+psycopg2://", "postgresql+psycopg://")):
 	raise RuntimeError("Only PostgreSQL is supported. Set DATABASE_URL to a PostgreSQL connection string.")
 

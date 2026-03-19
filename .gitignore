@@ -1,3 +1,4 @@
+node_modules
 ############################
 # 🔹 Python (FastAPI)
 ############################
@@ -44,3 +45,18 @@ htmlcov/
 ############################
 *.log
 
+
+# Database
+*.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# OS files
+.DS_Store
+Thumbs.db
+
+node_modules/
+package-lock.json
+.env
