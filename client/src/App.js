@@ -12,6 +12,7 @@ import Preferences from "./pages/Preferences";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
+import DashboardPage from "./pages/Dashboard";
 
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
@@ -63,6 +64,10 @@ const Dashboard = () => {
       >
         Logout
       </button>
+
+      <div style={{ marginTop: 40 }}>
+        <DashboardPage />
+      </div>
     </div>
   );
 };

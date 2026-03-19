@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from src.auth.models import (
@@ -32,8 +32,3 @@ def admin_login(data: AdminLogin, db: Session = Depends(get_db)):
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(data: RefreshTokenRequest, db: Session = Depends(get_db)):
     return AuthService(db).refresh(data.refresh_token)
-
-
-@router.post("/logout", status_code=204)
-def logout():
-    return None
