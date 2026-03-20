@@ -71,6 +71,27 @@ def get_users(db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching users: {str(e)}",
         )
+@router.get("/users/{user_id}", response_model=schemas.UserResponse)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
+
+        return user
+
+    except HTTPException:
+        raise   # ✅ keep original error (404)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error fetching user: {str(e)}"
+        )
 
 
 @router.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
@@ -622,3 +643,37 @@ def get_recent_activity(limit: int = 10, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error fetching recent activities: {str(e)}",
         )
+@router.put("/users/{user_id}", response_model=schemas.UserResponse)
+def update_user(user_id: int, data: dict, db: Session = Depends(get_db)):
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # ✅ update only provided fields
+        for key, value in data.items():
+            setattr(user, key, value)
+
+        db.commit()
+        db.refresh(user)
+
+        return user
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+@router.put("/users/{user_id}/preferences")
+def update_preferences(user_id: int, income: int, risk_level: str, db: Session = Depends(get_db)):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.income = income
+    user.risk_level = risk_level
+
+    db.commit()
+    db.refresh(user)
+
+    return {"message": "Preferences updated"}        

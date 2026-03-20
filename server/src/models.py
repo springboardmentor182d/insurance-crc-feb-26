@@ -11,6 +11,11 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     status = Column(String, default="Active")
 
+    # ✅ ADD THESE
+    income = Column(Integer, nullable=True)
+    risk_level = Column(String, nullable=True)
+    recommended_plan = Column(String, nullable=True)
+
 
 class FraudRule(Base):
     __tablename__ = "fraud_rules"
