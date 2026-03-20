@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../layout/user/Sidebar';
+import Sidebar from '../layout/Sidebar';
 import { getProfile, updateProfile } from '../features/profile/services/profileService';
 
 const Profile = () => {
