@@ -1,15 +1,16 @@
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-
 from src.api import api_router
 from src.database.core import SessionLocal
+from src.database.seeds import seed_fraud_rules
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
 
 setup_logging()
-
 app = FastAPI(
     title="BimaVerse API",
     description="Insurance Comparison, Recommendation & Claim Assistant",
@@ -32,6 +33,7 @@ def startup_db_check():
     try:
         with SessionLocal() as session:
             session.execute(text("SELECT 1"))
+        seed_fraud_rules()
     except SQLAlchemyError as exc:
         raise RuntimeError("Database connection failed on startup.") from exc
 

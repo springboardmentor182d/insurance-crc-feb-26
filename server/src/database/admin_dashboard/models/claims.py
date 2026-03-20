@@ -73,3 +73,6 @@ class Claim(Base):
     adjuster: Mapped["Adjuster | None"] = relationship(
         "Adjuster", back_populates="claims"
     )
+    fraud_flags: Mapped[list["FraudFlag"]] = relationship(
+        "FraudFlag", back_populates="claim", cascade="all, delete-orphan"
+    )
