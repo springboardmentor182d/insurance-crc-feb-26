@@ -46,4 +46,6 @@ async def root():
     return {"message": "BimaVerse API is running"}
 
 
+# Keep /api/v1 (new client) and root-prefixed routes (backward compatibility)
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router)

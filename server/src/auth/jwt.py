@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+﻿from datetime import datetime, timedelta
 import os
 from typing import Optional
 from jose import JWTError, jwt
@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from src.database.core import get_db
-from src.database.models.users import User
+from src.database.admin_dashboard.models.users import User
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-this-in-production")
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
@@ -38,7 +38,7 @@ def verify_token(token: str) -> Optional[dict]:
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     """Get current authenticated user from JWT token"""
     token = credentials.credentials
@@ -70,8 +70,6 @@ def get_current_user(
     return user
 
 
-def get_current_user_id(
-    current_user: User = Depends(get_current_user)
-) -> int:
+def get_current_user_id(current_user: User = Depends(get_current_user)) -> int:
     """Get current user ID from authenticated user"""
     return current_user.id
