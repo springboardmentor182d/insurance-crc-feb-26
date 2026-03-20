@@ -653,7 +653,7 @@ td {
   height: 175px;
   border: 1px dashed #d8dde3;
   border-radius: 8px;
-  background: linear-gradient(180deg, transparent 90%, #d8dde3 90%);
+  background: transparent;
 }
 
 .legend {
