@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Sidebar from '../layout/Sidebar';
+import Sidebar from '../layout/user/Sidebar';
 import {
   fetchActivePolicies,
   fetchActivePoliciesSummary,

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Sidebar from '../layout/Sidebar';
+import Sidebar from '../layout/user/Sidebar';
 import FromInput from '../components/Form/FromInput';
 import { fetchPolicies } from '../features/policies/services/policiesService';
 
@@ -11,8 +11,7 @@ const CATEGORY_FILTERS = [
   { id: 'HEALTH', label: 'Health' },
 ];
 
-// Fallback demo data so the catalog looks populated even
-// when the backend or database seeding is not ready yet.
+
 const SAMPLE_POLICIES = [
   {
     id: 1,
