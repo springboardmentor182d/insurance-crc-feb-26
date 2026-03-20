@@ -7,6 +7,8 @@ from src.claims.controller import router as claims_router
 from src.admin.manage_policies.controller import router as policies_router
 from src.auth.controller import router as auth_router
 from src.users.controller import router as users_router
+from src.active_policies.controller import router as policies_router
+from src.active_policies.controller import router as active_policies_router
 
 api_router = APIRouter()
 
