@@ -20,15 +20,17 @@ function Profile() {
 
   useEffect(() => {
 
-    apiClient.get("/users/1")
-      .then((res) => {
-        setUser(res.data);
-      })
-      .catch((err) => {
-        console.error("Error fetching user:", err);
-      });
+  const userId = localStorage.getItem("userId") || 1;
 
-  }, []);
+  apiClient.get(`/admin/users/${userId}`)
+    .then((res) => {
+      setUser(res.data);
+    })
+    .catch((err) => {
+      console.error("Error fetching user:", err);
+    });
+
+}, []);
 
   if (!user) {
     return (
