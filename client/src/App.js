@@ -13,6 +13,7 @@ import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
 import FraudRules from "./pages/admin/FraudRules";
 import FlaggedClaims from "./pages/admin/FlaggedClaims";
+import DashboardPage from "./pages/Dashboard";
 
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
@@ -81,6 +82,10 @@ const Dashboard = () => {
       >
         Logout
       </button>
+
+      <div style={{ marginTop: 40 }}>
+        <DashboardPage />
+      </div>
     </div>
   );
 };
