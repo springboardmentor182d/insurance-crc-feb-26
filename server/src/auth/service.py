@@ -1,14 +1,20 @@
 from datetime import datetime, timedelta
 import os
+from pathlib import Path
 from typing import Optional
 
 from fastapi import HTTPException, status
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from src.auth.jwt import create_access_token, verify_token
 from src.auth.models import AdminLogin, LoginRequest, RegisterRequest, TokenResponse
 from src.database.admin_dashboard.models.users import User, UserRole
+
+# Load .env from project root
+env_path = Path(__file__).resolve().parents[2] / ".env"
+load_dotenv(dotenv_path=env_path)
 
 REFRESH_SECRET_KEY = os.getenv(
     "JWT_REFRESH_SECRET_KEY", "your-refresh-secret-key-change-this-in-production"
@@ -152,7 +158,7 @@ class AuthService:
     def _make_tokens(self, user: User, admin: bool = False) -> TokenResponse:
         user_role = _role_as_frontend_value(user.role)
         token_payload = {
-            "sub": user.id,
+            "sub": str(user.id),
             "email": user.email,
             "role": user_role,
         }

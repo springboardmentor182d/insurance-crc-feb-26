@@ -2,6 +2,7 @@
 from src.database.admin_dashboard.models.activity_logs import ActivityLog
 from src.database.admin_dashboard.models.adjusters import Adjuster
 from src.database.admin_dashboard.models.claims import Claim, ClaimStatus
+from src.database.admin_dashboard.models.fraud_flags import FraudFlag
 from src.database.admin_dashboard.models.fraud_rules import FraudRule, FraudSeverity
 from src.database.admin_dashboard.models.policies import (
     Policy,
@@ -18,6 +19,7 @@ __all__ = [
     "Adjuster",
     "Claim",
     "ClaimStatus",
+    "FraudFlag",
     "FraudRule",
     "FraudSeverity",
     "Policy",
