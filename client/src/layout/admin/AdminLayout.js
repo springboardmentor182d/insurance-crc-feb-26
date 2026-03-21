@@ -4,8 +4,8 @@ const AdminLayout = ({ children }) => {
   return (
     <div className="flex h-screen bg-gray-50">
 
-      {/* Sidebar (Fixed Height, No Scroll) */}
-      <div className="w-[235px] bg-white h-full flex flex-col justify-between">
+      {/* Sidebar (Fixed, No Scroll) */}
+      <div className="w-[235px] bg-white h-full flex flex-col justify-between flex-shrink-0">
         <Sidebar />
       </div>
 
