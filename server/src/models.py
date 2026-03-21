@@ -55,6 +55,24 @@ class Claim(Base):
     policy = relationship("Policy", back_populates="claims")
 
 
+class Recommendation(Base):
+    __tablename__ = "recommendations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    category: Mapped[str] = mapped_column(String(80), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    provider: Mapped[str] = mapped_column(String(200), nullable=False)
+    match_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    coverage: Mapped[str] = mapped_column(String(100), nullable=False, default="")
+    premium: Mapped[str] = mapped_column(String(100), nullable=False, default="")
+    claim_ratio: Mapped[str] = mapped_column(String(30), nullable=False, default="0%")
+    risk_level: Mapped[str] = mapped_column(String(20), nullable=False, default="Medium")
+    why: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    family_health: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    is_top_recommendation: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
 class FraudRule(Base):
     __tablename__ = "fraud_rules"
 

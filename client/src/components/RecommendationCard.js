@@ -1,44 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { catalogService } from '../services/apiService';
+import React from 'react';
 import './RecommendationCard.css';
 
-const RecommendationCard = ({ category = null, topOnly = false }) => {
-  const [recommendations, setRecommendations] = useState([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    loadRecommendations();
-  }, [category, topOnly]);
-
-  const loadRecommendations = async () => {
-    try {
-      setLoading(true);
-      let data;
-      
-      if (topOnly) {
-        data = await catalogService.getTopRecommendations(category);
-      } else {
-        data = await catalogService.getRecommendations({ category });
-      }
-      
-      const recs = Array.isArray(data) ? data : data.recommendations || [];
-      setRecommendations(recs);
-      setSelectedIndex(0);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load recommendations");
-      console.error(err);
-      setRecommendations([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (loading) return <div className="recommendation-card"><p>Loading recommendations...</p></div>;
-  if (error) return <div className="recommendation-card"><p style={{ color: 'red' }}>{error}</p></div>;
-  if (recommendations.length === 0) {
+const RecommendationCard = ({ plan }) => {
+  if (!plan) {
     return (
       <div className="recommendation-card">
         <p style={{ textAlign: 'center', color: '#6b7280' }}>No recommendations available.</p>
@@ -46,8 +10,6 @@ const RecommendationCard = ({ category = null, topOnly = false }) => {
     );
   }
 
-  const plan = recommendations[selectedIndex];
-  // Helper to handle inconsistent naming from API
   const score = plan.match_score || plan.match || 0;
 
   return (
@@ -72,7 +34,7 @@ const RecommendationCard = ({ category = null, topOnly = false }) => {
 
       <div className="reason-box">
         <p className="reason-title">Why we recommend this</p>
-        <p className="reason-text">{plan.why || plan.reason || 'Great match for your profile'}</p>
+        <p className="reason-text">{plan.why || plan.reason || 'Based on your profile and policy performance data'}</p>
         {plan.family_health && (
           <p style={{ fontSize: '13px', color: '#4b5563', marginTop: '8px' }}>
             👨‍👩‍👧‍👦 {plan.family_health}
@@ -106,31 +68,6 @@ const RecommendationCard = ({ category = null, topOnly = false }) => {
           {plan.tags.map((tag, index) => (
             <span key={index} className="feature-tag">{tag}</span>
           ))}
-        </div>
-      )}
-
-      {/* Pagination Controls */}
-      {recommendations.length > 1 && (
-        <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-          <p style={{ fontSize: '12px', color: '#6b7280', marginBottom: '8px' }}>
-            Showing {selectedIndex + 1} of {recommendations.length}
-          </p>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-            <button
-              className="nav-btn"
-              onClick={() => setSelectedIndex(prev => prev - 1)}
-              disabled={selectedIndex === 0}
-            >
-              ← Previous
-            </button>
-            <button
-              className="nav-btn"
-              onClick={() => setSelectedIndex(prev => prev + 1)}
-              disabled={selectedIndex === recommendations.length - 1}
-            >
-              Next →
-            </button>
-          </div>
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MainLayout from '../layout/MainLayout';
 import RecommendationCard from '../components/RecommendationCard';
+import { catalogService } from '../services/apiService';
 import './Recommendation.css';
 
 const Recommendation = () => {
@@ -9,29 +10,19 @@ const Recommendation = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Fetching data from your backend
-    fetch('http://localhost:8000/api/recommendations')
-      .then((res) => {
-        if (!res.ok) {
-          return res.json().then((err) => {
-            throw new Error(err.detail || "Server Error");
-          });
-        }
-        return res.json();
-      })
-      .then((data) => {
-        if (Array.isArray(data)) {
-          setRecommendations(data);
-        } else {
-          setRecommendations([]);
-          console.error("Data received is not a list:", data);
-        }
+    const loadRecommendations = async () => {
+      try {
+        const data = await catalogService.getRecommendations();
+        const items = Array.isArray(data) ? data : data?.recommendations || [];
+        setRecommendations(items);
+      } catch (err) {
+        setError(err.message || 'Failed to load recommendations');
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
+      }
+    };
+
+    loadRecommendations();
   }, []);
 
   return (

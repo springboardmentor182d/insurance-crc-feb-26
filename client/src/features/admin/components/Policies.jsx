@@ -6,10 +6,12 @@ const INITIAL_FORM_STATE = {
   name: "",
   provider: "",
   policy_type: "Health",
-  coverage: "",
-  premium: "",
+  coverage_amount: "",
+  premium_amount: "",
   claim_ratio: "",
-  description: "",
+  risk_level: "Low",
+  is_active: true,
+  user_id: "",
 };
 
 const TYPE_COLORS = {
@@ -19,6 +21,11 @@ const TYPE_COLORS = {
   Home: "#8b5cf6",
   Travel: "#ec4899",
   Property: "#6366f1",
+};
+
+const formatCurrency = (value) => {
+  const amount = Number(value || 0);
+  return `₹${amount.toLocaleString("en-IN")}`;
 };
 
 const Policies = () => {
@@ -57,7 +64,16 @@ const Policies = () => {
   const handleOpenModal = (policy = null) => {
     if (policy) {
       setEditingPolicyId(policy.id);
-      setFormData({ ...policy, claim_ratio: policy.claim_ratio || "", description: policy.description || "" });
+      setFormData({
+        ...INITIAL_FORM_STATE,
+        ...policy,
+        coverage_amount: policy.coverage_amount ?? "",
+        premium_amount: policy.premium_amount ?? "",
+        claim_ratio: policy.claim_ratio ?? "",
+        risk_level: policy.risk_level || "Low",
+        is_active: policy.is_active ?? true,
+        user_id: policy.user_id ?? "",
+      });
     } else {
       setEditingPolicyId(null);
       setFormData(INITIAL_FORM_STATE);
@@ -78,18 +94,26 @@ const Policies = () => {
 
   // CRUD Actions
   const handleSavePolicy = async () => {
-    const { name, provider, coverage, premium } = formData;
-    if (!name || !provider || !coverage || !premium) {
+    const { name, provider, coverage_amount, premium_amount } = formData;
+    if (!name || !provider || coverage_amount === "" || premium_amount === "") {
       alert("Please fill in all required fields");
       return;
     }
 
     try {
       setLoading(true);
+      const payload = {
+        ...formData,
+        coverage_amount: Number(formData.coverage_amount || 0),
+        premium_amount: Number(formData.premium_amount || 0),
+        claim_ratio: Number(formData.claim_ratio || 0),
+        user_id: formData.user_id === "" ? null : Number(formData.user_id),
+      };
+
       if (editingPolicyId) {
-        await catalogService.updatePolicy(editingPolicyId, formData);
+        await catalogService.updatePolicy(editingPolicyId, payload);
       } else {
-        await catalogService.createPolicy(formData);
+        await catalogService.createPolicy(payload);
       }
       await fetchData();
       handleCloseModal();
@@ -162,9 +186,9 @@ const Policies = () => {
                       {policy.policy_type}
                     </span>
                   </td>
-                  <td className="bold">{policy.coverage}</td>
-                  <td className="bold">{policy.premium}</td>
-                  <td className="text-success-bold">{policy.claim_ratio}</td>
+                  <td className="bold">{formatCurrency(policy.coverage_amount)}</td>
+                  <td className="bold">{formatCurrency(policy.premium_amount)}</td>
+                  <td className="text-success-bold">{`${Number(policy.claim_ratio || 0)}%`}</td>
                   <td>
                     <button className="btn-link" onClick={() => handleOpenModal(policy)}>Edit</button>
                     <button className="btn-link-danger" onClick={() => handleDeletePolicy(policy.id)}>Delete</button>
@@ -196,13 +220,30 @@ const Policies = () => {
                 </select>
               </div>
 
-              <ModalInput label="Coverage Amount *" name="coverage" value={formData.coverage} onChange={handleInputChange} placeholder="e.g., ₹5.0L" />
-              <ModalInput label="Premium *" name="premium" value={formData.premium} onChange={handleInputChange} placeholder="e.g., ₹15,000/yr" />
-              <ModalInput label="Claim Ratio" name="claim_ratio" value={formData.claim_ratio} onChange={handleInputChange} placeholder="e.g., 95%" />
+              <ModalInput label="Coverage Amount *" type="number" name="coverage_amount" value={formData.coverage_amount} onChange={handleInputChange} placeholder="e.g., 500000" />
+              <ModalInput label="Premium *" type="number" name="premium_amount" value={formData.premium_amount} onChange={handleInputChange} placeholder="e.g., 15000" />
+              <ModalInput label="Claim Ratio" type="number" name="claim_ratio" value={formData.claim_ratio} onChange={handleInputChange} placeholder="e.g., 95" />
 
               <div className="modal-field">
-                <label>Description</label>
-                <textarea name="description" value={formData.description} onChange={handleInputChange} className="modal-input" placeholder="Policy description..." rows="3" />
+                <label>Risk Level</label>
+                <select name="risk_level" value={formData.risk_level} onChange={handleInputChange} className="modal-input">
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+
+              <div className="modal-field">
+                <label>Status</label>
+                <select
+                  name="is_active"
+                  value={String(formData.is_active)}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, is_active: e.target.value === "true" }))}
+                  className="modal-input"
+                >
+                  <option value="true">Active</option>
+                  <option value="false">Inactive</option>
+                </select>
               </div>
             </div>
             <div className="modal-footer">

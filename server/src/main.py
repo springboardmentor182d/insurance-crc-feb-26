@@ -6,7 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api import api_router
+from src.auth.controller import router as auth_router
 from src.database.core import init_db
+from src.routers.catalog import router as catalog_router
+from src.routers.platform import router as platform_router
+from src.users.controller import router as users_router
 
 load_dotenv()
 
@@ -40,6 +44,11 @@ def on_startup() -> None:
 
 
 app.include_router(api_router, prefix="/api")
+app.include_router(auth_router, prefix="/auth")
+app.include_router(users_router)
+app.include_router(catalog_router, prefix="/api")
+app.include_router(platform_router)
+app.include_router(platform_router, prefix="/api")
 
 
 @app.get("/health")

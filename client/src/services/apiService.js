@@ -3,12 +3,14 @@
  * Handles all API calls to the backend with proper error handling
  */
 
-const API_BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = (process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_BASE_URL || "").trim();
+
+const buildApiUrl = (endpoint) => `${API_BASE_URL}${endpoint}`;
 
 // Helper function for API calls with error handling
 const apiCall = async (endpoint, options = {}) => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(buildApiUrl(endpoint), {
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
@@ -33,34 +35,68 @@ const apiCall = async (endpoint, options = {}) => {
 // ============================================================================
 
 export const adminService = {
+  // Get dashboard payload (single source of truth for admin stats)
+  getDashboard: async () => {
+    return apiCall("/api/admin/dashboard");
+  },
+
   // Get overview statistics
   getOverview: async () => {
-    return apiCall("/admin/overview");
+    const dashboard = await apiCall("/api/admin/dashboard");
+    return dashboard.overview || {};
   },
 
   // Get quick stats
   getQuickStats: async () => {
-    return apiCall("/admin/quick-stats");
+    const overview = await adminService.getOverview();
+    return {
+      approval_rate: overview.approval_rate || 0,
+      avg_processing_time: overview.avg_processing_time_days || 0,
+      customer_satisfaction: overview.customer_satisfaction || 0,
+    };
   },
 
   // Get system alerts
   getSystemAlerts: async () => {
-    return apiCall("/admin/system-alerts");
+    const overview = await adminService.getOverview();
+    return {
+      alerts: [
+        {
+          priority: "High",
+          message: `${overview.high_priority_alerts || 0} high-risk claims pending review`,
+          icon: "!",
+        },
+        {
+          priority: "Medium",
+          message: `${overview.medium_priority_alerts || 0} claims under review`,
+          icon: "!",
+        },
+      ],
+    };
   },
 
   // Get recent activity
   getRecentActivity: async () => {
-    return apiCall("/admin/recent-activity");
+    const dashboard = await apiCall("/api/admin/dashboard");
+    return {
+      activities: (dashboard.recent_activity || []).map((item, index) => ({
+        id: index + 1,
+        action: item.title || "Activity",
+        description: item.description || "",
+        entity_type: item.type || "System",
+        timestamp: item.timestamp || new Date().toISOString(),
+      })),
+    };
   },
 
   // Get users
   getUsers: async () => {
-    return apiCall("/admin/users");
+    return apiCall("/api/users");
   },
 
   // Create user
   createUser: async (userData) => {
-    return apiCall("/admin/users", {
+    return apiCall("/api/users", {
       method: "POST",
       body: JSON.stringify(userData),
     });
@@ -68,7 +104,7 @@ export const adminService = {
 
   // Update user
   updateUser: async (userId, userData) => {
-    return apiCall(`/admin/users/${userId}`, {
+    return apiCall(`/api/users/${userId}`, {
       method: "PUT",
       body: JSON.stringify(userData),
     });
@@ -76,26 +112,27 @@ export const adminService = {
 
   // Delete user
   deleteUser: async (userId) => {
-    return apiCall(`/admin/users/${userId}`, {
+    return apiCall(`/api/users/${userId}`, {
       method: "DELETE",
     });
   },
 
   // Toggle user status
   toggleUserStatus: async (userId) => {
-    return apiCall(`/admin/users/${userId}/toggle-status`, {
+    return apiCall(`/api/users/${userId}/toggle-status`, {
       method: "PUT",
     });
   },
 
   // Get fraud rules
   getFraudRules: async () => {
-    return apiCall("/admin/fraud-rules");
+    const dashboard = await apiCall("/api/admin/dashboard");
+    return dashboard.fraud_rules || [];
   },
 
   // Create fraud rule
   createFraudRule: async (ruleData) => {
-    return apiCall("/admin/fraud-rules", {
+    return apiCall("/api/admin/fraud-rules", {
       method: "POST",
       body: JSON.stringify(ruleData),
     });
@@ -103,7 +140,7 @@ export const adminService = {
 
   // Update fraud rule
   updateFraudRule: async (ruleId, ruleData) => {
-    return apiCall(`/admin/fraud-rules/${ruleId}`, {
+    return apiCall(`/api/admin/fraud-rules/${ruleId}`, {
       method: "PUT",
       body: JSON.stringify(ruleData),
     });
@@ -111,26 +148,27 @@ export const adminService = {
 
   // Toggle fraud rule status
   toggleFraudRuleStatus: async (ruleId) => {
-    return apiCall(`/admin/fraud-rules/${ruleId}/toggle-status`, {
+    return apiCall(`/api/admin/fraud-rules/${ruleId}/toggle-status`, {
       method: "PUT",
     });
   },
 
   // Delete fraud rule
   deleteFraudRule: async (ruleId) => {
-    return apiCall(`/admin/fraud-rules/${ruleId}`, {
+    return apiCall(`/api/admin/fraud-rules/${ruleId}`, {
       method: "DELETE",
     });
   },
 
   // Get claims
   getClaims: async () => {
-    return apiCall("/admin/claims");
+    const dashboard = await apiCall("/api/admin/dashboard");
+    return dashboard.claims || [];
   },
 
   // Create claim
   createClaim: async (claimData) => {
-    return apiCall("/admin/claims", {
+    return apiCall("/api/admin/claims", {
       method: "POST",
       body: JSON.stringify(claimData),
     });
@@ -138,19 +176,20 @@ export const adminService = {
 
   // Delete claim
   deleteClaim: async (claimId) => {
-    return apiCall(`/admin/claims/${claimId}`, {
+    return apiCall(`/api/admin/claims/${claimId}`, {
       method: "DELETE",
     });
   },
 
   // Get analytics
   getAnalytics: async () => {
-    return apiCall("/admin/analytics");
+    return apiCall("/api/analytics");
   },
 
   // Get comprehensive analytics
   getComprehensiveAnalytics: async () => {
-    return apiCall("/admin/analytics/comprehensive");
+    const dashboard = await apiCall("/api/admin/dashboard");
+    return dashboard.analytics || {};
   },
 };
 
@@ -162,17 +201,17 @@ export const catalogService = {
   // Get all policies
   getPolicies: async (filters = {}) => {
     const params = new URLSearchParams(filters).toString();
-    return apiCall(`/catalog/policies?${params}`);
+    return apiCall(`/api/policies${params ? `?${params}` : ""}`);
   },
 
   // Get single policy
   getPolicy: async (policyId) => {
-    return apiCall(`/catalog/policies/${policyId}`);
+    return apiCall(`/api/policies/${policyId}`);
   },
 
   // Create policy
   createPolicy: async (policyData) => {
-    return apiCall("/catalog/policies", {
+    return apiCall("/api/policies", {
       method: "POST",
       body: JSON.stringify(policyData),
     });
@@ -180,7 +219,7 @@ export const catalogService = {
 
   // Update policy
   updatePolicy: async (policyId, policyData) => {
-    return apiCall(`/catalog/policies/${policyId}`, {
+    return apiCall(`/api/policies/${policyId}`, {
       method: "PUT",
       body: JSON.stringify(policyData),
     });
@@ -188,30 +227,32 @@ export const catalogService = {
 
   // Delete policy
   deletePolicy: async (policyId) => {
-    return apiCall(`/catalog/policies/${policyId}`, {
+    return apiCall(`/api/policies/${policyId}`, {
       method: "DELETE",
     });
   },
 
   // Get policy types
   getPolicyTypes: async () => {
-    return apiCall("/catalog/policy-types");
+    const policies = await catalogService.getPolicies();
+    const types = [...new Set((policies || []).map((policy) => policy.policy_type).filter(Boolean))];
+    return { types };
   },
 
   // Get all recommendations
   getRecommendations: async (filters = {}) => {
     const params = new URLSearchParams(filters).toString();
-    return apiCall(`/catalog/recommendations?${params}`);
+    return apiCall(`/api/recommendations${params ? `?${params}` : ""}`);
   },
 
   // Get single recommendation
   getRecommendation: async (recommendationId) => {
-    return apiCall(`/catalog/recommendations/${recommendationId}`);
+    return apiCall(`/api/catalog/recommendations/${recommendationId}`);
   },
 
   // Create recommendation
   createRecommendation: async (recommendationData) => {
-    return apiCall("/catalog/recommendations", {
+    return apiCall("/api/catalog/recommendations", {
       method: "POST",
       body: JSON.stringify(recommendationData),
     });
@@ -219,7 +260,7 @@ export const catalogService = {
 
   // Update recommendation
   updateRecommendation: async (recommendationId, recommendationData) => {
-    return apiCall(`/catalog/recommendations/${recommendationId}`, {
+    return apiCall(`/api/catalog/recommendations/${recommendationId}`, {
       method: "PUT",
       body: JSON.stringify(recommendationData),
     });
@@ -227,23 +268,29 @@ export const catalogService = {
 
   // Delete recommendation
   deleteRecommendation: async (recommendationId) => {
-    return apiCall(`/catalog/recommendations/${recommendationId}`, {
+    return apiCall(`/api/catalog/recommendations/${recommendationId}`, {
       method: "DELETE",
     });
   },
 
   // Get recommendation categories
   getRecommendationCategories: async () => {
-    return apiCall("/catalog/recommendation-categories");
+    return apiCall("/api/catalog/recommendation-categories");
   },
 
   // Get top recommendations
   getTopRecommendations: async (category = null) => {
-    const params = new URLSearchParams({ top_only: true });
+    const params = new URLSearchParams();
     if (category) {
       params.append("category", category);
     }
-    return apiCall(`/catalog/recommendations?${params.toString()}`);
+    const recommendations = await catalogService.getRecommendations(
+      Object.fromEntries(params.entries())
+    );
+    const items = Array.isArray(recommendations)
+      ? recommendations
+      : recommendations?.recommendations || [];
+    return items.filter((item) => item.is_top_recommendation);
   },
 };
 
