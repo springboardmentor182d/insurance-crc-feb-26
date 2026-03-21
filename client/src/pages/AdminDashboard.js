@@ -7,7 +7,7 @@ import PolicyDistribution from "../features/admin/dashboard/components/PolicyDis
 import TopAdjusters from "../features/admin/dashboard/components/TopAdjusters";
 import RecentActivity from "../features/admin/dashboard/components/RecentActivity";
 import ActionCard from "../features/admin/dashboard/components/ActionCard";
-import "../features/admin/dashboard/dashboardColors.css";
+import "../features/admin/dashboardColors.css";
 import { useNavigate } from "react-router-dom";
 import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
 import { HiOutlineChartBar } from "react-icons/hi";

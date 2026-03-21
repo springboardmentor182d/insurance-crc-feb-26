@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, field_validator
-from typing import Optional
 from datetime import date
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class RegisterRequest(BaseModel):
@@ -11,14 +12,14 @@ class RegisterRequest(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def password_strength(cls, v: str) -> str:
-        if len(v) < 8:
+    def password_strength(cls, value: str) -> str:
+        if len(value) < 8:
             raise ValueError("Password must be at least 8 characters")
-        if not any(c.isupper() for c in v):
+        if not any(char.isupper() for char in value):
             raise ValueError("Password must contain at least one uppercase letter")
-        if not any(c.isdigit() for c in v):
+        if not any(char.isdigit() for char in value):
             raise ValueError("Password must contain at least one number")
-        return v
+        return value
 
 
 class LoginRequest(BaseModel):
@@ -33,10 +34,18 @@ class AdminLogin(BaseModel):
     admin_secret: str
 
 
+class AuthUser(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    role: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    user: AuthUser
 
 
 class RefreshTokenRequest(BaseModel):

@@ -1,12 +1,9 @@
 import os
 from pathlib import Path
 from typing import Generator
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 # Load .env from project root
 env_path = Path(__file__).resolve().parents[2] / ".env"
@@ -14,23 +11,23 @@ load_dotenv(dotenv_path=env_path)
 
 
 def _build_database_url() -> str:
-    # For local development we prefer a lightweight sqlite DB so the
-    # backend can run without a running Postgres instance. This avoids
-    # startup failures when Postgres isn't available on the host machine.
-    sqlite_path = Path(__file__).resolve().parents[2] / "dev_data.sqlite3"
-    return f"sqlite:///{sqlite_path.as_posix()}"
+    explicit_url = os.getenv("DATABASE_URL")
+    if explicit_url:
+        # Replace asyncpg with psycopg2 if needed
+        return explicit_url.replace("asyncpg", "psycopg2")
 
+    user = os.getenv("POSTGRES_USER", "bimaverse_user")
+    password = os.getenv("POSTGRES_PASSWORD", "bimaverse_pass")
+    host = os.getenv("POSTGRES_HOST", "localhost")
+    port = os.getenv("POSTGRES_PORT", "5432")
+    database = os.getenv("POSTGRES_DB", "bimaverse")
+
+    return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
 
 DATABASE_URL = _build_database_url()
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
-
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
-
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
@@ -43,16 +40,8 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def create_tables() -> None:
-    try:
-        import src.database.models  # noqa: F401
-    except InvalidRequestError:
-        # If models have already been defined in this interpreter session,
-        # ignore and continue to create tables (if needed).
-        pass
+    # Ensure all ORM models are registered before create_all
+    import src.database.admin_dashboard.models  # noqa: F401
+    import src.database.manage_policies.models  # noqa: F401
 
-    try:
-        Base.metadata.create_all(bind=engine)
-    except InvalidRequestError:
-        # During rapid development the same table may be defined more than once
-        # in the same interpreter session. In that case, ignore and continue.
-        pass
+    Base.metadata.create_all(bind=engine)

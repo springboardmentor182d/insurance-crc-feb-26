@@ -1,18 +1,19 @@
-from sqlalchemy.orm import Session
-from src.database.models.users import User
-from src.database.models.user_preferences import UserPreferences
-from src.users.models import ProfileBase, PreferencesBase
 from typing import Optional
+from sqlalchemy.orm import Session
+from src.database.admin_dashboard.models.user_preferences import UserPreferences
+from src.database.admin_dashboard.models.users import User
+from src.users.models import PreferencesBase, ProfileBase
 
-
-def _merge_full_name(first_name: Optional[str], last_name: Optional[str], fallback: str) -> str:
+def _merge_full_name(
+    first_name: Optional[str],
+    last_name: Optional[str],
+    fallback: str,
+) -> str:
     parts = [part.strip() for part in [first_name, last_name] if part and part.strip()]
     return " ".join(parts) if parts else fallback
 
-
 def get_user_profile(db: Session, user_id: int) -> Optional[User]:
     return db.query(User).filter(User.id == user_id).first()
-
 
 def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) -> User:
     user = db.query(User).filter(User.id == user_id).first()
@@ -36,9 +37,10 @@ def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) ->
     db.refresh(user)
     return user
 
-
 def get_user_preferences(db: Session, user_id: int) -> Optional[UserPreferences]:
-    preferences = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
+    preferences = (
+        db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
+    )
 
     if not preferences:
         preferences = UserPreferences(user_id=user_id)
@@ -48,9 +50,14 @@ def get_user_preferences(db: Session, user_id: int) -> Optional[UserPreferences]
 
     return preferences
 
-
-def update_user_preferences(db: Session, user_id: int, preferences_data: PreferencesBase) -> UserPreferences:
-    preferences = db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
+def update_user_preferences(
+    db: Session,
+    user_id: int,
+    preferences_data: PreferencesBase,
+) -> UserPreferences:
+    preferences = (
+        db.query(UserPreferences).filter(UserPreferences.user_id == user_id).first()
+    )
 
     if not preferences:
         preferences = UserPreferences(user_id=user_id)
