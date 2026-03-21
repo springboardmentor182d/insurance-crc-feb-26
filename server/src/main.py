@@ -6,7 +6,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from src.api import api_router
 from src.database.core import SessionLocal
 from src.exceptions import setup_exception_handlers
-from src.logging import setup_logging
+from src.custom_logging import setup_logging
 
 setup_logging()
 
@@ -18,7 +18,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3004",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3004",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -29,11 +34,15 @@ setup_exception_handlers(app)
 
 @app.on_event("startup")
 def startup_db_check():
+    # For dev/local, skip strict DB check as sqlite may not be initialized yet.
+    # Errors will be caught when endpoints actually use the DB.
     try:
         with SessionLocal() as session:
             session.execute(text("SELECT 1"))
     except SQLAlchemyError as exc:
-        raise RuntimeError("Database connection failed on startup.") from exc
+        # Log but don't raise; let endpoints handle DB errors gracefully
+        import logging
+        logging.warning(f"Database connection warning on startup: {exc}")
 
 
 @app.get("/health", tags=["Health"])

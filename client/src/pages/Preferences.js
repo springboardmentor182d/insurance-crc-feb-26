@@ -51,7 +51,7 @@ const Preferences = () => {
         });
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load preferences');
+      setError(err.response?.data?.detail);
     } finally {
       setLoading(false);
     }

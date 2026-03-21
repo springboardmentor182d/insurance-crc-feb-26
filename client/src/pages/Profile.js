@@ -55,7 +55,7 @@ const Profile = () => {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to load profile');
+      setError(err.response?.data?.detail);
     } finally {
       setLoading(false);
     }

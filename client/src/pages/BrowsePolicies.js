@@ -12,86 +12,7 @@ const CATEGORY_FILTERS = [
 ];
 
 
-const SAMPLE_POLICIES = [
-  {
-    id: 1,
-    category: 'HOME',
-    insurer_name: 'SafeGuard Insurance',
-    name: 'Premium Home Protection',
-    tagline: 'Comprehensive coverage for your home and belongings.',
-    premium_annual: 1200,
-    coverage_amount: 500000,
-    deductible_amount: 1000,
-    average_rating: 4.8,
-    rating_count: 124,
-    key_features: ['Fire & theft coverage', 'Natural disaster protection', 'Liability coverage'],
-  },
-  {
-    id: 2,
-    category: 'AUTO',
-    insurer_name: 'DriveSecure',
-    name: 'Comprehensive Auto Coverage',
-    tagline: 'Peace of mind for every drive.',
-    premium_annual: 850,
-    coverage_amount: 250000,
-    deductible_amount: 500,
-    average_rating: 4.6,
-    rating_count: 201,
-    key_features: ['Collision coverage', 'Comprehensive coverage', 'Roadside assistance'],
-  },
-  {
-    id: 3,
-    category: 'LIFE',
-    insurer_name: 'LifeGuard',
-    name: 'Life Insurance Plus',
-    tagline: 'Protect your family’s future.',
-    premium_annual: 2400,
-    coverage_amount: 1000000,
-    deductible_amount: null,
-    average_rating: 4.9,
-    rating_count: 89,
-    key_features: ['Term life coverage', 'Cash value accumulation', 'Living benefits'],
-  },
-  {
-    id: 4,
-    category: 'HEALTH',
-    insurer_name: 'HealthFirst',
-    name: 'Family Health Plan',
-    tagline: 'Complete protection for your family.',
-    premium_annual: 3600,
-    coverage_amount: 2000000,
-    deductible_amount: 2500,
-    average_rating: 4.7,
-    rating_count: 142,
-    key_features: ['Preventive care', 'Emergency services', 'Prescription coverage'],
-  },
-  {
-    id: 5,
-    category: 'HOME',
-    insurer_name: 'HomeShield',
-    name: 'Basic Home Insurance',
-    tagline: 'Essential coverage at an affordable price.',
-    premium_annual: 800,
-    coverage_amount: 300000,
-    deductible_amount: 2000,
-    average_rating: 4.4,
-    rating_count: 76,
-    key_features: ['Fire coverage', 'Theft protection', 'Liability coverage'],
-  },
-  {
-    id: 6,
-    category: 'AUTO',
-    insurer_name: 'AutoProtect',
-    name: 'Auto Essentials',
-    tagline: 'Solid coverage for everyday driving.',
-    premium_annual: 650,
-    coverage_amount: 150000,
-    deductible_amount: 1000,
-    average_rating: 4.3,
-    rating_count: 58,
-    key_features: ['Liability coverage', 'Medical payments', 'Uninsured motorist'],
-  },
-];
+// Policies are fetched from the backend; in-file mock data removed.
 
 const PolicyCard = ({ policy, selected, onToggleSelect }) => {
   const deductibleLabel =
@@ -214,22 +135,40 @@ const BrowsePolicies = () => {
   const [error, setError] = useState(null);
 
   const loadPolicies = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await fetchPolicies({ search, category: activeCategory });
-      if (data && data.length > 0) {
-        setPolicies(data);
-      } else {
-        setPolicies(SAMPLE_POLICIES);
+    setLoading(true);
+    setError(null);
+    let lastErr = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        console.debug(`fetchPolicies attempt ${attempt} starting...`);
+        const data = await fetchPolicies({ search, category: activeCategory });
+        console.debug('fetchPolicies response:', data);
+        console.debug(`Response type: ${typeof data}, is array: ${Array.isArray(data)}, length: ${data?.length || 'N/A'}`);
+        if (Array.isArray(data)) {
+          setPolicies(data);
+          lastErr = null;
+          console.info(`Successfully loaded ${data.length} policies`);
+          break;
+        } else {
+          throw new Error(`Expected array from API, got ${typeof data}`);
+        }
+      } catch (err) {
+        console.warn(`fetchPolicies attempt ${attempt} failed:`, err);
+        console.error(`Error details - message: ${err?.message}, status: ${err?.response?.status}, data: ${JSON.stringify(err?.response?.data)}`);
+        lastErr = err;
+        // small backoff
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((res) => setTimeout(res, 300 * attempt));
       }
-    } catch (err) {
-      // If the backend is not available, fall back to demo data
-      setPolicies(SAMPLE_POLICIES);
-      setError(null);
-    } finally {
-      setLoading(false);
     }
+
+    if (lastErr) {
+      console.error('Failed to load policies after 3 retries:', lastErr);
+      setPolicies([]);
+      const message = lastErr?.response?.data?.detail || lastErr?.message || 'Failed to load policies. Is the backend running?';
+      setError(message);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -348,8 +287,17 @@ const BrowsePolicies = () => {
           )}
 
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between">
+              <div className="pr-4">{error}</div>
+              <div>
+                <button
+                  type="button"
+                  onClick={loadPolicies}
+                  className="inline-flex items-center rounded-md bg-red-600 text-white px-3 py-1 text-sm font-medium hover:bg-red-700"
+                >
+                  Try again
+                </button>
+              </div>
             </div>
           )}
 
