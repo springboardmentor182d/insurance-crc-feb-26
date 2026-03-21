@@ -12,6 +12,8 @@ from src.admin.dashboard.service import (
     get_policy_distribution,
     get_top_adjusters,
     get_recent_activity,
+    get_all_policies,  
+    get_all_claims,
 )
 from src.admin.dashboard.models import (
     AdminStatsResponse,
@@ -72,41 +74,48 @@ async def top_adjusters():
 async def recent_activity():
     return await get_recent_activity()
 
+# @router.get("/policies")
+# async def get_active_policies():
+#     return [
+#         {
+#             "name": "Home Insurance Premium",
+#             "sub": "Property Coverage",
+#             "price": "$120/month"
+#         },
+#         {
+#             "name": "Auto Comprehensive",
+#             "sub": "Vehicle Protection",
+#             "price": "$95/month"
+#         },
+#         {
+#             "name": "Life Insurance Plus",
+#             "sub": "Life Protection",
+#             "price": "$150/month"
+#         }
+#     ]
+
+# @router.get("/claims")
+# async def get_recent_claims():
+#     return [
+#         {
+#             "id": "CLM-1021",
+#             "type": "Auto",
+#             "date": "2026-02-14",
+#             "amount": "$1200",
+#             "status": "Pending"
+#         },
+#         {
+#             "id": "CLM-1044",
+#             "type": "Health",
+#             "date": "2026-01-20",
+#             "amount": "$850",
+#             "status": "Resolved"
+#         }
+#     ]
 @router.get("/policies")
-async def get_active_policies():
-    return [
-        {
-            "name": "Home Insurance Premium",
-            "sub": "Property Coverage",
-            "price": "$120/month"
-        },
-        {
-            "name": "Auto Comprehensive",
-            "sub": "Vehicle Protection",
-            "price": "$95/month"
-        },
-        {
-            "name": "Life Insurance Plus",
-            "sub": "Life Protection",
-            "price": "$150/month"
-        }
-    ]
+async def get_active_policies(db: Session = Depends(get_db)):
+    return await get_all_policies(db)
 
 @router.get("/claims")
-async def get_recent_claims():
-    return [
-        {
-            "id": "CLM-1021",
-            "type": "Auto",
-            "date": "2026-02-14",
-            "amount": "$1200",
-            "status": "Pending"
-        },
-        {
-            "id": "CLM-1044",
-            "type": "Health",
-            "date": "2026-01-20",
-            "amount": "$850",
-            "status": "Resolved"
-        }
-    ]
+async def get_recent_claims(db: Session = Depends(get_db)):
+    return await get_all_claims(db)
