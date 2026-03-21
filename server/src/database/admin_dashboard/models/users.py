@@ -50,3 +50,6 @@ class User(Base):
     activity_logs: Mapped[List["ActivityLog"]] = relationship(
         "ActivityLog", back_populates="user"
     )
+    preferences: Mapped["UserPreferences | None"] = relationship(
+        "UserPreferences", back_populates="user", uselist=False
+    )

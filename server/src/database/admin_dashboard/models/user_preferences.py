@@ -2,8 +2,8 @@
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.core import Base
 
@@ -13,7 +13,7 @@ class UserPreferences(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(
-        Integer, nullable=False, unique=True, index=True
+        ForeignKey("users.id"), nullable=False, unique=True, index=True
     )
 
     email_notifications: Mapped[bool] = mapped_column(
@@ -68,3 +68,5 @@ class UserPreferences(Base):
     updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), onupdate=func.now(), nullable=True
     )
+
+    user: Mapped["User"] = relationship("User", back_populates="preferences")

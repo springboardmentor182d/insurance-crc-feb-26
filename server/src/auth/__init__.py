@@ -1,22 +1,64 @@
 from fastapi import Depends, HTTPException, status
-
-from src.auth.jwt import get_current_user, get_current_user_id
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
+from src.auth.jwt import get_current_user
 from src.auth.service import decode_access_token
+from src.database.core import get_db
+
+security = HTTPBearer()
 
 
-def require_admin(current_user=Depends(get_current_user)):
-    role_value = getattr(current_user.role, "value", str(current_user.role)).lower()
-    if role_value != "admin":
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db)
+) -> dict:
+    """
+    Extract JWT from Authorization header,
+    validate it, and return the logged-in user.
+    """
+
+    payload = decode_access_token(credentials.credentials)
+
+    result = await db.execute(
+        text("SELECT id, name, email, role FROM users WHERE id = :id"),
+        {"id": int(payload["sub"])}
+    )
+
+    user = result.fetchone()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "role": user.role
+    }
+
+
+async def require_admin(
+    current_user: dict = Depends(get_current_user)
+) -> dict:
+    """
+    Allow only admin users
+    """
+
+    if current_user["role"] != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required",
+            detail="Admin access required"
         )
+
     return current_user
 
 
 __all__ = [
     "decode_access_token",
     "get_current_user",
-    "get_current_user_id",
     "require_admin",
 ]

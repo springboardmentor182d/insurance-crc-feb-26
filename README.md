@@ -1,6 +1,10 @@
 # insurance-crc-feb-26
 # BimaVerse Setup
 
+## Database Documentation
+- Detailed DB architecture, ER diagram, and feature-to-table mapping:
+  - `docs/database-architecture.md`
+
 ## Prerequisites
 - Docker Desktop running
 - Python 3.10+

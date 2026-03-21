@@ -7,6 +7,7 @@ import {
   FiBarChart2,
   FiLogOut,
 } from "react-icons/fi";
+import { ROUTES } from "../../data/constants";
 
 const Sidebar = () => {
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ const Sidebar = () => {
         <div className="mt-6 space-y-3 px-3">
 
           <NavLink
-            to="/admin"
+            to={ROUTES.ADMIN_DASHBOARD}
             end
             className={({ isActive }) =>
               `${navItem} ${isActive

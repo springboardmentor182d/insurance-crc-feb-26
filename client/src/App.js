@@ -1,18 +1,19 @@
 import React from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { TOKEN_KEYS, ROUTES, ROLES } from "./data/constants";
 
-import { ROLES, ROUTES, TOKEN_KEYS } from "./data/constants";
-
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminLogin from "./pages/AdminLogin";
+// Pages
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import ManagePolicies from "./pages/ManagePolicies";
-import Preferences from "./pages/Preferences";
-import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
+import AdminLogin from "./pages/AdminLogin";
+import Profile from "./pages/Profile";
+import Preferences from "./pages/Preferences";
+import Settings from "./pages/Settings";
+import AdminDashboard from "./pages/AdminDashboard";
+import ManagePolicies from "./pages/ManagePolicies";
 
+// ================= Utility =================
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
   if (!userRaw || userRaw === "undefined") return null;
@@ -24,11 +25,13 @@ const getStoredUser = () => {
   }
 };
 
+// ================= Protected Route =================
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const token = localStorage.getItem(TOKEN_KEYS.ACCESS);
   const user = getStoredUser();
 
   if (!token || !user) return <Navigate to={ROUTES.LOGIN} replace />;
+
   if (adminOnly && user.role !== ROLES.ADMIN) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
@@ -36,6 +39,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   return children;
 };
 
+// ================= Dashboard =================
 const Dashboard = () => {
   const user = getStoredUser();
 
@@ -45,37 +49,27 @@ const Dashboard = () => {
   };
 
   return (
-    <div style={{ padding: 40, fontFamily: "Outfit, sans-serif" }}>
-      <h1 style={{ color: "#1a47d1" }}>Welcome, {user?.name || "User"}!</h1>
-      <p style={{ color: "#6b7280", marginTop: 8 }}>Role: {user?.role || "N/A"}</p>
-      <button
-        onClick={handleLogout}
-        style={{
-          marginTop: 24,
-          padding: "10px 24px",
-          background: "#1a47d1",
-          color: "white",
-          border: "none",
-          borderRadius: 8,
-          cursor: "pointer",
-          fontWeight: 600,
-        }}
-      >
-        Logout
-      </button>
+    <div style={{ padding: 40 }}>
+      <h1>Welcome, {user?.name || "User"}!</h1>
+      <p>Role: {user?.role || "N/A"}</p>
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 };
 
-export default function App() {
+// ================= App =================
+function App() {
   return (
     <BrowserRouter>
       <Routes>
+
+        {/* Public Routes */}
         <Route path={ROUTES.HOME} element={<Home />} />
         <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route path={ROUTES.SIGNUP} element={<Signup />} />
         <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLogin />} />
 
+        {/* User Routes */}
         <Route
           path={ROUTES.DASHBOARD}
           element={
@@ -84,6 +78,13 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={<Navigate to={ROUTES.ADMIN_DASHBOARD} replace />}
+        />
+
         <Route
           path={ROUTES.ADMIN_DASHBOARD}
           element={
@@ -92,14 +93,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute adminOnly>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
+
         <Route
           path="/admin/manage-policies"
           element={
@@ -108,6 +102,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Other Protected Routes */}
         <Route
           path={ROUTES.PROFILE}
           element={
@@ -116,6 +112,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path={ROUTES.PREFERENCES}
           element={
@@ -124,6 +121,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path={ROUTES.SETTINGS}
           element={
@@ -133,8 +131,12 @@ export default function App() {
           }
         />
 
+        {/* Fallback */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+
       </Routes>
     </BrowserRouter>
   );
 }
+
+export default App;
