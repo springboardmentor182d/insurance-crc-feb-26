@@ -16,8 +16,11 @@ function DashboardPage() {
     const fetchData = async () => {
       try {
         const pRes = await apiClient.get("/api/v1/admin/policies");
-        const cRes = await apiClient.get("/api/v1/admin/claims");
+        console.log("Check this data structure:", pRes.data); // Look at this in F12 console
         setPolicies(pRes.data);
+        const cRes = await apiClient.get("/api/v1/admin/claims");
+        console.log("Check this data structure:", cRes.data); // Look at this in F12 console
+        //setPolicies(pRes.data);
         setClaims(cRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -32,10 +35,15 @@ function DashboardPage() {
   const totalActivePolicies = policies.length;
   
   // 2. Dynamic Coverage Sum (Formatted with "M" for Millions)
+  // const rawCoverageSum = policies.reduce((sum, policy) => {
+  //   const value = parseFloat(policy.price.replace(/[^0-9.]/g, '')) || 0;
+  //   return sum + value;
+  // }, 0);
   const rawCoverageSum = policies.reduce((sum, policy) => {
-    const value = parseFloat(policy.price.replace(/[^0-9.]/g, '')) || 0;
-    return sum + value;
-  }, 0);
+  // Use premium_amount or coverage_amount and ensure it's a number
+  const value = parseFloat(policy.premium_amount) || 0; 
+  return sum + value;
+}, 0);
 
   // 3. Dynamic Claims Filtering
   const pendingClaimsCount = claims.filter(c => c.status === 'Pending').length;
@@ -118,10 +126,21 @@ function DashboardPage() {
               </div>
               <div className="space-y-4">
                 {policies.map((policy, i) => (
-                  <div key={i} className="flex justify-between items-center p-4 bg-gray-50 border border-gray-100 rounded-2xl">
-                    <div><p className="font-bold text-gray-900">{policy.name}</p><p className="text-xs text-gray-400">{policy.sub}</p></div>
-                    <div className="text-right"><p className="font-bold text-gray-900">{policy.price}</p><span className="text-[10px] font-black text-green-600 uppercase bg-green-100 px-2 py-1 rounded">Active</span></div>
-                  </div>
+                  // <div key={i} className="flex justify-between items-center p-4 bg-gray-50 border border-gray-100 rounded-2xl">
+                  //   <div><p className="font-bold text-gray-900">{policy.name}</p><p className="text-xs text-gray-400">{policy.sub}</p></div>
+                  //   <div className="text-right"><p className="font-bold text-gray-900">{policy.price}</p><span className="text-[10px] font-black text-green-600 uppercase bg-green-100 px-2 py-1 rounded">Active</span></div>
+                  // </div>
+                  <div key={i} className="...">
+    <div>
+      {/* Use the actual column names from your SQLAlchemy model */}
+      <p className="font-bold text-gray-900">{policy.policy_type}</p>
+      <p className="text-xs text-gray-400">ID: {policy.policy_number}</p>
+    </div>
+    <div className="text-right">
+      <p className="font-bold text-gray-900">${policy.premium_amount}</p>
+      <span className="text-[10px] font-black text-green-600 uppercase bg-green-100 px-2 py-1 rounded">Active</span>
+    </div>
+  </div>
                 ))}
               </div>
             </div>

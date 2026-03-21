@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from typing import Generator
-
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
@@ -24,7 +23,6 @@ def _build_database_url() -> str:
     database = os.getenv("POSTGRES_DB", "bimaverse")
 
     return f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-
 
 DATABASE_URL = _build_database_url()
 

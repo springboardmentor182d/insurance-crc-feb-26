@@ -1,6 +1,11 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-
+from src.database.admin_dashboard.models.claims import Claim
+try:
+    from src.database.admin_dashboard.models.policies import Policy
+except ImportError:
+    # If the above fails, we might need to look in the 'admin' models
+    from src.admin.models import Policy
 from src.admin.dashboard.models import (
     AdminStatsData,
     AdminStatsResponse,
@@ -93,3 +98,9 @@ async def get_top_adjusters():
 async def get_recent_activity():
     activities = [RecentActivityItem(**row) for row in get_recent_activity_snapshot()]
     return RecentActivityResponse(data=activities)
+
+async def get_all_policies(db: Session):
+    return db.query(Policy).all()
+
+async def get_all_claims(db: Session):
+    return db.query(Claim).all()

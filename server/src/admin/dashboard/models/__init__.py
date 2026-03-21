@@ -5,6 +5,7 @@ from .recent_activity import RecentActivityItem, RecentActivityResponse
 from .revenue import RevenuePoint, RevenueResponse
 from .top_adjusters import TopAdjuster, TopAdjustersResponse
 
+
 __all__ = [
     "AdminStatsData",
     "AdminStatsResponse",
