@@ -1,3 +1,4 @@
+
 from src.entities.user import User
 
 def create_user(db, name, email, password):
@@ -29,3 +30,5 @@ def login_user(db, email, password):
         return None
 
     return user
+
+# update 
