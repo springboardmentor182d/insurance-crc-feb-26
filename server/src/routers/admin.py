@@ -1,472 +1,637 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import text
 from sqlalchemy.orm import Session
+from typing import List
+from .. import database
+from .. import models
+from .. import schemas
 
-from src.database.core import get_db
-
-router = APIRouter()
-
-
-def _format_rupees_compact(amount: float) -> str:
-    lakhs = amount / 100000 if amount else 0
-    return f"\u20b9{lakhs:.1f}L"
+router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _to_float(value: object) -> float:
-    try:
-        if value is None:
-            return 0.0
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def _to_int(value: object) -> int:
-    try:
-        if value is None:
-            return 0
-        return int(value)
-    except (TypeError, ValueError):
-        return 0
-
-
-def _normalize_risk_level(value: str | None) -> str:
-    if not value:
-        return "Low"
-    lowered = value.strip().lower()
-    if lowered == "high":
-        return "High"
-    if lowered == "medium":
-        return "Medium"
-    return "Low"
-
-
-def _risk_priority(value: str) -> int:
-    priorities = {"low": 1, "medium": 2, "high": 3}
-    return priorities.get(value.lower(), 1)
-
-
-def _month_buckets() -> list[tuple[int, int, str]]:
-    now = datetime.utcnow()
-    buckets: list[tuple[int, int, str]] = []
-    for offset in range(5, -1, -1):
-        month = now.month - offset
-        year = now.year
-        while month <= 0:
-            month += 12
-            year -= 1
-        buckets.append((year, month, datetime(year, month, 1).strftime("%b")))
-    return buckets
-
-
-def _safe_datetime(raw_value: object) -> datetime | None:
-    if raw_value is None:
-        return None
-    if isinstance(raw_value, datetime):
-        return raw_value
-    try:
-        return datetime.fromisoformat(str(raw_value).replace("Z", "+00:00"))
-    except ValueError:
-        return None
-
-
-def _percent_change(current: float, previous: float) -> float:
-    if previous <= 0:
-        return 0.0
-    return ((current - previous) / previous) * 100.0
-
-
-@router.get("/dashboard")
-def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
-    try:
-        db.execute(text("SELECT 1"))
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Database unavailable for admin dashboard",
-        ) from exc
-
-    users_rows = db.execute(
-        text(
-            """
-            SELECT id, full_name, email, is_active, created_at
-            FROM users
-            ORDER BY created_at DESC
-            """
-        )
-    ).mappings().all()
-
-    policies_rows = db.execute(
-        text(
-            """
-            SELECT id, name, provider, policy_type, coverage_amount, premium_amount, claim_ratio,
-                   risk_level, is_active, user_id, created_at
-            FROM policies
-            ORDER BY created_at DESC
-            """
-        )
-    ).mappings().all()
-
-    claims_rows = db.execute(
-        text(
-            """
-            SELECT id, claim_type, amount, status, risk_level, user_id, policy_id, created_at
-            FROM claims
-            ORDER BY created_at DESC
-            """
-        )
-    ).mappings().all()
-
-    fraud_rules_rows = db.execute(
-        text(
-            """
-            SELECT id, name, condition, severity, is_active, created_at
-            FROM fraud_rules
-            ORDER BY created_at DESC
-            """
-        )
-    ).mappings().all()
-
-    try:
-        activity_rows = db.execute(
-            text(
-                """
-                SELECT id, action, description, entity_type, created_at
-                FROM activity_logs
-                ORDER BY created_at DESC
-                LIMIT 10
-                """
-            )
-        ).mappings().all()
-    except Exception:
-        activity_rows = []
-
-    user_id_to_name = {row["id"]: row.get("full_name") or "-" for row in users_rows}
-    policy_id_to_name = {row["id"]: row.get("name") or "-" for row in policies_rows}
-
-    total_claims = len(claims_rows)
-    high_risk_claims = sum(1 for row in claims_rows if str(row.get("risk_level") or "").lower() == "high")
-    active_policies_rows = [row for row in policies_rows if bool(row.get("is_active"))]
-    active_policies = len(active_policies_rows)
-
-    users_with_plans_set = {
-        row.get("user_id")
-        for row in active_policies_rows
-        if row.get("user_id") is not None
-    }
-    users_with_plans = len(users_with_plans_set)
-
-    approved_claims = sum(
-        1
-        for row in claims_rows
-        if str(row.get("status") or "").lower() in {"approved", "paid"}
-    )
-    approval_rate = round((approved_claims / total_claims) * 100, 1) if total_claims else 0
-
-    claims_paid = sum(
-        _to_float(row.get("amount"))
-        for row in claims_rows
-        if str(row.get("status") or "").lower() in {"approved", "paid"}
-    )
-    total_revenue = sum(_to_float(row.get("premium_amount")) for row in active_policies_rows)
-
-    policies_by_user: dict[int, list[dict]] = {}
-    for row in active_policies_rows:
-        user_id = row.get("user_id")
-        if user_id is None:
-            continue
-        policies_by_user.setdefault(user_id, []).append(row)
-
-    users_data = []
-    for row in users_rows:
-        user_id = row.get("id")
-        user_policies = policies_by_user.get(user_id, [])
-        coverage_sum = sum(_to_float(policy.get("coverage_amount")) for policy in user_policies)
-        full_name = str(row.get("full_name") or "User")
-        initials = "".join(part[0].upper() for part in full_name.split()[:2]) or "U"
-        users_data.append(
-            {
-                "id": user_id,
-                "initials": initials,
-                "name": full_name,
-                "email": str(row.get("email") or ""),
-                "plans": len(user_policies),
-                "coverage": _format_rupees_compact(coverage_sum),
-                "status": "active" if bool(row.get("is_active")) else "inactive",
-            }
-        )
-
-    policies_data = []
-    for row in policies_rows:
-        policies_data.append(
-            {
-                "id": row.get("id"),
-                "name": str(row.get("name") or ""),
-                "provider": str(row.get("provider") or ""),
-                "type": str(row.get("policy_type") or ""),
-                "coverage": _format_rupees_compact(_to_float(row.get("coverage_amount"))),
-                "premium": _format_rupees_compact(_to_float(row.get("premium_amount"))),
-                "ratio": f"{_to_float(row.get('claim_ratio')):.0f}%",
-                "risk_level": _normalize_risk_level(str(row.get("risk_level") or "Low")),
-                "user_id": row.get("user_id"),
-            }
-        )
-
-    claims_data = []
-    for row in claims_rows:
-        claims_data.append(
-            {
-                "id": row.get("id"),
-                "claim_id": f"CLM-{_to_int(row.get('id')):04d}",
-                "user": user_id_to_name.get(row.get("user_id"), "-"),
-                "policy": policy_id_to_name.get(row.get("policy_id"), "-"),
-                "type": str(row.get("claim_type") or "General"),
-                "amount": _format_rupees_compact(_to_float(row.get("amount"))),
-                "status": str(row.get("status") or "pending"),
-                "risk": _normalize_risk_level(str(row.get("risk_level") or "Low")),
-            }
-        )
-
-    fraud_rules_data = []
-    for row in fraud_rules_rows:
-        fraud_rules_data.append(
-            {
-                "id": row.get("id"),
-                "name": str(row.get("name") or ""),
-                "condition": str(row.get("condition") or ""),
-                "severity": _normalize_risk_level(str(row.get("severity") or "Medium")),
-                "status": "active" if bool(row.get("is_active")) else "inactive",
-            }
-        )
-
-    user_risk_map: dict[int, str] = {}
-    for policy in policies_data:
-        user_id = policy.get("user_id")
-        if user_id is None:
-            continue
-        policy_risk = _normalize_risk_level(str(policy.get("risk_level") or "Low"))
-        current = user_risk_map.get(user_id)
-        if current is None or _risk_priority(policy_risk) > _risk_priority(current):
-            user_risk_map[user_id] = policy_risk
-
-    active_users_table = []
-    for user in users_data:
-        active_users_table.append(
-            {
-                "name": user["name"],
-                "email": user["email"],
-                "plans": user["plans"],
-                "coverage": user["coverage"],
-                "risk_level": user_risk_map.get(user["id"], "Low"),
-                "status": user["status"],
-                "initials": user["initials"],
-            }
-        )
-
-    active_provider_counts: dict[str, int] = {}
-    for row in active_policies_rows:
-        provider_name = str(row.get("provider_name") or "Unknown")
-        active_provider_counts[provider_name] = active_provider_counts.get(provider_name, 0) + 1
-
-    month_index = _month_buckets()
-    month_lookup = {(year, month): idx for idx, (year, month, _) in enumerate(month_index)}
-    policy_counts = [0] * len(month_index)
-    claim_counts = [0] * len(month_index)
-    high_risk_counts = [0] * len(month_index)
-    user_counts = [0] * len(month_index)
-    premium_sums = [0.0] * len(month_index)
-    paid_claim_sums = [0.0] * len(month_index)
-
-    for row in policies_rows:
-        created_at = _safe_datetime(row.get("created_at"))
-        if created_at is None:
-            continue
-        key = (created_at.year, created_at.month)
-        if key in month_lookup:
-            idx = month_lookup[key]
-            policy_counts[idx] += 1
-            premium_sums[idx] += _to_float(row.get("premium_amount"))
-
-    for row in users_rows:
-        created_at = _safe_datetime(row.get("created_at"))
-        if created_at is None:
-            continue
-        key = (created_at.year, created_at.month)
-        if key in month_lookup:
-            user_counts[month_lookup[key]] += 1
-
-    for row in claims_rows:
-        created_at = _safe_datetime(row.get("created_at"))
-        if created_at is None:
-            continue
-        key = (created_at.year, created_at.month)
-        if key in month_lookup:
-            idx = month_lookup[key]
-            claim_counts[idx] += 1
-            if str(row.get("risk_level") or "").lower() == "high":
-                high_risk_counts[idx] += 1
-            if str(row.get("status") or "").lower() in {"approved", "paid"}:
-                paid_claim_sums[idx] += _to_float(row.get("amount"))
-
-    month_over_month_growth = 0.0
-    if len(policy_counts) >= 2 and policy_counts[-2] > 0:
-        month_over_month_growth = ((policy_counts[-1] - policy_counts[-2]) / policy_counts[-2]) * 100
-
-    claims_trend_percent = _percent_change(claim_counts[-1], claim_counts[-2]) if len(claim_counts) >= 2 else 0.0
-    high_risk_trend_percent = _percent_change(high_risk_counts[-1], high_risk_counts[-2]) if len(high_risk_counts) >= 2 else 0.0
-    users_with_plans_trend_percent = _percent_change(user_counts[-1], user_counts[-2]) if len(user_counts) >= 2 else 0.0
-    revenue_trend_percent = _percent_change(premium_sums[-1], premium_sums[-2]) if len(premium_sums) >= 2 else 0.0
-    claims_paid_trend_percent = _percent_change(paid_claim_sums[-1], paid_claim_sums[-2]) if len(paid_claim_sums) >= 2 else 0.0
-
-    max_coverage = sum(_to_float(row.get("coverage_amount")) for row in active_policies_rows)
-    claim_ratio = round((claims_paid / max_coverage) * 100, 1) if max_coverage else 0
-
-    active_users_count = len([user for user in users_data if user["status"] == "active"])
-    active_users_trend_percent = _percent_change(active_users_count, max(active_users_count - user_counts[-1], 0))
-
-    closed_claim_durations = []
-    now = datetime.utcnow()
-    for row in claims_rows:
-        status = str(row.get("status") or "").lower()
-        if status in {"pending", "submitted"}:
-            continue
-        created_at = _safe_datetime(row.get("created_at"))
-        if created_at is None:
-            continue
-        closed_claim_durations.append(max((now - created_at).days, 0))
-
-    avg_processing_time_days = round(
-        (sum(closed_claim_durations) / len(closed_claim_durations)) if closed_claim_durations else 0,
-        1,
-    )
-
-    customer_satisfaction = round(min(5.0, max(0.0, 3.0 + (approval_rate / 50.0))), 1) if total_claims else 0
-    total_policies = len(policies_rows)
-    renewal_rate = round((active_policies / total_policies) * 100, 1) if total_policies else 0
-    fraud_detection_rate = round((high_risk_claims / total_claims) * 100, 1) if total_claims else 0
-    user_retention = round((active_users_count / len(users_rows)) * 100, 1) if users_rows else 0
-    processing_speed_percent = round(max(0.0, min(100.0, 100.0 - (avg_processing_time_days * 4.0))), 1)
-    claim_ratio_trend_percent = _percent_change(claim_ratio, max(claim_ratio - 1.0, 0.0)) if claim_ratio else 0.0
-
-    performance_metrics = [
-        {
-            "label": "Customer Satisfaction",
-            "value": f"{customer_satisfaction:.1f}/5.0",
-            "percent": round((customer_satisfaction / 5.0) * 100, 1) if customer_satisfaction else 0,
-        },
-        {
-            "label": "Claim Processing Speed",
-            "value": f"{avg_processing_time_days:.1f} days avg",
-            "percent": processing_speed_percent,
-        },
-        {
-            "label": "Policy Renewal Rate",
-            "value": f"{renewal_rate:.1f}%",
-            "percent": renewal_rate,
-        },
-        {
-            "label": "Fraud Detection Rate",
-            "value": f"{fraud_detection_rate:.1f}%",
-            "percent": fraud_detection_rate,
-        },
-        {
-            "label": "User Retention",
-            "value": f"{user_retention:.1f}%",
-            "percent": user_retention,
-        },
-    ]
-
-    claims_by_status = {
-        "pending": 0,
-        "approved": 0,
-        "rejected": 0,
-    }
-    for row in claims_rows:
-        status = str(row.get("status") or "").lower()
-        if status in claims_by_status:
-            claims_by_status[status] += 1
-
-    policy_type_counts: dict[str, int] = {}
-    for row in policies_rows:
-        policy_type = str(row.get("policy_type") or "Unknown")
-        policy_type_counts[policy_type] = policy_type_counts.get(policy_type, 0) + 1
-
-    recent_activity = []
-    if activity_rows:
-        for row in activity_rows:
-            recent_activity.append(
-                {
-                    "id": row.get("id"),
-                    "title": str(row.get("action") or "Activity"),
-                    "description": str(row.get("description") or ""),
-                    "type": str(row.get("entity_type") or "System"),
-                    "timestamp": (_safe_datetime(row.get("created_at")) or datetime.utcnow()).isoformat(),
-                }
-            )
-    else:
-        for row in claims_rows[:5]:
-            recent_activity.append(
-                {
-                    "id": row.get("id"),
-                    "title": f"Claim {str(row.get('status') or 'updated').title()}",
-                    "description": f"{str(row.get('claim_type') or 'General')} claim of {_format_rupees_compact(_to_float(row.get('amount')))}",
-                    "type": "Claim",
-                    "timestamp": (_safe_datetime(row.get("created_at")) or datetime.utcnow()).isoformat(),
-                }
-            )
-
+@router.get("", include_in_schema=False)
+def admin_root():
     return {
-        "overview": {
-            "total_claims": total_claims,
-            "high_risk_claims": high_risk_claims,
-            "active_policies": active_policies,
-            "users_with_plans": users_with_plans,
-            "approval_rate": approval_rate,
-            "avg_processing_time_days": avg_processing_time_days,
-            "customer_satisfaction": customer_satisfaction,
-            "high_priority_alerts": high_risk_claims,
-            "medium_priority_alerts": max(total_claims - approved_claims, 0),
-            "claims_trend_percent": round(claims_trend_percent, 1),
-            "high_risk_trend_percent": round(high_risk_trend_percent, 1),
-            "active_policies_trend_percent": round(month_over_month_growth, 1),
-            "users_with_plans_trend_percent": round(users_with_plans_trend_percent, 1),
-        },
-        "recent_activity": recent_activity,
-        "users": users_data,
-        "policies": policies_data,
-        "claims": claims_data,
-        "fraud_rules": fraud_rules_data,
-        "active_policies": {
-            "total_active_policies": active_policies,
-            "monthly_growth_percent": round(month_over_month_growth, 1),
-            "users_with_active_plans": users_with_plans,
-            "users": active_users_table,
-            "by_provider": [
-                {"provider": key, "count": value}
-                for key, value in sorted(active_provider_counts.items(), key=lambda item: item[1], reverse=True)
-            ],
-        },
-        "analytics": {
-            "total_revenue": _format_rupees_compact(total_revenue),
-            "claims_paid": _format_rupees_compact(claims_paid),
-            "active_users": active_users_count,
-            "claim_ratio": f"{claim_ratio:.1f}%",
-            "total_revenue_trend_percent": round(revenue_trend_percent, 1),
-            "claims_paid_trend_percent": round(claims_paid_trend_percent, 1),
-            "active_users_trend_percent": round(active_users_trend_percent, 1),
-            "claim_ratio_trend_percent": round(claim_ratio_trend_percent, 1),
-            "monthly_trends": {
-                "labels": [label for _, _, label in month_index],
-                "policies": policy_counts,
-                "claims": claim_counts,
-            },
-            "performance_metrics": performance_metrics,
-            "claims_by_status": claims_by_status,
-            "policies_by_type": [
-                {"type": key, "count": value}
-                for key, value in sorted(policy_type_counts.items())
-            ],
-        },
+        "message": "Admin API is running. Use /admin/overview, /admin/users, /admin/fraud-rules, /admin/analytics",
     }
+
+
+def get_db():
+    db = database.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# ============================================
+# OVERVIEW ENDPOINT
+# ============================================
+@router.get("/overview", response_model=schemas.OverviewStats)
+def get_overview(db: Session = Depends(get_db)):
+    """Get overview statistics for admin dashboard"""
+    try:
+        # Total users with insurance policies
+        total_users = db.query(models.User).count()
+        
+        # Active policies from policies table
+        active_policies = db.query(models.Policy).filter(models.Policy.is_active == True).count()
+        
+        # Total claims submitted
+        total_claims = db.query(models.Claim).count()
+        
+        # High-risk claims (Under Review or Rejected status)
+        high_risk_claims = db.query(models.Claim).filter(
+            models.Claim.status.in_(["Under Review", "Rejected"])
+        ).count()
+
+        return {
+            "total_users": total_users,
+            "active_policies": active_policies,
+            "claims": total_claims,
+            "fraud_alerts": high_risk_claims,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching overview: {str(e)}",
+        )
+
+
+# ============================================
+# USER ENDPOINTS
+# ============================================
+@router.get("/users", response_model=List[schemas.UserResponse])
+def get_users(db: Session = Depends(get_db)):
+    """Get all users"""
+    try:
+        users = db.query(models.User).all()
+        return users
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching users: {str(e)}",
+        )
+
+
+@router.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    """Create a new user"""
+    try:
+        # Check if user with email already exists
+        existing_user = db.query(models.User).filter(models.User.email == user.email).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists",
+            )
+
+        db_user = models.User(
+            full_name=user.name,
+            email=user.email,
+            password_hash="",
+            is_active=True,
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating user: {str(e)}",
+        )
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    """Delete a user by ID"""
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        db.delete(user)
+        db.commit()
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting user: {str(e)}",
+        )
+
+
+@router.put("/users/{user_id}/toggle-status", response_model=schemas.UserResponse)
+def toggle_user_status(user_id: int, db: Session = Depends(get_db)):
+    """Toggle user status between Active and Inactive"""
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+
+        user.status = "Inactive" if user.status == "Active" else "Active"
+        db.commit()
+        db.refresh(user)
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error toggling user status: {str(e)}",
+        )
+
+
+# ============================================
+# FRAUD RULE ENDPOINTS
+# ============================================
+@router.get("/fraud-rules", response_model=List[schemas.FraudRuleResponse])
+def get_fraud_rules(db: Session = Depends(get_db)):
+    """Get all fraud rules"""
+    try:
+        rules = db.query(models.FraudRule).all()
+        return rules
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching fraud rules: {str(e)}",
+        )
+
+
+@router.post("/fraud-rules", response_model=schemas.FraudRuleResponse, status_code=status.HTTP_201_CREATED)
+def create_fraud_rule(rule: schemas.FraudRuleCreate, db: Session = Depends(get_db)):
+    """Create a new fraud rule"""
+    try:
+        db_rule = models.FraudRule(
+            name=rule.name,
+            condition=rule.description,
+            severity=rule.priority or "Medium",
+            is_active=(rule.status or "Active") == "Active",
+        )
+        db.add(db_rule)
+        db.commit()
+        db.refresh(db_rule)
+        return db_rule
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating fraud rule: {str(e)}",
+        )
+
+
+@router.put("/fraud-rules/{rule_id}", response_model=schemas.FraudRuleResponse)
+def update_fraud_rule(rule_id: int, rule_update: schemas.FraudRuleUpdate, db: Session = Depends(get_db)):
+    """Update a fraud rule by ID"""
+    try:
+        rule = db.query(models.FraudRule).filter(models.FraudRule.id == rule_id).first()
+        if not rule:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Fraud rule not found",
+            )
+
+        update_data = rule_update.model_dump(exclude_unset=True)
+        if "name" in update_data:
+            rule.name = update_data["name"]
+        if "description" in update_data:
+            rule.condition = update_data["description"]
+        if "priority" in update_data:
+            rule.severity = update_data["priority"]
+        if "status" in update_data:
+            rule.is_active = str(update_data["status"]).lower() == "active"
+
+        db.commit()
+        db.refresh(rule)
+        return rule
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating fraud rule: {str(e)}",
+        )
+
+
+@router.put("/fraud-rules/{rule_id}/toggle-status", response_model=schemas.FraudRuleResponse)
+def toggle_fraud_rule_status(rule_id: int, db: Session = Depends(get_db)):
+    """Toggle fraud rule status between Active and Inactive"""
+    try:
+        rule = db.query(models.FraudRule).filter(models.FraudRule.id == rule_id).first()
+        if not rule:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Fraud rule not found",
+            )
+
+        rule.is_active = not rule.is_active
+        db.commit()
+        db.refresh(rule)
+        return rule
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error toggling fraud rule status: {str(e)}",
+        )
+
+
+@router.delete("/fraud-rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_fraud_rule(rule_id: int, db: Session = Depends(get_db)):
+    """Delete a fraud rule by ID"""
+    try:
+        rule = db.query(models.FraudRule).filter(models.FraudRule.id == rule_id).first()
+        if not rule:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Fraud rule not found",
+            )
+
+        db.delete(rule)
+        db.commit()
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting fraud rule: {str(e)}",
+        )
+
+
+# ============================================
+# CLAIMS ENDPOINT
+# ============================================
+@router.get("/claims", response_model=List[schemas.ClaimResponse])
+def get_claims(db: Session = Depends(get_db)):
+    """Get all claims"""
+    try:
+        claims = db.query(models.Claim).all()
+        return claims
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching claims: {str(e)}",
+        )
+
+
+@router.post("/claims", response_model=schemas.ClaimResponse, status_code=status.HTTP_201_CREATED)
+def create_claim(claim: schemas.ClaimCreate, db: Session = Depends(get_db)):
+    """Create a new claim"""
+    try:
+        amount_value = claim.amount
+        if isinstance(amount_value, str):
+            amount_value = amount_value.replace("₹", "").replace(",", "")
+        db_claim = models.Claim(
+            claim_type=claim.claim_type,
+            amount=float(amount_value),
+            status=claim.status,
+            risk_level=claim.priority,
+        )
+        db.add(db_claim)
+        db.commit()
+        db.refresh(db_claim)
+        return db_claim
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating claim: {str(e)}",
+        )
+
+
+@router.delete("/claims/{claim_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_claim(claim_id: int, db: Session = Depends(get_db)):
+    """Delete a claim by ID"""
+    try:
+        claim = db.query(models.Claim).filter(models.Claim.id == claim_id).first()
+        if not claim:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Claim not found",
+            )
+
+        db.delete(claim)
+        db.commit()
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting claim: {str(e)}",
+        )
+
+
+# ============================================
+# ANALYTICS ENDPOINT
+# ============================================
+@router.get("/analytics/comprehensive", response_model=schemas.ComprehensiveAnalytics)
+def get_comprehensive_analytics(db: Session = Depends(get_db)):
+    """Get comprehensive analytics calculated from actual claims data"""
+    try:
+        all_claims = db.query(models.Claim).all()
+        
+        if not all_claims:
+            # Return zeros if no claims
+            return {
+                "total_claims": 0,
+                "approved_claims": 0,
+                "pending_claims": 0,
+                "rejected_claims": 0,
+                "under_review_claims": 0,
+                "average_claim_amount": 0,
+                "approval_rate": 0,
+                "fraud_rate": 0,
+                "claims_by_type": {},
+                "claims_by_priority": {}
+            }
+        
+        # Calculate statistics
+        total_claims = len(all_claims)
+        approved_claims = sum(1 for c in all_claims if c.status == "Approved")
+        pending_claims = sum(1 for c in all_claims if c.status == "Pending")
+        rejected_claims = sum(1 for c in all_claims if c.status == "Rejected")
+        under_review_claims = sum(1 for c in all_claims if c.status == "Under Review")
+        
+        amounts = [float(c.amount) for c in all_claims if c.amount is not None]
+        average_amount = sum(amounts) / len(amounts) if amounts else 0
+        
+        # Calculate rates
+        approval_rate = (approved_claims / total_claims * 100) if total_claims > 0 else 0
+        fraud_rate = (rejected_claims / total_claims * 100) if total_claims > 0 else 0
+        
+        # Distribution by type
+        claims_by_type = {}
+        for claim in all_claims:
+            claim_type = claim.claim_type
+            claims_by_type[claim_type] = claims_by_type.get(claim_type, 0) + 1
+        
+        # Distribution by priority
+        claims_by_priority = {}
+        for claim in all_claims:
+            priority = claim.risk_level
+            claims_by_priority[priority] = claims_by_priority.get(priority, 0) + 1
+        
+        return {
+            "total_claims": total_claims,
+            "approved_claims": approved_claims,
+            "pending_claims": pending_claims,
+            "rejected_claims": rejected_claims,
+            "under_review_claims": under_review_claims,
+            "average_claim_amount": round(average_amount, 2),
+            "approval_rate": round(approval_rate, 2),
+            "fraud_rate": round(fraud_rate, 2),
+            "claims_by_type": claims_by_type,
+            "claims_by_priority": claims_by_priority
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching comprehensive analytics: {str(e)}",
+        )
+
+
+@router.get("/analytics", response_model=List[schemas.ClaimStatsResponse])
+def get_analytics(db: Session = Depends(get_db)):
+    """Get analytics data for claims per month"""
+    try:
+        stats = db.query(models.ClaimStats).all()
+        return stats
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching analytics: {str(e)}",
+        )
+
+
+@router.get("/quick-stats")
+def get_quick_stats(db: Session = Depends(get_db)):
+    """Get quick stats for dashboard with real data"""
+    try:
+        all_claims = db.query(models.Claim).all()
+        
+        if not all_claims:
+            return {
+                "approval_rate": 0,
+                "avg_processing_time": 0,
+                "customer_satisfaction": 0
+            }
+        
+        # Calculate Approval Rate
+        total_claims = len(all_claims)
+        approved_claims = sum(1 for c in all_claims if c.status == "Approved")
+        approval_rate = (approved_claims / total_claims * 100) if total_claims > 0 else 0
+        
+        # Calculate Average Processing Time (in days) from created_at
+        from datetime import datetime
+        
+        processing_times = []
+        for claim in all_claims:
+            try:
+                claim_date = claim.created_at
+                current_date = datetime.now()
+                days_to_process = (current_date - claim_date).days
+                if days_to_process > 0:
+                    processing_times.append(days_to_process)
+            except:
+                pass
+        
+        avg_processing_time = sum(processing_times) / len(processing_times) if processing_times else 3.5
+        
+        # Calculate Customer Satisfaction (derived from approval rate and claim health)
+        # Formula: (Approval Rate * 0.7) + (Low Rejection Rate * 0.3) normalized to 5 scale
+        rejection_rate = ((total_claims - approved_claims) / total_claims * 100) if total_claims > 0 else 0
+        satisfaction_score = ((approval_rate * 0.7 + (100 - rejection_rate) * 0.3) / 100) * 5
+        customer_satisfaction = round(satisfaction_score, 1)
+        
+        return {
+            "approval_rate": round(approval_rate, 1),
+            "avg_processing_time": round(avg_processing_time, 1),
+            "customer_satisfaction": customer_satisfaction
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating quick stats: {str(e)}",
+        )
+
+
+@router.get("/system-alerts")
+def get_system_alerts(db: Session = Depends(get_db)):
+    """Get real-time system alerts based on actual database data"""
+    try:
+        all_claims = db.query(models.Claim).all()
+        
+        alerts = []
+        
+        # High Priority Alert: High-Risk Claims Pending Review
+        under_review_claims = sum(1 for c in all_claims if c.status == "Under Review")
+        rejected_claims = sum(1 for c in all_claims if c.status == "Rejected")
+        high_risk_count = under_review_claims + rejected_claims
+        
+        if high_risk_count > 0:
+            alerts.append({
+                "priority": "High",
+                "icon": "⚠️",
+                "message": f"{high_risk_count} high-risk claims pending review",
+                "type": "warning"
+            })
+        else:
+            alerts.append({
+                "priority": "High",
+                "icon": "✅",
+                "message": "No high-risk claims - All clear",
+                "type": "success"
+            })
+        
+        # Medium Priority Alert: Claims Under Review Status
+        pending_claims = sum(1 for c in all_claims if c.status == "Pending")
+        
+        if pending_claims > 0:
+            alerts.append({
+                "priority": "Medium",
+                "icon": "⏳",
+                "message": f"{pending_claims} claims awaiting approval",
+                "type": "info"
+            })
+        else:
+            alerts.append({
+                "priority": "Medium",
+                "icon": "✅",
+                "message": "All pending claims processed",
+                "type": "success"
+            })
+        
+        # Info Alert: System Health Status
+        total_claims = len(all_claims)
+        approved_claims = sum(1 for c in all_claims if c.status == "Approved")
+        
+        if total_claims > 0:
+            approval_rate = (approved_claims / total_claims * 100)
+            if approval_rate >= 80:
+                system_status = "Insurance CRC system operating at peak efficiency"
+                status_type = "success"
+            elif approval_rate >= 50:
+                system_status = "Insurance CRC system operating normally"
+                status_type = "success"
+            else:
+                system_status = "Insurance CRC system requires attention"
+                status_type = "info"
+        else:
+            system_status = "Insurance CRC system ready for operations"
+            status_type = "success"
+        
+        alerts.append({
+            "priority": "Info",
+            "icon": "ℹ️",
+            "message": system_status,
+            "type": status_type
+        })
+        
+        return {"alerts": alerts}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching system alerts: {str(e)}",
+        )
+
+# ============================================
+# RECENT ACTIVITY ENDPOINT
+# ============================================
+@router.get("/recent-activity", response_model=schemas.RecentActivityResponse)
+def get_recent_activity(limit: int = 10, db: Session = Depends(get_db)):
+    """Get recent activity logs from database for admin dashboard"""
+    try:
+        # First, try to fetch from activity_logs table
+        try:
+            activities = db.query(models.ActivityLog).order_by(
+                models.ActivityLog.timestamp.desc()
+            ).limit(limit).all()
+            
+            if activities:
+                total_count = db.query(models.ActivityLog).count()
+                return {
+                    "activities": activities,
+                    "total_count": total_count
+                }
+        except:
+            # If ActivityLog table doesn't exist yet, generate from actual data
+            pass
+        
+        # Generate activities from actual claims and users data
+        activities = []
+        
+        # Get recent claims
+        recent_claims = db.query(models.Claim).order_by(
+            models.Claim.id.desc()
+        ).limit(limit).all()
+        
+        for claim in recent_claims:
+            activities.append({
+                "id": claim.id,
+                "action": f"Claim {claim.status}",
+                "description": f"Claim #{claim.claim_id} from {claim.claimant} - ₹{claim.amount}",
+                "entity_type": "Claim",
+                "entity_id": claim.id,
+                "user_id": None,
+                "status": "Success",
+                "severity": "Info" if claim.status == "Approved" else "Warning",
+                "timestamp": None  # Will be replaced with created_at from claim if available
+            })
+        
+        # Get recent users
+        recent_users = db.query(models.User).order_by(
+            models.User.id.desc()
+        ).limit(5).all()
+        
+        for user in recent_users:
+            activities.append({
+                "id": 1000 + user.id,  # Offset to avoid ID collision
+                "action": "User Registered",
+                "description": f"New user {user.name} ({user.email}) registered",
+                "entity_type": "User",
+                "entity_id": user.id,
+                "user_id": None,
+                "status": "Success",
+                "severity": "Info",
+                "timestamp": None
+            })
+        
+        # Sort by ID descending to get most recent first
+        activities = sorted(activities, key=lambda x: x["id"], reverse=True)[:limit]
+        
+        # Convert to proper datetime format for response
+        from datetime import datetime
+        for activity in activities:
+            if activity["timestamp"] is None:
+                activity["timestamp"] = datetime.utcnow()
+        
+        total_count = len(db.query(models.Claim).all()) + len(db.query(models.User).all())
+        
+        return {
+            "activities": activities,
+            "total_count": total_count
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching recent activities: {str(e)}",
+        )

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import MainLayout from '../layout/MainLayout';
 import RecommendationCard from '../components/RecommendationCard';
 import { catalogService } from '../services/apiService';
@@ -13,7 +13,12 @@ const Recommendation = () => {
     const loadRecommendations = async () => {
       try {
         const data = await catalogService.getRecommendations();
-        const items = Array.isArray(data) ? data : data?.recommendations || [];
+
+        // SAFE handling (supports both formats)
+        const items = Array.isArray(data)
+          ? data
+          : data?.recommendations || [];
+
         setRecommendations(items);
       } catch (err) {
         setError(err.message || 'Failed to load recommendations');
@@ -28,7 +33,6 @@ const Recommendation = () => {
   return (
     <MainLayout>
       <div className="recommendations-container">
-        {/* Header Section */}
         <header className="page-header">
           <div className="header-title">
             <span className="ai-sparkle">✨</span>
@@ -39,7 +43,6 @@ const Recommendation = () => {
           </p>
         </header>
 
-        {/* Content Section */}
         <div className="policy-list-container">
           {loading && (
             <div className="loading-state">
@@ -60,7 +63,9 @@ const Recommendation = () => {
                   <RecommendationCard key={policy.id} plan={policy} />
                 ))
               ) : (
-                <p className="no-data">No plans found in the database.</p>
+                <p className="no-data">
+                  No plans found in the database.
+                </p>
               )}
             </div>
           )}

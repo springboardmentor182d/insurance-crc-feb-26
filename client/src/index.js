@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+<<<<<<< HEAD
 class AppErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -43,9 +44,10 @@ class AppErrorBoundary extends React.Component {
 }
 
 // Initialize the root element
+=======
+>>>>>>> origin/main-group-A
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-// Render the application
 root.render(
   <React.StrictMode>
     <AppErrorBoundary>
@@ -53,10 +55,4 @@ root.render(
     </AppErrorBoundary>
   </React.StrictMode>
 );
-
-/**
- * Performance Monitoring
- * To start measuring performance, pass a function (e.g., reportWebVitals(console.log))
- * or send to an analytics endpoint. 
- */
 reportWebVitals();

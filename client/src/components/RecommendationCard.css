@@ -1,28 +1,20 @@
-/* client/src/components/RecommendationCard.css */
-
 .recommendation-card {
-  background: white;
-  border: 1px solid #E0E4E8;
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 24px;
-  font-family: 'Inter', sans-serif;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   overflow: hidden;
 }
 
-/* Header Section */
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
+  padding: 16px 20px 0;
 }
 
 .category-tag {
-  background: #E8F5E9;
-  color: #1B5E20;
-  padding: 4px 12px;
+  background: #e8f5e9;
+  color: #166534;
+  padding: 4px 10px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -34,139 +26,111 @@
 
 .match-value {
   display: block;
-  font-size: 24px;
-  font-weight: 800;
-  color: #00C853;
+  font-size: 22px;
+  color: #16a34a;
+  font-weight: 700;
 }
 
 .match-label {
-  display: block;
   font-size: 12px;
-  color: #666;
+  color: #6b7280;
 }
 
-/* Titles */
-.plan-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1A1C1E;
+.card-body {
+  padding: 0 20px 20px;
+}
+
+.policy-title {
   margin: 8px 0 4px;
 }
 
 .provider-name {
-  color: #666;
-  font-size: 14px;
-  margin: 0 0 16px;
+  margin: 0 0 12px;
+  color: #6b7280;
 }
 
-/* Progress/Match Bar */
 .progress-container {
   height: 8px;
-  background: #F0F2F5;
-  border-radius: 10px;
-  margin: 16px 0 24px;
+  background: #f3f4f6;
+  border-radius: 9999px;
   overflow: hidden;
+  margin-bottom: 14px;
 }
 
 .progress-bar {
   height: 100%;
-  background: #00C853;
-  border-radius: 10px;
-  transition: width 0.3s ease;
+  background: #22c55e;
 }
 
-/* Insights Box */
 .reason-box {
-  background: #F1F8F1;
-  padding: 16px;
+  background: #f0fdf4;
   border-radius: 8px;
-  margin-bottom: 24px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
 }
 
 .reason-title {
-  font-size: 12px;
-  color: #1B5E20;
-  font-weight: 700;
   margin: 0 0 4px;
-  text-transform: uppercase;
+  font-size: 12px;
+  color: #6b7280;
 }
 
 .reason-text {
-  font-size: 14px;
-  color: #333;
   margin: 0;
-  line-height: 1.4;
 }
 
-/* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #EEE;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .stat-item label {
   display: block;
   font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
+  color: #6b7280;
 }
 
 .stat-item p {
-  font-size: 16px;
-  font-weight: 700;
-  margin: 0;
+  margin: 2px 0 0;
+  font-weight: 600;
 }
 
 .highlight-green {
-  color: #00C853;
+  color: #16a34a;
 }
 
-/* Tags & Indicators */
+.risk-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid #86efac;
+  border-radius: 9999px;
+  color: #166534;
+  font-size: 12px;
+}
+
 .tags-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .feature-tag {
-  display: inline-block;
-  border: 1px solid #1B5E20;
-  color: #1B5E20;
-  padding: 4px 12px;
-  border-radius: 20px;
+  border: 1px solid #166534;
+  color: #166534;
+  padding: 3px 10px;
+  border-radius: 9999px;
   font-size: 12px;
-  font-weight: 500;
 }
 
-.risk-tag {
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 12px;
-  border: 1px solid;
-}
-
-.low-risk { border-color: #2E7D32; color: #2E7D32; }
-.medium-risk { border-color: #F57C00; color: #F57C00; }
-
-/* Primary Action */
-.select-btn {
+.select-plan-btn {
   width: 100%;
-  background: #1B5E20;
-  color: white;
   border: none;
-  padding: 14px;
   border-radius: 8px;
-  font-weight: 700;
-  font-size: 16px;
+  padding: 10px;
+  background: #166534;
+  color: #fff;
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-.select-btn:hover {
-  background: #145217;
 }

@@ -1,13 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ShieldCheck, 
-  Repeat, 
-  Stars, 
-  FileText, 
+import {
+  LayoutDashboard,
+  ShieldCheck,
+  Repeat,
+  Stars,
+  FileText,
   UserCircle,
-  Shield
+  Shield,
 } from 'lucide-react';
 import './Sidebar.css';
 

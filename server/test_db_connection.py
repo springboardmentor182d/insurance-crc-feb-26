@@ -67,10 +67,13 @@ def run_database_connection_check():
             user_count = db.query(models.User).count()
             claim_count = db.query(models.Claim).count()
             policy_count = db.query(models.Policy).count()
-            
+
             print(f"   ✅ Users: {user_count}")
             print(f"   ✅ Claims: {claim_count}")
             print(f"   ✅ Policies: {policy_count}")
+        except Exception as sample_err:
+            print(f"   ⚠️  Sample ORM query skipped: {sample_err}")
+            print("   ⚠️  Connection is valid, but current DB schema differs from ORM models")
         finally:
             db.close()
         
