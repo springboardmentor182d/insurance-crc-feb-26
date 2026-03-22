@@ -1,10 +1,9 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Profile from './pages/Profile';
-import Preferences from './pages/Preferences';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import Profile from './pages/Profile';
+import Preferences from './pages/Preferences';
 import Settings from './pages/Settings';
 import BrowsePolicies from './pages/BrowsePolicies';
 import ActivePolicies from './pages/ActivePolicies';
