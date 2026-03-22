@@ -1,0 +1,38 @@
+.recommendations-container {
+  padding: 2rem;
+  background-color: #fcfcfc;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-sparkle {
+  font-size: 1.25rem;
+}
+
+.subtitle {
+  margin-top: 0.25rem;
+  color: #6b7280;
+}
+
+.policy-list-container {
+  margin-top: 1rem;
+}
+
+.loading-state,
+.error-state,
+.no-data {
+  padding: 1rem;
+}
+
+.policy-list {
+  display: grid;
+  gap: 1rem;
+}
