@@ -3,37 +3,61 @@
 
 ## Prerequisites
 - Docker Desktop running
-- Python 3.10+ in `server/venv`
+- Python 3.10+
+- Node.js + npm
 
-## Backend Quick Start
-1. Go to server folder:
+## Backend Setup (FastAPI)
+1. Go to `server`:
 ```powershell
 cd "D:\Infosys Springboard\Policy compare app\insurance-crc-feb-26\server"
 ```
 
-2. Start PostgreSQL container:
+2. Create/activate venv (if not already created):
+```powershell
+python -m venv venv
+.\venv\Scripts\activate
+```
+
+3. Install dependencies:
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+4. Configure env file:
+```powershell
+copy .env.example .env
+```
+Recommended extra keys in `.env`:
+- `ADMIN_SECRET=bimaverse-admin-2026`
+- `JWT_SECRET_KEY=change-this`
+- `JWT_REFRESH_SECRET_KEY=change-this`
+
+5. Start PostgreSQL:
 ```powershell
 docker compose up -d
 docker compose ps
 ```
 
-3. Apply DB migrations:
+6. Run migrations:
 ```powershell
 .\venv\Scripts\alembic.exe upgrade head
 ```
 
-4. Seed sample data:
+7. Seed sample data:
 ```powershell
 .\venv\Scripts\python.exe -m src.database.seed
 ```
 
-5. Run FastAPI server:
+8. Run API:
 ```powershell
 .\venv\Scripts\uvicorn.exe src.main:app --reload
 ```
 
-## Frontend Quick Start
-1. Open a new terminal and go to client folder:
+Health check:
+- `GET http://localhost:8000/health`
+
+## Frontend Setup (React)
+1. Go to `client`:
 ```powershell
 cd "D:\Infosys Springboard\Policy compare app\insurance-crc-feb-26\client"
 ```
@@ -43,39 +67,67 @@ cd "D:\Infosys Springboard\Policy compare app\insurance-crc-feb-26\client"
 npm install
 ```
 
-3. Start frontend:
+3. Ensure API URL is set (in `client/.env`):
+```env
+REACT_APP_API_URL=http://localhost:8000/api/v1
+```
+
+4. Start frontend:
 ```powershell
 npm start
 ```
 
-If your setup uses Vite instead of CRA, use:
+## API Prefix Note
+Backend currently serves both:
+- `/api/v1/...` (primary for frontend)
+- legacy root paths `...` (backward compatibility)
+
+## Common Endpoints
+Auth:
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/admin/login`
+- `POST /auth/refresh`
+- `POST /auth/logout`
+
+Admin Dashboard:
+- `GET /admin/stats`
+- `GET /admin/claims-trends`
+- `GET /admin/revenue`
+- `GET /admin/policy-distribution`
+- `GET /admin/top-adjusters`
+- `GET /admin/recent-activity`
+
+Manage Policies:
+- `GET /admin/policies/stats`
+- `GET /admin/policies`
+- `GET /admin/policies/{policy_id}`
+- `POST /admin/policies`
+- `PUT /admin/policies/{policy_id}`
+- `DELETE /admin/policies/{policy_id}`
+
+Users:
+- `GET /users/profile`
+- `PUT /users/profile`
+- `GET /users/preferences`
+- `PUT /users/preferences`
+
+## Tests
+Backend:
 ```powershell
-npm run dev
+cd "D:\Infosys Springboard\Policy compare app\insurance-crc-feb-26\server"
+.\venv\Scripts\python.exe -m pytest -q
+```
+
+Frontend:
+```powershell
+cd "D:\Infosys Springboard\Policy compare app\insurance-crc-feb-26\client"
+$env:CI="true"; npm test
 ```
 
 ## Migration Workflow
-When schema changes are made in SQLAlchemy models:
-
-1. Generate migration:
+When SQLAlchemy models change:
 ```powershell
 .\venv\Scripts\alembic.exe revision --autogenerate -m "describe_change"
-```
-
-2. Apply migration:
-```powershell
 .\venv\Scripts\alembic.exe upgrade head
 ```
-
-## Test Command
-```powershell
-cd "D:\Infosys Springboard\Policy compare app\insurance-crc-feb-26\server"
-.\venv\Scripts\pytest.exe -q
-```
-
-## Admin Endpoints
-- `/admin/stats`
-- `/admin/claims-trends`
-- `/admin/revenue`
-- `/admin/policy-distribution`
-- `/admin/top-adjusters`
-- `/admin/recent-activity`

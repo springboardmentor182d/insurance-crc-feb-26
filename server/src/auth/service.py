@@ -1,135 +1,179 @@
 from datetime import datetime, timedelta
+import os
+from pathlib import Path
 from typing import Optional
-import jwt
-import bcrypt
+
 from fastapi import HTTPException, status
+from dotenv import load_dotenv
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 
-from src.auth.models import UserRegister, UserLogin, AdminLogin, TokenResponse
+from src.auth.jwt import create_access_token, verify_token
+from src.auth.models import AdminLogin, LoginRequest, RegisterRequest, TokenResponse
+from src.database.admin_dashboard.models.users import User, UserRole
 
-SECRET_KEY = "your-secret-key-change-in-production"
-REFRESH_SECRET_KEY = "your-refresh-secret-key-change-in-production"
-ALGORITHM = "HS256"
-ACCESS_EXPIRE_MIN = 30
-REFRESH_EXPIRE_DAYS = 7
-ADMIN_SECRET = "bimaverse-admin-2026"
+# Load .env from project root
+env_path = Path(__file__).resolve().parents[2] / ".env"
+load_dotenv(dotenv_path=env_path)
 
-
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    return bcrypt.checkpw(plain.encode(), hashed.encode())
+REFRESH_SECRET_KEY = os.getenv(
+    "JWT_REFRESH_SECRET_KEY", "your-refresh-secret-key-change-this-in-production"
+)
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+REFRESH_EXPIRE_DAYS = int(os.getenv("JWT_REFRESH_EXPIRE_DAYS", "7"))
+ADMIN_SECRET = os.getenv("ADMIN_SECRET", "bimaverse-admin-2026")
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    payload = {**data, "exp": datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_EXPIRE_MIN)), "type": "access"}
-    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+def _role_as_frontend_value(role: object) -> str:
+    value = getattr(role, "value", str(role)).lower()
+    if value == "customer":
+        return "user"
+    return value
+
+
+def _user_name(user: User) -> str:
+    if getattr(user, "full_name", None):
+        return user.full_name
+
+    first_name = (getattr(user, "first_name", "") or "").strip()
+    last_name = (getattr(user, "last_name", "") or "").strip()
+    combined = " ".join(part for part in [first_name, last_name] if part)
+    return combined or user.email
 
 
 def create_refresh_token(data: dict) -> str:
-    payload = {**data, "exp": datetime.utcnow() + timedelta(days=REFRESH_EXPIRE_DAYS), "type": "refresh"}
+    payload = {
+        **data,
+        "exp": datetime.utcnow() + timedelta(days=REFRESH_EXPIRE_DAYS),
+        "type": "refresh",
+    }
     return jwt.encode(payload, REFRESH_SECRET_KEY, algorithm=ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict:
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        if payload.get("type") != "access":
-            raise HTTPException(status_code=401, detail="Invalid token type")
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    payload = verify_token(token)
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
+    return payload
 
 
 def decode_refresh_token(token: str) -> dict:
     try:
         payload = jwt.decode(token, REFRESH_SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid token type")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token type",
+            )
         return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Refresh token has expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    except JWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        ) from exc
 
 
 class AuthService:
     def __init__(self, db: Session):
         self.db = db
 
-    def register(self, data: UserRegister) -> TokenResponse:
-        exists = self.db.execute(
-            text("SELECT id FROM users WHERE email = :email"),
-            {"email": data.email}
-        ).fetchone()
+    def register(self, data: RegisterRequest) -> TokenResponse:
+        exists = self.db.query(User).filter(User.email == data.email).first()
         if exists:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered",
+            )
 
-        result = self.db.execute(
-            text("""
-                INSERT INTO users (name, email, password, dob, role, created_at)
-                VALUES (:name, :email, :password, :dob, 'user', NOW())
-                RETURNING id, name, email, role
-            """),
-            {
-                "name": data.name,
-                "email": data.email,
-                "password": hash_password(data.password),
-                "dob": data.date_of_birth
-            }
-        ).fetchone()
+        full_name = data.name.strip()
+        first_name, _, remaining = full_name.partition(" ")
+        last_name = remaining.strip() or None
+
+        user = User(
+            email=data.email,
+            first_name=first_name or None,
+            last_name=last_name,
+            full_name=full_name,
+            role=UserRole.CUSTOMER,
+        )
+        self.db.add(user)
         self.db.commit()
-        return self._make_tokens(result)
+        self.db.refresh(user)
 
-    def login(self, data: UserLogin) -> TokenResponse:
-        user = self.db.execute(
-            text("SELECT id, name, email, password, role FROM users WHERE email = :email"),
-            {"email": data.email}
-        ).fetchone()
-        if not user or not verify_password(data.password, user.password):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-        if user.role == "admin":
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please use the admin login portal")
+        return self._make_tokens(user)
+
+    def login(self, data: LoginRequest) -> TokenResponse:
+        user = self.db.query(User).filter(User.email == data.email).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
+
+        if _role_as_frontend_value(user.role) == "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please use the admin login portal",
+            )
+
         return self._make_tokens(user)
 
     def admin_login(self, data: AdminLogin) -> TokenResponse:
         if data.admin_secret != ADMIN_SECRET:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid admin secret key")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Invalid admin secret key",
+            )
 
-        user = self.db.execute(
-            text("SELECT id, name, email, password, role FROM users WHERE email = :email AND role = 'admin'"),
-            {"email": data.email}
-        ).fetchone()
-        if not user or not verify_password(data.password, user.password):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid admin credentials")
+        user = self.db.query(User).filter(User.email == data.email).first()
+        if not user or _role_as_frontend_value(user.role) != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin credentials",
+            )
 
-        self.db.execute(
-            text("INSERT INTO admin_logs (admin_id, action, target_type, target_id, timestamp) VALUES (:id, 'LOGIN', 'user', :id, NOW())"),
-            {"id": user.id}
-        )
-        self.db.commit()
         return self._make_tokens(user, admin=True)
 
     def refresh(self, refresh_token: str) -> TokenResponse:
         payload = decode_refresh_token(refresh_token)
-        user = self.db.execute(
-            text("SELECT id, name, email, role FROM users WHERE id = :id"),
-            {"id": int(payload["sub"])}
-        ).fetchone()
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token payload",
+            )
+
+        user = self.db.query(User).filter(User.id == int(user_id)).first()
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
         return self._make_tokens(user)
 
-    def _make_tokens(self, user, admin: bool = False) -> TokenResponse:
-        data = {"sub": str(user.id), "email": user.email, "role": user.role}
-        expiry = timedelta(hours=8) if admin else None
+    def _make_tokens(self, user: User, admin: bool = False) -> TokenResponse:
+        user_role = _role_as_frontend_value(user.role)
+        token_payload = {
+            "sub": str(user.id),
+            "email": user.email,
+            "role": user_role,
+        }
+
+        access_expiry: Optional[timedelta] = timedelta(hours=8) if admin else None
+        access_token = create_access_token(token_payload, access_expiry)
+        refresh_token = create_refresh_token(token_payload)
+
         return TokenResponse(
-            access_token=create_access_token(data, expiry),
-            refresh_token=create_refresh_token(data),
-            user={"id": user.id, "name": user.name, "email": user.email, "role": user.role}
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user={
+                "id": user.id,
+                "name": _user_name(user),
+                "email": user.email,
+                "role": user_role,
+            },
         )

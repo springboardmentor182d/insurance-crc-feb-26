@@ -1,26 +1,16 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter
 
-from src.users.models import UserUpdate, UserProfileResponse
-from src.users.service import UserService
-from src.auth import get_current_user
-from src.database.core import get_db
+from src.todos.models import CreateTodoRequest, TodoItem
+from src.todos.service import create_todo, list_todos
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(prefix="/todos", tags=["Todos"])
 
 
-@router.get("/me", response_model=UserProfileResponse)
-async def get_my_profile(
-    current_user: dict = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    return await UserService(db).get_profile(current_user["id"])
+@router.get("", response_model=list[TodoItem])
+def get_todos():
+    return list_todos()
 
 
-@router.patch("/me", response_model=UserProfileResponse)
-async def update_my_profile(
-    data: UserUpdate,
-    current_user: dict = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    return await UserService(db).update_profile(current_user["id"], data)
+@router.post("", response_model=TodoItem)
+def add_todo(data: CreateTodoRequest):
+    return create_todo(data)

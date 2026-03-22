@@ -62,3 +62,7 @@ class UserPreferences(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+from src.database.admin_dashboard.models.user_preferences import UserPreferences
+from src.database.admin_dashboard.models.users import User
+
+__all__ = ["User", "UserPreferences"]
