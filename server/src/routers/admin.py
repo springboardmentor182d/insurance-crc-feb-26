@@ -33,8 +33,8 @@ def get_overview(db: Session = Depends(get_db)):
         # Total users with insurance policies
         total_users = db.query(models.User).count()
         
-        # Active policyholders
-        active_policies = db.query(models.User).filter(models.User.status == "Active").count()
+        # Active policies from policies table
+        active_policies = db.query(models.Policy).filter(models.Policy.is_active == True).count()
         
         # Total claims submitted
         total_claims = db.query(models.Claim).count()
@@ -106,7 +106,12 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
                 detail="User with this email already exists",
             )
 
-        db_user = models.User(**user.model_dump())
+        db_user = models.User(
+            full_name=user.name,
+            email=user.email,
+            password_hash="",
+            is_active=True,
+        )
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
@@ -190,7 +195,12 @@ def get_fraud_rules(db: Session = Depends(get_db)):
 def create_fraud_rule(rule: schemas.FraudRuleCreate, db: Session = Depends(get_db)):
     """Create a new fraud rule"""
     try:
-        db_rule = models.FraudRule(**rule.model_dump())
+        db_rule = models.FraudRule(
+            name=rule.name,
+            condition=rule.description,
+            severity=rule.priority or "Medium",
+            is_active=(rule.status or "Active") == "Active",
+        )
         db.add(db_rule)
         db.commit()
         db.refresh(db_rule)
@@ -214,10 +224,15 @@ def update_fraud_rule(rule_id: int, rule_update: schemas.FraudRuleUpdate, db: Se
                 detail="Fraud rule not found",
             )
 
-        # Update only provided fields
         update_data = rule_update.model_dump(exclude_unset=True)
-        for key, value in update_data.items():
-            setattr(rule, key, value)
+        if "name" in update_data:
+            rule.name = update_data["name"]
+        if "description" in update_data:
+            rule.condition = update_data["description"]
+        if "priority" in update_data:
+            rule.severity = update_data["priority"]
+        if "status" in update_data:
+            rule.is_active = str(update_data["status"]).lower() == "active"
 
         db.commit()
         db.refresh(rule)
@@ -243,7 +258,7 @@ def toggle_fraud_rule_status(rule_id: int, db: Session = Depends(get_db)):
                 detail="Fraud rule not found",
             )
 
-        rule.status = "Inactive" if rule.status == "Active" else "Active"
+        rule.is_active = not rule.is_active
         db.commit()
         db.refresh(rule)
         return rule
@@ -301,7 +316,15 @@ def get_claims(db: Session = Depends(get_db)):
 def create_claim(claim: schemas.ClaimCreate, db: Session = Depends(get_db)):
     """Create a new claim"""
     try:
-        db_claim = models.Claim(**claim.model_dump())
+        amount_value = claim.amount
+        if isinstance(amount_value, str):
+            amount_value = amount_value.replace("₹", "").replace(",", "")
+        db_claim = models.Claim(
+            claim_type=claim.claim_type,
+            amount=float(amount_value),
+            status=claim.status,
+            risk_level=claim.priority,
+        )
         db.add(db_claim)
         db.commit()
         db.refresh(db_claim)
@@ -369,16 +392,7 @@ def get_comprehensive_analytics(db: Session = Depends(get_db)):
         rejected_claims = sum(1 for c in all_claims if c.status == "Rejected")
         under_review_claims = sum(1 for c in all_claims if c.status == "Under Review")
         
-        # Calculate average claim amount (remove ₹ and commas)
-        amounts = []
-        for claim in all_claims:
-            try:
-                # Extract numeric value from amount string like "₹45,000"
-                numeric_amount = float(claim.amount.replace("₹", "").replace(",", ""))
-                amounts.append(numeric_amount)
-            except:
-                pass
-        
+        amounts = [float(c.amount) for c in all_claims if c.amount is not None]
         average_amount = sum(amounts) / len(amounts) if amounts else 0
         
         # Calculate rates
@@ -394,7 +408,7 @@ def get_comprehensive_analytics(db: Session = Depends(get_db)):
         # Distribution by priority
         claims_by_priority = {}
         for claim in all_claims:
-            priority = claim.priority
+            priority = claim.risk_level
             claims_by_priority[priority] = claims_by_priority.get(priority, 0) + 1
         
         return {
@@ -447,14 +461,13 @@ def get_quick_stats(db: Session = Depends(get_db)):
         approved_claims = sum(1 for c in all_claims if c.status == "Approved")
         approval_rate = (approved_claims / total_claims * 100) if total_claims > 0 else 0
         
-        # Calculate Average Processing Time (in days)
-        # Based on the date field, we'll estimate average days to process
+        # Calculate Average Processing Time (in days) from created_at
         from datetime import datetime
         
         processing_times = []
         for claim in all_claims:
             try:
-                claim_date = datetime.strptime(claim.date, "%b %d, %Y")
+                claim_date = claim.created_at
                 current_date = datetime.now()
                 days_to_process = (current_date - claim_date).days
                 if days_to_process > 0:

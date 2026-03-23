@@ -42,28 +42,62 @@ def login(email: str, password: str, db: Session = Depends(get_db)):
 
 from fastapi import APIRouter, HTTPException
 from auth.service import *
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import Dict
 
-router = APIRouter()
+# Internal Project Imports
+from src.database.core import get_db
+from src.auth.models import User
+from src.auth.service import (
+    hash_password, 
+    verify_password, 
+    create_access_token, 
+    create_refresh_token
+)
 
-# Fake in-memory user
-fake_user = {
-    "email": "durga@gmail.com",
-    "password": hash_password("1234")
-}
+router = APIRouter(prefix="/auth", tags=["Auth"])
+
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
+def signup(name: str, email: str, password: str, db: Session = Depends(get_db)):
+    # 1. Check if user already exists
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Email already registered"
+        )
+
+    # 2. Hash password and save new user
+    new_user = User(
+        name=name, 
+        email=email, 
+        password=hash_password(password)
+    )
+    db.add(new_user)
+    db.commit()
+    
+    return {"message": "User created successfully"}
 
 @router.post("/login")
-def login(data: dict):
-    if data["email"] != fake_user["email"]:
-        raise HTTPException(status_code=400, detail="User not found")
+def login(data: Dict[str, str], db: Session = Depends(get_db)):
+    # 1. Find user by email
+    user = db.query(User).filter(User.email == data.get("email")).first()
+    
+    # 2. Verify existence and password
+    if not user or not verify_password(data.get("password"), user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Invalid credentials"
+        )
 
-    if not verify_password(data["password"], fake_user["password"]):
-        raise HTTPException(status_code=400, detail="Wrong password")
-
-    access = create_access_token({"sub": data["email"]})
-    refresh = create_refresh_token({"sub": data["email"]})
-
+    # 3. Return Access and Refresh tokens
     return {
         "access_token": access,
         "refresh_token": refresh
+    }
+        "access_token": create_access_token({"sub": user.email}),
+        "refresh_token": create_refresh_token({"sub": user.email}),
+        "token_type": "bearer"
     }
 

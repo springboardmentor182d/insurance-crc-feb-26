@@ -57,7 +57,19 @@ def create_policy(
     db: Session = Depends(get_db)
 ):
     """Create a new policy"""
-    db_policy = models.Policy(**policy.dict())
+    coverage_amount = float(str(policy.coverage).replace("₹", "").replace(",", ""))
+    premium_amount = float(str(policy.premium).replace("₹", "").replace(",", "").replace("/yr", ""))
+    claim_ratio = str(policy.claim_ratio or "0").replace("%", "")
+    db_policy = models.Policy(
+        name=policy.name,
+        provider=policy.provider,
+        policy_type=policy.policy_type,
+        coverage_amount=coverage_amount,
+        premium_amount=premium_amount,
+        claim_ratio=float(claim_ratio),
+        risk_level="Medium",
+        is_active=bool(policy.is_active),
+    )
     db.add(db_policy)
     db.commit()
     db.refresh(db_policy)
@@ -80,8 +92,22 @@ def update_policy(
         )
     
     update_data = policy_update.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_policy, field, value)
+    if "name" in update_data:
+        db_policy.name = update_data["name"]
+    if "provider" in update_data:
+        db_policy.provider = update_data["provider"]
+    if "policy_type" in update_data:
+        db_policy.policy_type = update_data["policy_type"]
+    if "coverage" in update_data:
+        db_policy.coverage_amount = float(str(update_data["coverage"]).replace("₹", "").replace(",", ""))
+    if "premium" in update_data:
+        db_policy.premium_amount = float(
+            str(update_data["premium"]).replace("₹", "").replace(",", "").replace("/yr", "")
+        )
+    if "claim_ratio" in update_data:
+        db_policy.claim_ratio = float(str(update_data["claim_ratio"]).replace("%", ""))
+    if "is_active" in update_data:
+        db_policy.is_active = bool(update_data["is_active"])
     
     db.commit()
     db.refresh(db_policy)
