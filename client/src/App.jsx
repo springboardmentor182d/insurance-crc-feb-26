@@ -2,7 +2,10 @@ import "./App.css";
 import { useState } from "react";
 import { FcGoogle } from "react-icons/fc";
 import { FaPhoneAlt } from "react-icons/fa";
-import { loginUser, signupUser } from "./features/authentication/auth/authService";
+
+// ✅ FIXED IMPORT PATH
+import { loginUser, signupUser } from "./features/authentication/services/authService";
+
 function App() {
   const [isLogin, setIsLogin] = useState(true);
 
@@ -54,7 +57,7 @@ function App() {
       setModalOpen(true);
       resetForm();
 
-    } catch {
+    } catch (err) {
       setModalTitle("Login Status");
       setModalMessage("Invalid Credentials");
       setModalStep("message");
