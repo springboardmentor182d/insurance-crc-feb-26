@@ -22,10 +22,13 @@ const policyTypeOptions = [
 
 const PolicyModal = ({ isOpen, onClose, reload }) => {
   const [form, setForm] = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (isOpen) {
       setForm(initialForm);
+      setSubmitError("");
     }
   }, [isOpen]);
 
@@ -48,10 +51,27 @@ const PolicyModal = ({ isOpen, onClose, reload }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    await createPolicy(form);
-    await reload();
-    onClose();
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      await createPolicy(form);
+      await reload();
+      onClose();
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      const validationErrors = error?.response?.data?.errors;
+      const validationMessage = Array.isArray(validationErrors)
+        ? validationErrors.map((item) => item?.message).filter(Boolean).join(", ")
+        : "";
+      const message =
+        validationMessage ||
+        (typeof detail === "string" ? detail : "") ||
+        error?.message ||
+        "Unable to create policy. Please check backend and try again.";
+      setSubmitError(String(message));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -62,6 +82,12 @@ const PolicyModal = ({ isOpen, onClose, reload }) => {
         <h2 className="text-3xl font-semibold text-gray-900">Add New Policy</h2>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          {submitError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {submitError}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <label className="space-y-2">
               <span className="block text-base font-medium text-gray-900 md:text-lg">Policy Name *</span>
@@ -163,6 +189,7 @@ const PolicyModal = ({ isOpen, onClose, reload }) => {
             <button
               type="button"
               onClick={onClose}
+              disabled={submitting}
               className="h-12 rounded-2xl border border-gray-300 bg-gray-100 text-base font-medium text-gray-800 md:h-14"
             >
               Cancel
@@ -170,9 +197,10 @@ const PolicyModal = ({ isOpen, onClose, reload }) => {
 
             <button
               type="submit"
+              disabled={submitting}
               className="h-12 rounded-2xl bg-blue-600 text-base font-medium text-white transition hover:bg-blue-700 md:h-14"
             >
-              Add Policy
+              {submitting ? "Adding..." : "Add Policy"}
             </button>
           </div>
         </form>

@@ -4,9 +4,9 @@ import {
   FiFileText,
   FiShield,
   FiAlertTriangle,
-  FiBarChart2,
   FiLogOut,
 } from "react-icons/fi";
+import { ClipboardList } from "lucide-react";
 import { TOKEN_KEYS, ROUTES } from "../../data/constants";
 
 const Sidebar = () => {
@@ -56,6 +56,12 @@ const Sidebar = () => {
             Manage Policies
           </NavLink>
 
+          <NavLink to="/admin/manage-claims" className={navClass}>
+            <ClipboardList size={18} />
+            Manage Claims
+          </NavLink>
+
+
           <NavLink to="/admin/fraud-rules" className={navClass}>
             <FiShield size={18} />
             Fraud Rules
@@ -66,11 +72,7 @@ const Sidebar = () => {
             Flagged Claims
           </NavLink>
 
-          <NavLink to="/admin/analytics" className={navClass}>
-            <FiBarChart2 size={18} />
-            Analytics
-          </NavLink>
-
+          
         </nav>
       </div>
 

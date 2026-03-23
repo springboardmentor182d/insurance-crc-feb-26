@@ -1,34 +1,38 @@
-import axios from "axios";
-
-const API = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL,
-});
+import apiClient from "../../../../utils/apiClient";
 
 export const getPolicies = async () => {
-  const res = await API.get("/admin/policies");
-  return res.data.data;
+  const res = await apiClient.get("/admin/policies");
+  const payload = res.data?.data ?? res.data;
+  return Array.isArray(payload) ? payload : [];
 };
 
 export const getPolicyStats = async () => {
-  const res = await API.get("/admin/policies/stats");
-  return res.data.data;
+  const res = await apiClient.get("/admin/policies/stats");
+  const payload = res.data?.data ?? res.data;
+  return payload && typeof payload === "object" ? payload : {};
 };
 
 export const createPolicy = async (data) => {
-  const res = await API.post("/admin/policies", data);
+  const payload = {
+    ...data,
+    premium: Number(data.premium),
+    coverage: Number(data.coverage),
+    deductible: Number(data.deductible),
+  };
+  const res = await apiClient.post("/admin/policies", payload);
   return res.data.data;
 };
 
 export const deletePolicy = async (id) => {
-  await API.delete(`/admin/policies/${id}`);
+  await apiClient.delete(`/admin/policies/${id}`);
 };
 
 export const getPolicyById = async (id) => {
-  const res = await API.get(`/admin/policies/${id}`);
+  const res = await apiClient.get(`/admin/policies/${id}`);
   return res.data.data;
 };
 
 export const updatePolicy = async (id, data) => {
-  const res = await API.put(`/admin/policies/${id}`, data);
+  const res = await apiClient.put(`/admin/policies/${id}`, data);
   return res.data.data;
 };

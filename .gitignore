@@ -57,3 +57,5 @@ htmlcov/
 # 🔹 Logs
 ############################
 *.log
+# Local Comparison Reports
+CSS_AUTH_VS_OLD_INDEX_REPORT.md

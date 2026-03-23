@@ -1,12 +1,8 @@
-import axios from "axios";
+import apiClient from "../../../../utils/apiClient";
 
-const API = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL,
-});
-
-export const fetchStats = () => API.get("/admin/stats");
-export const fetchClaimsTrends = () => API.get("/admin/claims-trends");
-export const fetchRevenue = () => API.get("/admin/revenue");
-export const fetchPolicyDistribution = () => API.get("/admin/policy-distribution");
-export const fetchTopAdjusters = () => API.get("/admin/top-adjusters");
-export const fetchRecentActivity = () => API.get("/admin/recent-activity");
+export const fetchStats = () => apiClient.get("/admin/stats");
+export const fetchClaimsTrends = () => apiClient.get("/admin/claims-trends");
+export const fetchRevenue = () => apiClient.get("/admin/revenue");
+export const fetchPolicyDistribution = () => apiClient.get("/admin/policy-distribution");
+export const fetchTopAdjusters = () => apiClient.get("/admin/top-adjusters");
+export const fetchRecentActivity = () => apiClient.get("/admin/recent-activity");

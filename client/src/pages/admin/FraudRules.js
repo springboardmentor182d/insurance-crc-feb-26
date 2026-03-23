@@ -43,7 +43,7 @@ const FraudRules = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
 
-  const rules = data?.rules || [];
+  const rules = useMemo(() => data?.rules ?? [], [data?.rules]);
 
   const filteredRules = useMemo(() => {
     if (activeTab === "All Rules") return rules;

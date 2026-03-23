@@ -26,6 +26,7 @@ const ManagePolicies = () => {
   const {
     stats,
     policies,
+    error,
     search,
     setSearch,
     filter,
@@ -64,6 +65,16 @@ const ManagePolicies = () => {
     setViewOpen(false);
     setEditOpen(true);
   };
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+          {error}
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!stats) return <AdminLayout>Loading...</AdminLayout>;
 

@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+import { ROUTES } from '../../data/constants';
+import { logoutUser } from '../../features/authentication/services/getUsers';
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Keep Policies submenu open whenever we are on any /policies route
   const isPoliciesRoute = location.pathname.startsWith('/policies');
   const [policiesOpen, setPoliciesOpen] = useState(isPoliciesRoute);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (isPoliciesRoute) {
@@ -15,16 +20,16 @@ const Sidebar = () => {
   }, [isPoliciesRoute]);
 
   const menuItems = [
-    { path: '/', label: 'Dashboard', icon: '📊' },
-    { 
-      path: '/policies', 
-      label: 'Policies', 
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    {
+      path: '/policies',
+      label: 'Policies',
       icon: '📄',
       hasSubmenu: true,
       submenu: [
         { path: '/policies/browse', label: 'Browse Policies', icon: '🔍' },
         { path: '/policies/active', label: 'Active Policies', icon: '✓' },
-      ]
+      ],
     },
     { path: '/recommendations', label: 'Recommendations', icon: '💡' },
     { path: '/claims', label: 'Claims', icon: '📋' },
@@ -37,6 +42,18 @@ const Sidebar = () => {
       return isPoliciesRoute;
     }
     return location.pathname === path;
+  };
+
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+
+    try {
+      await logoutUser();
+    } finally {
+      navigate(ROUTES.LOGIN, { replace: true });
+      setLoggingOut(false);
+    }
   };
 
   return (
@@ -70,7 +87,11 @@ const Sidebar = () => {
                       <span>{item.icon}</span>
                       <span className="font-medium">{item.label}</span>
                     </div>
-                    <span className={`transform transition-transform ${policiesOpen ? 'rotate-180' : ''}`}>
+                    <span
+                      className={`transform transition-transform ${
+                        policiesOpen ? 'rotate-180' : ''
+                      }`}
+                    >
                       ▼
                     </span>
                   </button>
@@ -114,8 +135,12 @@ const Sidebar = () => {
 
       {/* Logout Button */}
       <div className="p-4 border-t">
-        <button className="w-full flex items-center justify-center space-x-2 text-red-600 hover:text-red-700 font-medium py-2">
-          <span>Logout</span>
+        <button
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className="w-full flex items-center justify-center space-x-2 text-red-600 hover:text-red-700 font-xl py-4 disabled:opacity-60"
+        >
+          <span>{loggingOut ? 'Logging out...' : 'Logout'}</span>
           <span>→</span>
         </button>
       </div>

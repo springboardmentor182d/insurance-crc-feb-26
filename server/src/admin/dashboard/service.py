@@ -96,7 +96,9 @@ async def get_top_adjusters():
 
 
 async def get_recent_activity():
-    activities = [RecentActivityItem(**row) for row in get_recent_activity_snapshot()]
+    activities = [
+        RecentActivityItem(**row) for row in get_recent_activity_snapshot(limit=5)
+    ]
     return RecentActivityResponse(data=activities)
 
 async def get_all_policies(db: Session):

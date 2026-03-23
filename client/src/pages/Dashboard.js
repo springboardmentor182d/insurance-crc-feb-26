@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import apiClient from '../utils/apiClient'; // Note the '../' because we are now in the 'pages' folder
 import FormInput from '../components/Form/FormInput';
 import Formselect from '../components/Form/Formselect'; 
+import Sidebar from '../layout/user/Sidebar';
 import {
   FileText, Activity, AlertCircle, CheckCircle,
   ArrowRight, Plus, ArrowLeft
@@ -15,13 +16,14 @@ function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const pRes = await apiClient.get("/api/v1/admin/policies");
+        const pRes = await apiClient.get("/admin/dashboard/policies");
         console.log("Check this data structure:", pRes.data); // Look at this in F12 console
-        setPolicies(pRes.data);
-        const cRes = await apiClient.get("/api/v1/admin/claims");
+        const policiesPayload = pRes.data?.data ?? pRes.data;
+        setPolicies(Array.isArray(policiesPayload) ? policiesPayload : []);
+        const cRes = await apiClient.get("/admin/dashboard/claims");
         console.log("Check this data structure:", cRes.data); // Look at this in F12 console
-        //setPolicies(pRes.data);
-        setClaims(cRes.data);
+        const claimsPayload = cRes.data?.data ?? cRes.data;
+        setClaims(Array.isArray(claimsPayload) ? claimsPayload : []);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -54,9 +56,12 @@ function DashboardPage() {
   const coverageTrend = rawCoverageSum > 0 ? `${(rawCoverageSum / 10).toFixed(1)}% vs last year` : "0% growth";
 
   return (
-    <div className="w-full">
-      {view === 'dashboard' ? (
-        <div className="animate-in fade-in duration-700">
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar />
+      <div className="flex-1 ml-64 overflow-y-auto">
+        <div className="max-w-6xl mx-auto p-8">
+          {view === 'dashboard' ? (
+            <div className="animate-in fade-in duration-700">
           {/* Header */}
           <div className="mb-8 text-left">
             <h1 className="text-3xl font-bold text-gray-900">Welcome Back, John!</h1>
@@ -159,8 +164,8 @@ function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
-      ) : (
+            </div>
+          ) : (
         /* Form View */
         <div className="max-w-2xl mx-auto bg-white p-10 rounded-3xl border border-gray-100 shadow-xl text-left">
           <button onClick={() => setView('dashboard')} className="flex items-center text-blue-600 mb-8 font-bold text-xs"><ArrowLeft size={16} className="mr-2" /> BACK TO DASHBOARD</button>
@@ -170,8 +175,10 @@ function DashboardPage() {
             <Formselect label="CLAIM CATEGORY" options={[{ value: 'health', label: 'Health' }, { value: 'auto', label: 'Auto' }]} />
             <button type="button" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg">SUBMIT CLAIM</button>
           </form>
+          </div>
+        )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

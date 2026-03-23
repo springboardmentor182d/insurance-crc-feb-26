@@ -69,7 +69,7 @@ npm install
 
 3. Ensure API URL is set (in `client/.env`):
 ```env
-REACT_APP_API_URL=http://localhost:8000/api/v1
+REACT_APP_API_BASE_URL=http://localhost:8000/api/v1
 ```
 
 4. Start frontend:

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from '../layout/user/Sidebar';
-import FromInput from '../components/Form/FromInput';
+import FormInput from '../components/Form/FormInput';
 import { fetchPolicies } from '../features/policies/services/policiesService';
 
 const CATEGORY_FILTERS = [
@@ -294,7 +294,7 @@ const BrowsePolicies = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 mb-4 flex flex-col md:flex-row md:items-center md:space-x-4 space-y-3 md:space-y-0">
             <form onSubmit={handleSearchSubmit} className="flex-1 flex items-center space-x-3">
               <div className="flex-1">
-                <FromInput
+                <FormInput
                   type="text"
                   name="search"
                   value={search}

@@ -1,4 +1,7 @@
-export const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8000/api/v1";
+const configuredApiBaseUrl =
+  process.env.REACT_APP_API_BASE_URL || process.env.REACT_APP_API_URL;
+
+export const API_BASE_URL = configuredApiBaseUrl || "http://localhost:8000/api/v1";
 
 export const ROUTES = {
   HOME:            "/",

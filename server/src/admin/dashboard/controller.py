@@ -112,10 +112,10 @@ async def recent_activity():
 #             "status": "Resolved"
 #         }
 #     ]
-@router.get("/policies")
+@router.get("/dashboard/policies")
 async def get_active_policies(db: Session = Depends(get_db)):
     return await get_all_policies(db)
 
-@router.get("/claims")
+@router.get("/dashboard/claims")
 async def get_recent_claims(db: Session = Depends(get_db)):
     return await get_all_claims(db)
