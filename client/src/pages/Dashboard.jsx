@@ -45,12 +45,60 @@ export default function Dashboard() {
 
   // PROFILE FETCH (same as settings)
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/users/profile")
-      .then(res => res.json())
-      .then(data => {
-        setProfile(data);
-      })
-      .catch(() => { });
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get("/users/profile");
+        const data = await response.data;
+
+        setProfile({
+          name: data.name,
+          email: data.email || '',
+          phone: data.phone || '',
+          dob: data.dob || '',
+          address: data.address || '',
+          occupation: data.occupation || ''
+        });
+
+        if (data.preferences) {
+
+          // Notifications
+          if (data.preferences.notifications) {
+            setEmailNotifications(
+              data.preferences.notifications.email || emailNotifications
+            );
+
+            setSmsNotifications(
+              data.preferences.notifications.sms || smsNotifications
+            );
+
+            setPushNotifications(
+              data.preferences.notifications.push || pushNotifications
+            );
+          }
+
+          // Privacy
+          if (data.preferences.privacy) {
+            setPrivacySettings(data.preferences.privacy);
+          }
+
+          // Display
+          if (data.preferences.display) {
+            setDisplayPreferences(data.preferences.display);
+          }
+
+          if (data.preferences.insurance) {
+            setInsurancePreferences(data.preferences.insurance);
+          }
+        }
+
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
   }, []);
 
   // ✅ LOGOUT

@@ -24,7 +24,7 @@ import {
 
 
 } from 'lucide-react';
-
+import api from "../utils/api";
 export default function Settings() {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -57,8 +57,8 @@ export default function Settings() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const response = await fetch("http://127.0.0.1:8000/users/profile");
-                const data = await response.json();
+                const response = await api.get("/users/profile");
+                const data = await response.data;
 
                 setProfile({
                     name: data.name,
@@ -123,21 +123,13 @@ export default function Settings() {
 
     const saveAll = async () => {
         try {
-            await fetch("http://127.0.0.1:8000/users", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name: profile.name,
-                    phone: profile.phone,
-                    address: profile.address,
-                    occupation: profile.occupation,
-                    dob: profile.dob
-                })
+            await api.put("/users/profile", {
+                name: profile.name,
+                phone: profile.phone,
+                address: profile.address,
+                occupation: profile.occupation,
+                dob: profile.dob
             });
-            // Apply theme after saving
-
 
             setIsEditing(false);
             setSaved(true);
@@ -147,7 +139,6 @@ export default function Settings() {
             console.error("Error saving profile:", error);
         }
     };
-
     // ================= SUCCESS MESSAGE =================
 
     const [saveMessage, setSaveMessage] = useState(false);
@@ -213,21 +204,17 @@ export default function Settings() {
 
     const handleSavePreferences = async () => {
         try {
-            await fetch("http://127.0.0.1:8000/users/preferences", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
+            await api.put("/users/preferences", {
+
+                notifications: {
+                    email: emailNotifications,
+                    sms: smsNotifications,
+                    push: pushNotifications
                 },
-                body: JSON.stringify({
-                    notifications: {
-                        email: emailNotifications,
-                        sms: smsNotifications,
-                        push: pushNotifications
-                    },
-                    privacy: privacySettings,
-                    display: displayPreferences,
-                    insurance: insurancePreferences
-                })
+                privacy: privacySettings,
+                display: displayPreferences,
+                insurance: insurancePreferences
+
             });
 
             // save locally

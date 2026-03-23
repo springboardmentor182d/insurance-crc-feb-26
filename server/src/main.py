@@ -3,15 +3,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List
-
+from src.auth.routes import router as auth_router
 from src.database.core import Base, engine, SessionLocal
 from src.entities.user import User
 from src.entities.dashboard import DashboardData
 from src.schemas.user_schema import UserCreate, UserResponse
 from src.users.controller import router as user_router
-
 app = FastAPI()
+from src.auth.routes import router as auth_router
+
+app.include_router(auth_router)   # ✅ ADD THIS
+
+
 app.include_router(user_router)
+
+
+
 
 # Create tables automatically
 Base.metadata.create_all(bind=engine)

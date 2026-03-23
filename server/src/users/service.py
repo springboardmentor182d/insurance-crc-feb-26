@@ -5,7 +5,55 @@ from src.entities.user import User
 def get_user_profile(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
 
+def get_default_preferences():
+    return {
+        "notifications": {
+            "email": {
+                "policyUpdates": True,
+                "claimStatus": True,
+                "paymentReminders": True,
+                "recommendations": False,
+                "marketing": False,
+                "newsletter": True,
+            },
+            "sms": {
+                "claimApproval": True,
+                "paymentDue": True,
+                "emergencyAlerts": True,
+                "policyExpiry": True,
+            },
+            "push": {
+                "enabled": True,
+                "claimUpdates": True,
+                "messages": True,
+                "promotions": False,
+            },
+        },
+        "privacy": {
+            "profileVisibility": "private",
+            "shareDataWithPartners": False,
+            "allowAnalytics": True,
+            "showOnlineStatus": False,
+        },
+        "display": {
+            "language": "en",
+            "timezone": "Asia/Kolkata",
+            "dateFormat": "DD/MM/YYYY",
+            "currency": "INR",
+            "theme": "light",
+        },
+        "insurance": {
+            "interestedPolicies": ["Health", "Auto"],
+            "autoRenewal": True,
+            "paperlessBilling": True,
+            "preferredPaymentMethod": "upi",
 
+            # ✅ IMPORTANT FIX (NO MORE 500 ERROR)
+            "coverageAmount": None,
+            "premiumAmount": None,
+        },
+    }
+    
 def update_user_profile(db: Session, user_id: int, data):
     user = db.query(User).filter(User.id == user_id).first()
 

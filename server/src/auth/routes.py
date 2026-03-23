@@ -1,62 +1,46 @@
-import os
-from dotenv import load_dotenv
+# src/auth/routes.py
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from pydantic import BaseModel, EmailStr
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-
-# Load environment variables
-load_dotenv()
-
-# ✅ Correct imports after restructuring
+import os
+from src.users.service import get_default_preferences
 from src.database.core import SessionLocal
-from .models import User
+from src.entities.user import User   # ✅ FIXED (single model)
 
-router = APIRouter()
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
-# ==============================
-# Security Configuration
-# ==============================
-
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY is not set in .env file")
-
+SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
-
-
-# ==============================
-# Pydantic Schemas
-# ==============================
+from datetime import date
+from pydantic import BaseModel, EmailStr, field_validator
 
 class SignupRequest(BaseModel):
     name: str
     email: EmailStr
     password: str
+    phone: str
+    address: str
+    dob: date
 
+    @field_validator("dob")
+    def validate_age(cls, value):
+        from datetime import date
+        today = date.today()
+        age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
 
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+        if age < 18:
+            raise ValueError("User must be at least 18 years old")
 
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str
-
-
-# ==============================
-# Database Dependency
-# ==============================
-
+        return value
+# DB
 def get_db():
     db = SessionLocal()
     try:
@@ -65,54 +49,39 @@ def get_db():
         db.close()
 
 
-# ==============================
-# Utility Functions
-# ==============================
-
+# HASH
 def hash_password(password: str):
-    return pwd_context.hash(password)
+    return pwd_context.hash(password[:72])
 
 
-def verify_password(plain_password: str, hashed_password: str):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain, hashed):
+    return pwd_context.verify(plain, hashed)
 
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+# TOKEN
+def create_token(data: dict):
+    data.update({"exp": datetime.utcnow() + timedelta(minutes=60)})
+    return jwt.encode(data, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-    )
-
+# GET USER
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
+        email = payload.get("sub")
+    except:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     user = db.query(User).filter(User.email == email).first()
-
-    if user is None:
-        raise credentials_exception
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
 
     return user
 
 
-# ==============================
-# Signup Endpoint
-# ==============================
-
+# ============================
+# SIGNUP
+# ============================
 @router.post("/signup")
 def signup(request: SignupRequest, db: Session = Depends(get_db)):
 
@@ -125,7 +94,11 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     new_user = User(
         name=request.name,
         email=request.email,
-        password=hashed_password
+        password=hashed_password,
+        phone=request.phone,
+        address=request.address,
+        dob=request.dob,
+        preferences=get_default_preferences()
     )
 
     db.add(new_user)
@@ -133,41 +106,32 @@ def signup(request: SignupRequest, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return {"message": "User created successfully"}
+# ============================
+# LOGIN
+# ============================
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
-
-# ==============================
-# Login Endpoint (JWT)
-# ==============================
-
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.email == request.email).first()
 
-    if not user:
-        raise HTTPException(status_code=400, detail="Invalid email or password")
+    if not user or not verify_password(request.password, user.password):
+        raise HTTPException(status_code=400, detail="Invalid credentials")
 
-    if not verify_password(request.password, user.password):
-        raise HTTPException(status_code=400, detail="Invalid email or password")
+    token = create_token({"sub": user.email})
 
-    access_token = create_access_token(
-        data={"sub": user.email}
-    )
+    return {"access_token": token}
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
-
-
-# ==============================
-# Protected Route
-# ==============================
-
+# ============================
+# ME
+# ============================
 @router.get("/me")
-def read_current_user(current_user: User = Depends(get_current_user)):
+def get_me(user: User = Depends(get_current_user)):
     return {
-        "id": current_user.id,
-        "name": current_user.name,
-        "email": current_user.email
+        "id": user.id,
+        "name": user.name,
+        "email": user.email
     }
