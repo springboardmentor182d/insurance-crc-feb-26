@@ -82,7 +82,14 @@ Backend currently serves both:
 - `/api/v1/...` (primary for frontend)
 - legacy root paths `...` (backward compatibility)
 
-## Common Endpoints
+## Common Endpoints (Current)
+Use these as base paths, and prepend `/api/v1` for primary frontend routes.
+Example: `GET /admin/stats` -> `GET /api/v1/admin/stats`
+
+Health:
+- `GET /health`
+- `GET /`
+
 Auth:
 - `POST /auth/register`
 - `POST /auth/login`
@@ -90,13 +97,30 @@ Auth:
 - `POST /auth/refresh`
 - `POST /auth/logout`
 
-Admin Dashboard:
+Admin Auth + Dashboard:
+- `POST /admin/signup`
+- `POST /admin/login`
 - `GET /admin/stats`
 - `GET /admin/claims-trends`
 - `GET /admin/revenue`
 - `GET /admin/policy-distribution`
 - `GET /admin/top-adjusters`
 - `GET /admin/recent-activity`
+- `GET /admin/dashboard/policies`
+- `GET /admin/dashboard/claims`
+
+Admin Fraud Rules:
+- `GET /admin/fraud-rules`
+- `POST /admin/fraud-rules`
+- `PUT /admin/fraud-rules/{rule_id}`
+- `DELETE /admin/fraud-rules/{rule_id}`
+
+Admin Flagged Claims:
+- `GET /admin/flagged-claims`
+- `GET /admin/flagged-claims/stats`
+- `GET /admin/flagged-claims/{claim_id}/details`
+- `POST /admin/flagged-claims/{claim_id}/confirm-fraud`
+- `POST /admin/flagged-claims/{claim_id}/clear`
 
 Manage Policies:
 - `GET /admin/policies/stats`
@@ -106,11 +130,24 @@ Manage Policies:
 - `PUT /admin/policies/{policy_id}`
 - `DELETE /admin/policies/{policy_id}`
 
+Policy Catalog + Active Policies:
+- `GET /api/policies`
+- `GET /api/policies/active`
+- `GET /api/policies/active/summary`
+- `POST /api/policies/active/external`
+
+Claims:
+- `POST /claims`
+
 Users:
 - `GET /users/profile`
 - `PUT /users/profile`
 - `GET /users/preferences`
 - `PUT /users/preferences`
+- `GET /api/users/profile`
+- `PUT /api/users/profile`
+- `GET /api/users/preferences`
+- `PUT /api/users/preferences`
 
 ## Tests
 Backend:
