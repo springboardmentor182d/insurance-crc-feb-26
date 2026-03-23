@@ -1,0 +1,76 @@
+body{
+font-family:Arial;
+background:#f5f7fb;
+}
+
+.container{
+width:900px;
+margin:auto;
+}
+
+.profile{
+background:linear-gradient(135deg,#1e4ed8,#2563eb);
+color:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+}
+
+.coverage span{
+background:#3b82f6;
+padding:6px 12px;
+margin:5px;
+border-radius:20px;
+display:inline-block;
+}
+
+.tabs{
+margin-bottom:20px;
+}
+
+.tabs button{
+padding:10px 15px;
+margin:5px;
+border:none;
+background:#e5e7eb;
+border-radius:20px;
+cursor:pointer;
+}
+
+.tabs .active{
+background:black;
+color:white;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+.buttons{
+margin-top:20px;
+}
+
+.quote{
+background:#2563eb;
+color:white;
+border:none;
+padding:10px 20px;
+border-radius:8px;
+margin-right:10px;
+}
+
+.learn{
+background:#e5e7eb;
+border:none;
+padding:10px 20px;
+border-radius:8px;
+}
+
+.not{
+border:none;
+background:white;
+margin-left:10px;
+}
