@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String
 from .database import Base
 
@@ -9,3 +10,5 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True)
     password = Column(String)
+
+# update s

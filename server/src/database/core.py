@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine 
-from sqlalchemy.orm import sessionmaker,declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base
 
 DATABASE_URL = "postgresql://postgres:lakshmidevi%4012@localhost:5432/insurance_db"
 
@@ -18,7 +18,6 @@ def get_fraud_cases():
 
 def get_detection_rules():
     return detection_rules
-
 
 
 def create_rule(rule):

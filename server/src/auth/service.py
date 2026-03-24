@@ -1,3 +1,4 @@
+
 def login_service(email):
 
     if email == "admin@gmail.com":
@@ -12,4 +13,5 @@ def login_service(email):
             "redirect": "/user-dashboard"
         }
 
-    return {"role": "invalid"}
+    return {"role": "invalid","ridirect":"/invalid"}
+# update 

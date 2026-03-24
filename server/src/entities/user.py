@@ -1,3 +1,4 @@
+
 from sqlalchemy import Column, Integer, String
 from src.database.core import Base
 
@@ -9,3 +10,6 @@ class User(Base):
     email = Column(String, unique=True)
     password = Column(String)
     role = Column(String)   # admin or user
+
+# update 
+
