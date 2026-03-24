@@ -225,24 +225,32 @@ export default function App() {
   const [dashboard, setDashboard] = useState(null)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-      fetch('http://127.0.0.1:8000/stats')
-      .then((res) => res.json())
-      .then((data) =>
-       setDashboard({
-    ...defaultStats,
-    approvedClaims: data.approved,
-    pendingClaims: data.pending,
-    rejected: data.rejected,
-    underReview: data.pending, // or separate if backend provides it
-  })
-)
-      .catch((err) => {
-        console.warn(err)
-        setDashboard(defaultStats)
-        setError('Could not load backend data, using default values.')
+useEffect(() => {
+  const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+  if (!BASE_URL) {
+    console.error("BASE_URL is undefined. Check your .env file.");
+    setDashboard(defaultStats);
+    return;
+  }
+
+  fetch(`${BASE_URL}/claims`)
+    .then((res) => res.json())
+    .then((data) =>
+      setDashboard({
+        ...defaultStats,
+        approvedClaims: data.approved,
+        pendingClaims: data.pending,
+        rejected: data.rejected,
+        underReview: data.pending,
       })
-  }, [])
+    )
+    .catch((err) => {
+      console.warn(err);
+      setDashboard(defaultStats);
+      setError('Could not load backend data, using default values.');
+    });
+}, []);
 
   if (!dashboard) {
     return (

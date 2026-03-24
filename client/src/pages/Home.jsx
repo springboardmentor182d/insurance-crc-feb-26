@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import axios from 'axios'
 import BarChart from '../components/charts/BarChart'
 import PieChart from '../components/charts/PieChart'
 import Sidebar from '../layout/Sidebar'
@@ -9,9 +10,12 @@ export default function Home() {
   const [data, setData] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:8000/dashboard')
-      .then(res => res.json())
-      .then(d => setData({ ...defaultStats, ...d }))
+    const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+    axios.get(`${BASE_URL}/claims`)
+      .then(res => {
+        setData({ ...defaultStats, ...res.data })
+      })
       .catch(() => setData(defaultStats))
   }, [])
 
