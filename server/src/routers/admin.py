@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
@@ -72,6 +73,64 @@ def _safe_datetime(raw_value: object) -> datetime | None:
         return None
 
 
+def _percent_change(current: int, previous: int) -> float:
+    if previous <= 0:
+        return 100.0 if current > 0 else 0.0
+    return ((current - previous) / previous) * 100
+
+
+def _build_performance_metrics(
+    total_claims: int,
+    approved_claims: int,
+    claims_paid: float,
+    high_risk_claims: int,
+    users_count: int,
+    users_with_plans: int,
+    total_policies: int,
+    active_policies: int,
+    total_policy_coverage: float,
+) -> list[dict]:
+    average_claim_amount = (claims_paid / approved_claims) if approved_claims else 0.0
+    average_policy_coverage = (total_policy_coverage / total_policies) if total_policies else 0.0
+    approval_rate = (approved_claims / total_claims) * 100 if total_claims else 0.0
+    high_risk_rate = (high_risk_claims / total_claims) * 100 if total_claims else 0.0
+    policy_adoption = (users_with_plans / users_count) * 100 if users_count else 0.0
+    active_policy_rate = (active_policies / total_policies) * 100 if total_policies else 0.0
+
+    return [
+        {
+            "label": "Approval Rate",
+            "value": f"{approval_rate:.1f}%",
+            "percent": round(approval_rate, 1),
+        },
+        {
+            "label": "Average Approved Claim",
+            "value": _format_rupees_compact(average_claim_amount),
+            "percent": min(round((average_claim_amount / 100000) * 100, 1), 100) if average_claim_amount else 0,
+        },
+        {
+            "label": "Average Policy Coverage",
+            "value": _format_rupees_compact(average_policy_coverage),
+            "percent": min(round((average_policy_coverage / 100000) * 100, 1), 100) if average_policy_coverage else 0,
+        },
+        {
+            "label": "High Risk Claim Rate",
+            "value": f"{high_risk_rate:.1f}%",
+            "percent": round(high_risk_rate, 1),
+        },
+        {
+            "label": "User Policy Adoption",
+            "value": f"{policy_adoption:.1f}%",
+            "percent": round(policy_adoption, 1),
+        },
+        {
+            "label": "Active Policy Rate",
+            "value": f"{active_policy_rate:.1f}%",
+            "percent": round(active_policy_rate, 1),
+        },
+    ]
+
+
 @router.get("/dashboard")
 def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
     users_rows = db.execute(
@@ -119,6 +178,8 @@ def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
     policy_id_to_name = {row["id"]: row.get("name") or "-" for row in policies_rows}
 
     total_claims = len(claims_rows)
+    total_policies = len(policies_rows)
+    total_users = len(users_rows)
     high_risk_claims = sum(1 for row in claims_rows if str(row.get("risk_level") or "").lower() == "high")
     active_policies_rows = [row for row in policies_rows if bool(row.get("is_active"))]
     active_policies = len(active_policies_rows)
@@ -143,6 +204,13 @@ def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
         if str(row.get("status") or "").lower() in {"approved", "paid"}
     )
     total_revenue = sum(_to_float(row.get("premium_amount")) for row in active_policies_rows)
+    total_policy_coverage = sum(_to_float(row.get("coverage_amount")) for row in policies_rows)
+
+    now = datetime.utcnow()
+    current_year = now.year
+    current_month = now.month
+    previous_year = current_year if current_month > 1 else current_year - 1
+    previous_month = current_month - 1 if current_month > 1 else 12
 
     policies_by_user: dict[int, list[dict]] = {}
     for row in active_policies_rows:
@@ -237,6 +305,15 @@ def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
             }
         )
 
+    provider_breakdown_counter = Counter(
+        str(row.get("provider") or "Unknown")
+        for row in active_policies_rows
+    )
+    provider_breakdown = [
+        {"provider": provider, "count": count}
+        for provider, count in provider_breakdown_counter.most_common()
+    ]
+
     month_index = _month_buckets()
     month_lookup = {(year, month): idx for idx, (year, month, _) in enumerate(month_index)}
     policy_counts = [0] * len(month_index)
@@ -262,51 +339,115 @@ def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
     if len(policy_counts) >= 2 and policy_counts[-2] > 0:
         month_over_month_growth = ((policy_counts[-1] - policy_counts[-2]) / policy_counts[-2]) * 100
 
-    max_coverage = sum(_to_float(row.get("coverage_amount")) for row in active_policies_rows)
-    claim_ratio = round((claims_paid / max_coverage) * 100, 1) if max_coverage else 0
+    claim_ratio = round((claims_paid / total_policy_coverage) * 100, 1) if total_policy_coverage else 0
 
-    performance_metrics = [
-        {
-            "label": "Customer Satisfaction",
-            "value": f"{(4.5 if users_with_plans else 0):.1f}/5.0",
-            "percent": 90 if users_with_plans else 0,
-        },
-        {
-            "label": "Claim Processing Speed",
-            "value": f"{(2.5 if total_claims else 0):.1f} days avg",
-            "percent": 80 if total_claims else 0,
-        },
-        {
-            "label": "Policy Renewal Rate",
-            "value": f"{(87 if active_policies else 0)}%",
-            "percent": 87 if active_policies else 0,
-        },
-        {
-            "label": "Fraud Detection Rate",
-            "value": f"{(98 if fraud_rules_data else 0)}%",
-            "percent": 98 if fraud_rules_data else 0,
-        },
-        {
-            "label": "User Retention",
-            "value": f"{(92 if users_data else 0)}%",
-            "percent": 92 if users_data else 0,
-        },
+    current_month_claims = [
+        row for row in claims_rows
+        if (created_at := _safe_datetime(row.get("created_at")))
+        and created_at.year == current_year
+        and created_at.month == current_month
+    ]
+    previous_month_claims = [
+        row for row in claims_rows
+        if (created_at := _safe_datetime(row.get("created_at")))
+        and created_at.year == previous_year
+        and created_at.month == previous_month
+    ]
+    current_month_policies = [
+        row for row in policies_rows
+        if (created_at := _safe_datetime(row.get("created_at")))
+        and created_at.year == current_year
+        and created_at.month == current_month
+    ]
+    previous_month_policies = [
+        row for row in policies_rows
+        if (created_at := _safe_datetime(row.get("created_at")))
+        and created_at.year == previous_year
+        and created_at.month == previous_month
     ]
 
-    claims_by_status = {
-        "pending": 0,
-        "approved": 0,
-        "rejected": 0,
-    }
-    for row in claims_rows:
-        status = str(row.get("status") or "").lower()
-        if status in claims_by_status:
-            claims_by_status[status] += 1
+    current_month_high_risk = sum(
+        1 for row in current_month_claims if str(row.get("risk_level") or "").lower() == "high"
+    )
+    previous_month_high_risk = sum(
+        1 for row in previous_month_claims if str(row.get("risk_level") or "").lower() == "high"
+    )
+    current_month_active_policies = sum(1 for row in current_month_policies if bool(row.get("is_active")))
+    previous_month_active_policies = sum(1 for row in previous_month_policies if bool(row.get("is_active")))
+    current_month_users_with_plans = len({
+        row.get("user_id")
+        for row in current_month_policies
+        if bool(row.get("is_active")) and row.get("user_id") is not None
+    })
+    previous_month_users_with_plans = len({
+        row.get("user_id")
+        for row in previous_month_policies
+        if bool(row.get("is_active")) and row.get("user_id") is not None
+    })
 
-    policy_type_counts: dict[str, int] = {}
+    overview_trends = {
+        "total_claims": round(_percent_change(len(current_month_claims), len(previous_month_claims)), 1),
+        "high_risk_claims": round(_percent_change(current_month_high_risk, previous_month_high_risk), 1),
+        "active_policies": round(_percent_change(current_month_active_policies, previous_month_active_policies), 1),
+        "users_with_plans": round(_percent_change(current_month_users_with_plans, previous_month_users_with_plans), 1),
+    }
+
+    claims_by_status_counter = Counter()
+    for row in claims_rows:
+        status = str(row.get("status") or "unknown").strip().lower()
+        claims_by_status_counter[status] += 1
+
+    policy_type_counter = Counter()
     for row in policies_rows:
-        policy_type = str(row.get("policy_type") or "Unknown")
-        policy_type_counts[policy_type] = policy_type_counts.get(policy_type, 0) + 1
+        policy_type = str(row.get("policy_type") or "Unknown").strip()
+        policy_type_counter[policy_type] += 1
+
+    activity_feed = []
+    for row in claims_rows[:5]:
+        activity_feed.append(
+            {
+                "title": f"Claim {f'CLM-{_to_int(row.get('id')):04d}'} updated",
+                "description": f"Status: {str(row.get('status') or 'pending').title()}",
+                "type": "Claim",
+                "timestamp": row.get("created_at"),
+            }
+        )
+    for row in policies_rows[:5]:
+        activity_feed.append(
+            {
+                "title": f"Policy {row.get('name') or '-'} available",
+                "description": f"Provider: {row.get('provider') or '-'}",
+                "type": "Policy",
+                "timestamp": row.get("created_at"),
+            }
+        )
+    for row in users_rows[:5]:
+        activity_feed.append(
+            {
+                "title": f"User {row.get('full_name') or 'User'} registered",
+                "description": str(row.get("email") or ""),
+                "type": "User",
+                "timestamp": row.get("created_at"),
+            }
+        )
+
+    recent_activity = sorted(
+        activity_feed,
+        key=lambda item: _safe_datetime(item.get("timestamp")) or datetime.min,
+        reverse=True,
+    )[:8]
+
+    performance_metrics = _build_performance_metrics(
+        total_claims=total_claims,
+        approved_claims=approved_claims,
+        claims_paid=claims_paid,
+        high_risk_claims=high_risk_claims,
+        users_count=total_users,
+        users_with_plans=users_with_plans,
+        total_policies=total_policies,
+        active_policies=active_policies,
+        total_policy_coverage=total_policy_coverage,
+    )
 
     return {
         "overview": {
@@ -314,12 +455,14 @@ def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
             "high_risk_claims": high_risk_claims,
             "active_policies": active_policies,
             "users_with_plans": users_with_plans,
+            "trends": overview_trends,
             "approval_rate": approval_rate,
-            "avg_processing_time_days": 2.5 if total_claims else 0,
-            "customer_satisfaction": 4.8 if users_with_plans else 0,
+            "avg_processing_time_days": None,
+            "customer_satisfaction": None,
             "high_priority_alerts": high_risk_claims,
             "medium_priority_alerts": max(total_claims - approved_claims, 0),
         },
+        "recent_activity": recent_activity,
         "users": users_data,
         "policies": policies_data,
         "claims": claims_data,
@@ -328,6 +471,7 @@ def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
             "total_active_policies": active_policies,
             "monthly_growth_percent": round(month_over_month_growth, 1),
             "users_with_active_plans": users_with_plans,
+            "provider_breakdown": provider_breakdown,
             "users": active_users_table,
         },
         "analytics": {
@@ -341,10 +485,10 @@ def get_admin_dashboard(db: Session = Depends(get_db)) -> dict:
                 "claims": claim_counts,
             },
             "performance_metrics": performance_metrics,
-            "claims_by_status": claims_by_status,
+            "claims_by_status": dict(sorted(claims_by_status_counter.items())),
             "policies_by_type": [
                 {"type": key, "count": value}
-                for key, value in sorted(policy_type_counts.items())
+                for key, value in sorted(policy_type_counter.items())
             ],
         },
     }

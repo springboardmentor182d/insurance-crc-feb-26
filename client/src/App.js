@@ -1,15 +1,12 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import {
   FiAlertTriangle,
   FiCheck,
-  FiChevronDown,
-  FiClipboard,
   FiDollarSign,
   FiFile,
-  FiGrid,
-  FiHelpCircle,
-  FiInfo,
   FiFileText,
+  FiGrid,
+  FiInfo,
   FiLogOut,
   FiMail,
   FiPlus,
@@ -18,37 +15,51 @@ import {
   FiUsers,
 } from "react-icons/fi";
 import { LuBuilding2 } from "react-icons/lu";
+import { Link, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import apiClient from "./utils/apiClient";
 import "./App.css";
-import { Routes, Route, Navigate, useLocation, Link } from "react-router-dom";
 
 function AnalyticsNavIcon({ size = 14 }) {
-  // L-shaped chart: thick horizontal base, three vertical bars (left short, middle medium, right tallest), all rounded
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      {/* Thick horizontal base */}
-      <rect x="2" y="16" width="15.5" height="2.2" rx="1.1" fill="currentColor" />
-      {/* Left bar (shortest) */}
-      <rect x="4" y="12" width="2.2" height="4" rx="1.1" fill="currentColor" />
-      {/* Middle bar (medium) */}
-      <rect x="8.2" y="8.5" width="2.2" height="7.5" rx="1.1" fill="currentColor" />
-      {/* Right bar (tallest) */}
-      <rect x="12.4" y="4" width="2.2" height="12" rx="1.1" fill="currentColor" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 3.75V18.5C4 19.33 4.67 20 5.5 20H19.5"
+        stroke="currentColor"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <rect x="7.1" y="12.2" width="2.5" height="4.3" rx="1.25" fill="currentColor" />
+      <rect x="11.2" y="5.2" width="2.6" height="11.3" rx="1.3" fill="currentColor" />
+      <rect x="15.8" y="8.1" width="2.6" height="8.4" rx="1.3" fill="currentColor" />
     </svg>
   );
 }
 
-
 function ClaimsNavIcon({ size = 14 }) {
-  // File with bold border and thick tick
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      {/* File outline */}
-      <rect x="3.5" y="2.5" width="13" height="15" rx="2.5" stroke="currentColor" strokeWidth="2.2" fill="none" />
-      {/* Folded corner */}
-      <rect x="7" y="2" width="6" height="3.5" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
-      {/* Bold checkmark */}
-      <path d="M8 12.2L10 14.2L13.5 10.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M7 3.75H14.25L19 8.5V18C19 19.1 18.1 20 17 20H7C5.9 20 5 19.1 5 18V5.75C5 4.65 5.9 3.75 7 3.75Z"
+        stroke="currentColor"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 4V8C14 8.83 14.67 9.5 15.5 9.5H19"
+        stroke="currentColor"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 13L11.15 15.2L15.4 10.4"
+        stroke="currentColor"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -63,18 +74,25 @@ const navItems = [
   { key: "analytics", label: "Analytics", icon: AnalyticsNavIcon, path: "/admin/analytics" },
 ];
 
-const fallbackData = {
+const emptyDashboardData = {
   overview: {
     total_claims: 0,
     high_risk_claims: 0,
     active_policies: 0,
     users_with_plans: 0,
+    trends: {
+      total_claims: 0,
+      high_risk_claims: 0,
+      active_policies: 0,
+      users_with_plans: 0,
+    },
     approval_rate: 0,
-    avg_processing_time_days: 0,
-    customer_satisfaction: 0,
+    avg_processing_time_days: null,
+    customer_satisfaction: null,
     high_priority_alerts: 0,
     medium_priority_alerts: 0,
   },
+  recent_activity: [],
   users: [],
   policies: [],
   claims: [],
@@ -83,29 +101,66 @@ const fallbackData = {
     total_active_policies: 0,
     monthly_growth_percent: 0,
     users_with_active_plans: 0,
+    provider_breakdown: [],
     users: [],
   },
   analytics: {
-    total_revenue: "\u20b90.0L",
-    claims_paid: "\u20b90.0L",
+    total_revenue: "-",
+    claims_paid: "-",
     active_users: 0,
-    claim_ratio: "0%",
+    claim_ratio: "-",
     monthly_trends: {
-      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-      policies: [0, 0, 0, 0, 0, 0],
-      claims: [0, 0, 0, 0, 0, 0],
+      labels: [],
+      policies: [],
+      claims: [],
     },
-    performance_metrics: [
-      { label: "Customer Satisfaction", value: "0.0/5.0", percent: 0 },
-      { label: "Claim Processing Speed", value: "0.0 days avg", percent: 0 },
-      { label: "Policy Renewal Rate", value: "0%", percent: 0 },
-      { label: "Fraud Detection Rate", value: "0%", percent: 0 },
-      { label: "User Retention", value: "0%", percent: 0 },
-    ],
+    performance_metrics: [],
+    claims_by_status: {},
+    policies_by_type: [],
   },
 };
 
-const cleanCurrency = (value) => String(value || "\u20b90.0L").replace("Rs ", "\u20b9");
+const normalizeDashboardData = (data) => ({
+  ...emptyDashboardData,
+  ...data,
+  overview: { ...emptyDashboardData.overview, ...(data?.overview || {}) },
+  recent_activity: Array.isArray(data?.recent_activity) ? data.recent_activity : [],
+  users: Array.isArray(data?.users) ? data.users : [],
+  policies: Array.isArray(data?.policies) ? data.policies : [],
+  claims: Array.isArray(data?.claims) ? data.claims : [],
+  fraud_rules: Array.isArray(data?.fraud_rules) ? data.fraud_rules : [],
+  active_policies: {
+    ...emptyDashboardData.active_policies,
+    ...(data?.active_policies || {}),
+    provider_breakdown: Array.isArray(data?.active_policies?.provider_breakdown)
+      ? data.active_policies.provider_breakdown
+      : [],
+    users: Array.isArray(data?.active_policies?.users) ? data.active_policies.users : [],
+  },
+  analytics: {
+    ...emptyDashboardData.analytics,
+    ...(data?.analytics || {}),
+    monthly_trends: {
+      ...emptyDashboardData.analytics.monthly_trends,
+      ...(data?.analytics?.monthly_trends || {}),
+      labels: Array.isArray(data?.analytics?.monthly_trends?.labels) ? data.analytics.monthly_trends.labels : [],
+      policies: Array.isArray(data?.analytics?.monthly_trends?.policies) ? data.analytics.monthly_trends.policies : [],
+      claims: Array.isArray(data?.analytics?.monthly_trends?.claims) ? data.analytics.monthly_trends.claims : [],
+    },
+    performance_metrics: Array.isArray(data?.analytics?.performance_metrics)
+      ? data.analytics.performance_metrics
+      : [],
+    claims_by_status: data?.analytics?.claims_by_status || {},
+    policies_by_type: Array.isArray(data?.analytics?.policies_by_type) ? data.analytics.policies_by_type : [],
+  },
+});
+
+const formatNullable = (value, suffix = "") => {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+  return `${value}${suffix}`;
+};
 
 const riskToneClass = (riskLevel) => {
   const normalized = String(riskLevel || "").toLowerCase();
@@ -114,64 +169,104 @@ const riskToneClass = (riskLevel) => {
   return "ok";
 };
 
-const normalizeDashboardData = (data) => ({
-  ...fallbackData,
-  ...data,
-  overview: { ...fallbackData.overview, ...(data?.overview || {}) },
-  users: data?.users || [],
-  policies: data?.policies || [],
-  claims: data?.claims || [],
-  fraud_rules: data?.fraud_rules || [],
-  active_policies: { ...fallbackData.active_policies, ...(data?.active_policies || {}) },
-  analytics: {
-    ...fallbackData.analytics,
-    ...(data?.analytics || {}),
-    monthly_trends: { ...fallbackData.analytics.monthly_trends, ...(data?.analytics?.monthly_trends || {}) },
-    performance_metrics: data?.analytics?.performance_metrics || fallbackData.analytics.performance_metrics,
-  },
-});
+const titleCase = (value) =>
+  String(value || "")
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join(" ");
 
-const OverviewSection = ({ overview }) => (
+const HomePage = () => (
+  <main className="app-shell">
+    <h3>Insurence_CRC</h3>
+  </main>
+);
+
+const EmptyState = ({ message }) => <p className="empty-row">{message}</p>;
+
+const RecentActivityPanel = ({ recentActivity }) => (
+  <div className="panel recent-panel full-height-panel">
+    <h3>Recent Activity</h3>
+    {recentActivity.length ? (
+      <div className="activity-list">
+        {recentActivity.map((item, index) => (
+          <div key={`${item.title}-${index}`} className="activity-item">
+            <strong>{item.title}</strong>
+            <span>{item.description || "-"}</span>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <EmptyState message="No recent activity found" />
+    )}
+  </div>
+);
+
+const SystemAlertsPanel = ({ overview }) => {
+  const alerts = [
+    {
+      key: "high",
+      tone: "high",
+      title: "High Priority",
+      message: `${overview.high_priority_alerts} high-risk claims pending review`,
+      Icon: FiAlertTriangle,
+    },
+    {
+      key: "medium",
+      tone: "medium",
+      title: "Medium Priority",
+      message: `${overview.medium_priority_alerts} claims under review`,
+      Icon: FiAlertTriangle,
+    },
+    {
+      key: "info",
+      tone: "info",
+      title: "Info",
+      message: "System operating normally",
+      Icon: FiInfo,
+    },
+  ];
+
+  return (
+    <div className="panel alerts-panel">
+      <h3>System Alerts</h3>
+      {alerts.map((alert) => (
+        <div key={alert.key} className={`alert-box ${alert.tone}`}>
+          <div className="alert-title"><alert.Icon size={12} />{alert.title}</div>
+          <div className="alert-message">{alert.message}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const QuickStatsPanel = ({ overview }) => (
+  <div className="panel quick-panel">
+    <h3>Quick Stats</h3>
+    <p>Approval Rate</p>
+    <strong>{formatNullable(overview.approval_rate, "%")}</strong>
+    <p>Avg. Processing Time</p>
+    <strong>{formatNullable(overview.avg_processing_time_days, " days")}</strong>
+    <p>Customer Satisfaction</p>
+    <strong>{formatNullable(overview.customer_satisfaction, "/5")}</strong>
+  </div>
+);
+
+const OverviewSection = ({ overview, recentActivity }) => (
   <>
     <h1 className="page-title">Admin Overview</h1>
     <div className="cards-grid four">
-      <StatCard title="Total Claims" value={String(overview.total_claims)} icon={FiFile} trend={`${overview.total_claims > 0 ? "+" : ""}${overview.total_claims}%`} trendGood={overview.total_claims >= 0} tone="green" iconTick />
-      <StatCard title="High-Risk Claims" value={String(overview.high_risk_claims)} icon={FiAlertTriangle} trend={`${overview.high_risk_claims > 0 ? "+" : ""}${overview.high_risk_claims}%`} tone="red" />
-      <StatCard title="Active Policies" value={String(overview.active_policies)} icon={FiShield} trend={`${overview.active_policies > 0 ? "+" : ""}${overview.active_policies}%`} trendGood={overview.active_policies >= 0} tone="green" />
-      <StatCard title="Users with Plans" value={String(overview.users_with_plans)} icon={FiUsers} trend={`${overview.users_with_plans > 0 ? "+" : ""}${overview.users_with_plans}%`} trendGood={overview.users_with_plans >= 0} tone="green" />
+      <StatCard title="Total Claims" value={String(overview.total_claims)} icon={FiFile} tone="green" iconTick trend={overview.trends?.total_claims} />
+      <StatCard title="High-Risk Claims" value={String(overview.high_risk_claims)} icon={FiAlertTriangle} tone="red" trend={overview.trends?.high_risk_claims} />
+      <StatCard title="Active Policies" value={String(overview.active_policies)} icon={FiShield} tone="green" trend={overview.trends?.active_policies} />
+      <StatCard title="Users with Plans" value={String(overview.users_with_plans)} icon={FiUsers} tone="green" trend={overview.trends?.users_with_plans} />
     </div>
 
     <div className="split-layout">
-      <div className="panel recent-panel">
-        <h3>Recent Activity</h3>
-      </div>
-
+      <RecentActivityPanel recentActivity={recentActivity} />
       <div className="stack">
-        <div className="panel alerts-panel">
-          <h3>System Alerts</h3>
-          <div className="alert-box high">
-            <div className="alert-title"><FiAlertTriangle size={12} />High Priority</div>
-            <div className="alert-message">{overview.high_priority_alerts} high-risk claims pending review</div>
-          </div>
-          <div className="alert-box medium">
-            <div className="alert-title"><FiAlertTriangle size={12} />Medium Priority</div>
-            <div className="alert-message">{overview.medium_priority_alerts} claims under review</div>
-          </div>
-          <div className="alert-box info">
-            <div className="alert-title"><FiInfo size={12} />Info</div>
-            <div className="alert-message">System operating normally</div>
-          </div>
-        </div>
-
-        <div className="panel quick-panel">
-          <h3>Quick Stats</h3>
-          <p>Approval Rate</p>
-          <strong>{overview.approval_rate}%</strong>
-          <p>Avg. Processing Time</p>
-          <strong>{overview.avg_processing_time_days} days</strong>
-          <p>Customer Satisfaction</p>
-          <strong>{overview.customer_satisfaction}/5</strong>
-        </div>
+        <SystemAlertsPanel overview={overview} />
+        <QuickStatsPanel overview={overview} />
       </div>
     </div>
   </>
@@ -199,18 +294,19 @@ const UsersSection = ({ users }) => (
           </tr>
         </thead>
         <tbody>
-          {users.map((row) => (
-            <tr key={row.email}>
-              <td><span className="avatar">{row.initials}</span> {row.name}</td>
-              <td><span className="cell-icon"><FiMail size={14} /></span>{row.email}</td>
-              <td><span className="cell-icon users-plans-icon"><FiShield size={14} /></span>{row.plans}</td>
-              <td>{cleanCurrency(row.coverage)}</td>
-              <td><span className="status-pill users-active-pill">{row.status}</span></td>
+          {users.map((row, index) => (
+            <tr key={row.email || index}>
+              <td><span className="avatar">{row.initials || "U"}</span> {row.name || "-"}</td>
+              <td><span className="cell-icon"><FiMail size={14} /></span>{row.email || "-"}</td>
+              <td><span className="cell-icon users-plans-icon"><FiShield size={14} /></span>{row.plans || 0}</td>
+              <td>{row.coverage || "-"}</td>
+              <td><span className="status-pill users-active-pill">{titleCase(row.status) || "-"}</span></td>
               <td className="action-link">View Details</td>
             </tr>
           ))}
         </tbody>
       </table>
+      {users.length === 0 ? <EmptyState message="No users found" /> : null}
     </div>
   </>
 );
@@ -235,19 +331,20 @@ const PoliciesSection = ({ policies }) => (
           </tr>
         </thead>
         <tbody>
-          {policies.map((row) => (
-            <tr key={row.name}>
-              <td>{row.name}</td>
-              <td><span className="cell-icon provider-icon"><LuBuilding2 size={13} /></span>{row.provider}</td>
-              <td><span className="type-pill">{row.type}</span></td>
-              <td>{cleanCurrency(row.coverage)}</td>
-              <td>{cleanCurrency(row.premium)}</td>
-              <td className="ratio">{row.ratio}</td>
+          {policies.map((row, index) => (
+            <tr key={row.id || row.name || index}>
+              <td>{row.name || "-"}</td>
+              <td><span className="cell-icon provider-icon"><LuBuilding2 size={13} /></span>{row.provider || "-"}</td>
+              <td><span className="type-pill">{row.type || "-"}</span></td>
+              <td>{row.coverage || "-"}</td>
+              <td>{row.premium || "-"}</td>
+              <td className="ratio">{row.ratio || "-"}</td>
               <td className="action-link">Edit</td>
             </tr>
           ))}
         </tbody>
       </table>
+      {policies.length === 0 ? <EmptyState message="No policies found" /> : null}
     </div>
   </>
 );
@@ -269,21 +366,21 @@ const ClaimsSection = ({ claims, highRiskClaims }) => (
           </tr>
         </thead>
         <tbody>
-          {claims.map((row) => (
-            <tr key={row.claim_id}>
-              <td>{row.claim_id}</td>
-              <td>{row.user}</td>
-              <td>{row.policy}</td>
-              <td>{row.type}</td>
-              <td>{cleanCurrency(row.amount)}</td>
-              <td><span className="status-pill">{row.status}</span></td>
-              <td><span className={`severity ${String(row.risk).toLowerCase()}`}>{row.risk}</span></td>
+          {claims.map((row, index) => (
+            <tr key={row.id || row.claim_id || index}>
+              <td>{row.claim_id || "-"}</td>
+              <td>{row.user || "-"}</td>
+              <td>{row.policy || "-"}</td>
+              <td>{row.type || "-"}</td>
+              <td>{row.amount || "-"}</td>
+              <td><span className="status-pill">{titleCase(row.status) || "-"}</span></td>
+              <td><span className={`severity ${String(row.risk || "").toLowerCase()}`}>{row.risk || "-"}</span></td>
               <td className="action-link">Review</td>
             </tr>
           ))}
         </tbody>
       </table>
-      {claims.length === 0 ? <p className="empty-row claims-empty-row">No claims filed yet</p> : null}
+      {claims.length === 0 ? <EmptyState message="No claims found" /> : null}
     </div>
   </>
 );
@@ -300,37 +397,58 @@ const FraudSection = ({ fraudRules }) => (
           <tr><th>Rule Name</th><th>Condition</th><th>Severity</th><th>Status</th><th>Actions</th></tr>
         </thead>
         <tbody>
-          {fraudRules.map((row) => (
-            <tr key={row.name}>
-              <td><span className="cell-icon"><FiAlertTriangle size={14} /></span>{row.name}</td>
-              <td>{row.condition}</td>
-              <td><span className={`severity ${row.severity.toLowerCase()}`}>{row.severity}</span></td>
-              <td><span className="status-pill">{row.status}</span></td>
+          {fraudRules.map((row, index) => (
+            <tr key={row.id || row.name || index}>
+              <td><span className="cell-icon"><FiAlertTriangle size={14} /></span>{row.name || "-"}</td>
+              <td>{row.condition || "-"}</td>
+              <td><span className={`severity ${String(row.severity || "").toLowerCase()}`}>{row.severity || "-"}</span></td>
+              <td><span className="status-pill">{titleCase(row.status) || "-"}</span></td>
               <td className="actions-inline"><span className="action-link">Edit</span><span className="danger">Deactivate</span></td>
             </tr>
           ))}
         </tbody>
       </table>
+      {fraudRules.length === 0 ? <EmptyState message="No fraud rules found" /> : null}
     </div>
   </>
 );
+
+const ProviderBreakdownPanel = ({ providerBreakdown }) => {
+  const maxCount = Math.max(1, ...providerBreakdown.map((item) => item.count || 0));
+
+  return (
+    <div className="panel active-provider-panel">
+      <h3>Active Policies by Provider</h3>
+      {providerBreakdown.length ? (
+        <div className="provider-list">
+          {providerBreakdown.map((item) => (
+            <div key={item.provider} className="provider-row">
+              <div className="provider-meta">
+                <span>{item.provider}</span>
+                <strong>{item.count}</strong>
+              </div>
+              <div className="bar provider-bar">
+                <div style={{ width: `${(item.count / maxCount) * 100}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState message="No active provider data found" />
+      )}
+    </div>
+  );
+};
 
 const ActivePoliciesSection = ({ activePolicies }) => (
   <div className="active-page">
     <h1 className="page-title">Active Policies</h1>
     <div className="cards-grid three">
       <StatCard title="Total Active Policies" value={String(activePolicies.total_active_policies)} icon={FiShield} tone="green" className="active-stat" />
-      <StatCard title="Monthly Growth" value={`${activePolicies.monthly_growth_percent > 0 ? "+" : ""}${activePolicies.monthly_growth_percent}%`} icon={FiTrendingUp} tone="green" className="active-stat" />
+      <StatCard title="Monthly Growth" value={formatNullable(activePolicies.monthly_growth_percent, "%")} icon={FiTrendingUp} tone="green" className="active-stat" />
       <StatCard title="Users with Active Plans" value={String(activePolicies.users_with_active_plans)} icon={FiUsers} tone="green" className="active-stat" />
     </div>
-    <div className="panel chart-panel active-provider-panel">
-      <h3>Active Policies by Provider</h3>
-      <div className="active-provider-canvas">
-        <div className="active-provider-inner" />
-        <div className="active-provider-baseline" />
-      </div>
-      <div className="active-legend"><span className="active-legend-dot" />policies</div>
-    </div>
+    <ProviderBreakdownPanel providerBreakdown={activePolicies.provider_breakdown} />
     <div className="table-panel mt16 active-users-table">
       <h3>Users with Active Plans</h3>
       <table>
@@ -338,30 +456,61 @@ const ActivePoliciesSection = ({ activePolicies }) => (
           <tr><th>User Name</th><th>Email</th><th>Active Plans</th><th>Total Coverage</th><th>Risk Level</th><th>Status</th></tr>
         </thead>
         <tbody>
-          {activePolicies.users.map((row) => (
-            <tr key={row.email}>
-              <td><span className="avatar">{row.initials}</span> {row.name}</td>
-              <td>{row.email}</td>
-              <td><span className="cell-icon"><FiShield size={13} /></span>{row.plans}</td>
-              <td>{cleanCurrency(row.coverage)}</td>
-              <td className={riskToneClass(row.risk_level)}>{row.risk_level}</td>
-              <td><span className="status-pill">{row.status}</span></td>
+          {activePolicies.users.map((row, index) => (
+            <tr key={row.email || index}>
+              <td><span className="avatar">{row.initials || "U"}</span> {row.name || "-"}</td>
+              <td>{row.email || "-"}</td>
+              <td><span className="cell-icon"><FiShield size={13} /></span>{row.plans || 0}</td>
+              <td>{row.coverage || "-"}</td>
+              <td className={riskToneClass(row.risk_level)}>{row.risk_level || "-"}</td>
+              <td><span className="status-pill">{titleCase(row.status) || "-"}</span></td>
             </tr>
           ))}
         </tbody>
       </table>
+      {activePolicies.users.length === 0 ? <EmptyState message="No users with active plans found" /> : null}
     </div>
   </div>
 );
+
+const KeyValuePanel = ({ title, items, itemKey, keyLabel, valueLabel }) => {
+  const normalizedItems = Array.isArray(items)
+    ? items
+    : Object.entries(items || {}).map(([key, value]) => ({ [keyLabel]: key, [valueLabel]: value }));
+  const maxValue = Math.max(1, ...normalizedItems.map((item) => Number(item[valueLabel]) || 0));
+
+  return (
+    <div className="panel chart-panel">
+      <h3>{title}</h3>
+      {normalizedItems.length ? (
+        <div className="provider-list">
+          {normalizedItems.map((item, index) => (
+            <div key={`${item[itemKey] || item[keyLabel]}-${index}`} className="provider-row">
+              <div className="provider-meta">
+                <span>{titleCase(item[itemKey] || item[keyLabel])}</span>
+                <strong>{item[valueLabel] || 0}</strong>
+              </div>
+              <div className="bar provider-bar">
+                <div style={{ width: `${((Number(item[valueLabel]) || 0) / maxValue) * 100}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState message={`No ${title.toLowerCase()} data found`} />
+      )}
+    </div>
+  );
+};
 
 const AnalyticsSection = ({ analytics }) => (
   <>
     <h1 className="page-title">Analytics</h1>
     <div className="cards-grid four">
-      <StatCard title="Total Revenue" value={cleanCurrency(analytics.total_revenue)} icon={FiDollarSign} trend="0%" trendGood tone="green" />
-      <StatCard title="Claims Paid" value={cleanCurrency(analytics.claims_paid)} icon={ClaimsNavIcon} trend="0%" trendGood tone="green" />
-      <StatCard title="Active Users" value={String(analytics.active_users)} icon={FiUsers} trend="0%" trendGood tone="green" />
-      <StatCard title="Claim Ratio" value={analytics.claim_ratio} icon={FiTrendingUp} trend="0%" trendGood tone="green" />
+      <StatCard title="Total Revenue" value={analytics.total_revenue || "-"} icon={FiDollarSign} tone="green" />
+      <StatCard title="Claims Paid" value={analytics.claims_paid || "-"} icon={ClaimsNavIcon} tone="green" />
+      <StatCard title="Active Users" value={String(analytics.active_users)} icon={FiUsers} tone="green" />
+      <StatCard title="Claim Ratio" value={analytics.claim_ratio || "-"} icon={FiTrendingUp} tone="green" />
     </div>
 
     <div className="grid-2x2">
@@ -369,71 +518,85 @@ const AnalyticsSection = ({ analytics }) => (
         <h3>Monthly Trends</h3>
         <MonthlyChart monthlyTrends={analytics.monthly_trends} />
       </div>
-      <div className="panel chart-panel">
-        <h3>Claims by Status</h3>
-      </div>
-      <div className="panel chart-panel">
-        <h3>Policies by Type</h3>
-      </div>
+      <KeyValuePanel
+        title="Claims by Status"
+        items={analytics.claims_by_status}
+        itemKey="status"
+        keyLabel="status"
+        valueLabel="count"
+      />
+      <KeyValuePanel
+        title="Policies by Type"
+        items={analytics.policies_by_type.map((item) => ({ type: item.type, count: item.count }))}
+        itemKey="type"
+        keyLabel="type"
+        valueLabel="count"
+      />
       <div className="panel metrics-panel">
         <h3>Performance Metrics</h3>
-        {analytics.performance_metrics.map(({ label, value, percent }) => (
-          <div key={label} className="metric-row">
-            <div className="metric-label"><span>{label}</span><strong>{value}</strong></div>
-            <div className="bar"><div style={{ width: `${percent}%` }} /></div>
-          </div>
-        ))}
+        {analytics.performance_metrics.length ? (
+          analytics.performance_metrics.map(({ label, value, percent }, index) => (
+            <div key={`${label}-${index}`} className="metric-row">
+              <div className="metric-label"><span>{label || "-"}</span><strong>{value || "-"}</strong></div>
+              <div className="bar"><div style={{ width: `${Math.min(Number(percent) || 0, 100)}%` }} /></div>
+            </div>
+          ))
+        ) : (
+          <EmptyState message="No performance metrics found" />
+        )}
       </div>
     </div>
   </>
 );
 
 function MonthlyChart({ monthlyTrends }) {
-  const labels = monthlyTrends?.labels?.length ? monthlyTrends.labels : fallbackData.analytics.monthly_trends.labels;
-  const policies = monthlyTrends?.policies?.length ? monthlyTrends.policies : fallbackData.analytics.monthly_trends.policies;
-  const claims = monthlyTrends?.claims?.length ? monthlyTrends.claims : fallbackData.analytics.monthly_trends.claims;
+  const labels = monthlyTrends?.labels?.length ? monthlyTrends.labels : [];
+  const policies = monthlyTrends?.policies?.length ? monthlyTrends.policies : [];
+  const claims = monthlyTrends?.claims?.length ? monthlyTrends.claims : [];
+
+  if (!labels.length || (!policies.length && !claims.length)) {
+    return <div className="chart-empty">No analytics data available</div>;
+  }
+
   const maxValue = Math.max(1, ...policies, ...claims);
-  const pointsFor = (values) => values
-    .map((value, index) => {
-      const x = 58 + index * 72;
-      const y = 188 - (value / maxValue) * 150;
-      return `${x},${y.toFixed(1)}`;
-    })
-    .join(" ");
+  const pointsFor = (values) =>
+    values
+      .map((value, index) => {
+        const x = 58 + index * 72;
+        const y = 188 - (value / maxValue) * 150;
+        return `${x},${y.toFixed(1)}`;
+      })
+      .join(" ");
+
   const policyPoints = pointsFor(policies);
   const claimsPoints = pointsFor(claims);
 
   return (
     <div className="monthly-chart" aria-label="Monthly trends chart">
-      <svg viewBox="0 0 520 220" role="img" aria-label="Revenue and claims monthly trend lines">
+      <svg viewBox="0 0 520 220" role="img" aria-label="Policy and claim monthly trend lines">
         <line x1="58" y1="188" x2="58" y2="28" className="axis" />
         <line x1="58" y1="188" x2="488" y2="188" className="axis" />
-
         <line x1="58" y1="148" x2="488" y2="148" className="grid" />
         <line x1="58" y1="108" x2="488" y2="108" className="grid" />
         <line x1="58" y1="68" x2="488" y2="68" className="grid" />
         <line x1="58" y1="28" x2="488" y2="28" className="grid" />
-
         <polyline className="line-policies" points={policyPoints} />
         <polyline className="line-claims" points={claimsPoints} />
-
-        {policyPoints.split(" ").map((p) => {
-          const [cx, cy] = p.split(",");
-          return <circle key={`p-${p}`} cx={cx} cy={cy} r="3" className="dot-policies" />;
+        {policyPoints.split(" ").filter(Boolean).map((point) => {
+          const [cx, cy] = point.split(",");
+          return <circle key={`policy-${point}`} cx={cx} cy={cy} r="3" className="dot-policies" />;
         })}
-        {claimsPoints.split(" ").map((p) => {
-          const [cx, cy] = p.split(",");
-          return <circle key={`c-${p}`} cx={cx} cy={cy} r="3" className="dot-claims" />;
+        {claimsPoints.split(" ").filter(Boolean).map((point) => {
+          const [cx, cy] = point.split(",");
+          return <circle key={`claim-${point}`} cx={cx} cy={cy} r="3" className="dot-claims" />;
         })}
-
         <text x="44" y="192" className="tick">0</text>
         <text x="40" y="152" className="tick">{Math.round(maxValue * 0.25)}</text>
         <text x="35" y="112" className="tick">{Math.round(maxValue * 0.5)}</text>
         <text x="35" y="72" className="tick">{Math.round(maxValue * 0.75)}</text>
         <text x="35" y="32" className="tick">{maxValue}</text>
-
         {labels.map((label, index) => (
-          <text key={`m-${label}-${index}`} x={52 + index * 72} y="206" className="tick">{label}</text>
+          <text key={`label-${label}-${index}`} x={52 + index * 72} y="206" className="tick">{label}</text>
         ))}
       </svg>
       <div className="month-axis legend-axis">
@@ -444,7 +607,7 @@ function MonthlyChart({ monthlyTrends }) {
   );
 }
 
-function StatCard({ title, value, icon: Icon, trend, trendGood, tone = "green", className = "", iconTick = false }) {
+function StatCard({ title, value, icon: Icon, tone = "green", className = "", iconTick = false, trend = null }) {
   return (
     <article className={`stat-card ${className}`.trim()}>
       <div className="card-head">
@@ -455,10 +618,10 @@ function StatCard({ title, value, icon: Icon, trend, trendGood, tone = "green", 
         </div>
       </div>
       <h2>{value}</h2>
-      {trend ? (
-        <p className={trendGood ? "trend good" : "trend"}>
+      {trend !== null ? (
+        <p className={`trend ${Number(trend) >= 0 ? "good" : "bad"}`}>
           <span className="trend-leading"><FiTrendingUp size={10} /></span>
-          <span className="trend-value">{trend}</span>
+          <span className="trend-value">{`${Number(trend) > 0 ? "+" : ""}${Number(trend).toFixed(1)}%`}</span>
           <span className="trend-note">vs last month</span>
         </p>
       ) : null}
@@ -466,43 +629,37 @@ function StatCard({ title, value, icon: Icon, trend, trendGood, tone = "green", 
   );
 }
 
-function App() {
-  const [dashboardData, setDashboardData] = React.useState(fallbackData);
+function AdminApp() {
+  const [dashboardData, setDashboardData] = React.useState(emptyDashboardData);
   const location = useLocation();
 
   useEffect(() => {
     let isMounted = true;
+
     const loadDashboard = async () => {
       try {
         const response = await apiClient.get("/api/admin/dashboard");
         if (isMounted) {
           setDashboardData(normalizeDashboardData(response.data));
         }
-      } catch {
+      } catch (error) {
+        console.error("Failed to load admin dashboard", error);
         if (isMounted) {
-          setDashboardData(fallbackData);
+          setDashboardData(emptyDashboardData);
         }
       }
     };
+
     loadDashboard();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Determine active nav item from URL
-  const activeKey = navItems.find(item => location.pathname.startsWith(item.path))?.key || "overview";
+  const activeKey = navItems.find((item) => location.pathname.startsWith(item.path))?.key || "overview";
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="top-left">
-          <span className="figma-dot"><FiGrid size={12} /></span>
-          <span className="ai-badge">AI</span>
-        </div>
-        <p>Insurance Comparison Platform UI <FiChevronDown size={10} /></p>
-        <button className="help-btn" type="button"><FiHelpCircle size={12} /></button>
-        <button className="share-btn">Share</button>
-      </header>
-
+    <div className="admin-shell">
       <aside className="sidebar">
         <div className="brand">
           <h2>InsureHub</h2>
@@ -531,20 +688,27 @@ function App() {
 
       <main className="main-content">
         <Routes>
-          <Route path="/admin/overview" element={<OverviewSection overview={dashboardData.overview} />} />
-          <Route path="/admin/users" element={<UsersSection users={dashboardData.users} />} />
-          <Route path="/admin/policies" element={<PoliciesSection policies={dashboardData.policies} />} />
-          <Route path="/admin/claims" element={<ClaimsSection claims={dashboardData.claims} highRiskClaims={dashboardData.overview.high_risk_claims} />} />
-          <Route path="/admin/fraud" element={<FraudSection fraudRules={dashboardData.fraud_rules} />} />
-          <Route path="/admin/active" element={<ActivePoliciesSection activePolicies={dashboardData.active_policies} />} />
-          <Route path="/admin/analytics" element={<AnalyticsSection analytics={dashboardData.analytics} />} />
-          <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
+          <Route path="/" element={<Navigate to="/admin/overview" replace />} />
+          <Route path="overview" element={<OverviewSection overview={dashboardData.overview} recentActivity={dashboardData.recent_activity} />} />
+          <Route path="users" element={<UsersSection users={dashboardData.users} />} />
+          <Route path="policies" element={<PoliciesSection policies={dashboardData.policies} />} />
+          <Route path="claims" element={<ClaimsSection claims={dashboardData.claims} highRiskClaims={dashboardData.overview.high_risk_claims} />} />
+          <Route path="fraud" element={<FraudSection fraudRules={dashboardData.fraud_rules} />} />
+          <Route path="active" element={<ActivePoliciesSection activePolicies={dashboardData.active_policies} />} />
+          <Route path="analytics" element={<AnalyticsSection analytics={dashboardData.analytics} />} />
         </Routes>
       </main>
     </div>
   );
 }
 
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/admin/*" element={<AdminApp />} />
+    </Routes>
+  );
+}
+
 export default App;
-
-
