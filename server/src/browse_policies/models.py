@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class PolicyBase(BaseModel):
@@ -16,6 +16,17 @@ class PolicyBase(BaseModel):
     rating_count: Optional[int] = None
     tagline: Optional[str] = None
     key_features: Optional[List[str]] = None
+
+    @field_validator("key_features", mode="before")
+    @classmethod
+    def parse_key_features(cls, v: Union[str, List[str], None]) -> Optional[List[str]]:
+        if v is None:
+            return None
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            return [f.strip() for f in v.split(",") if f.strip()]
+        return None
 
 
 class PolicyResponse(PolicyBase):
@@ -31,4 +42,3 @@ class PolicyResponse(PolicyBase):
 class PolicyFilter(BaseModel):
     search: Optional[str] = None
     category: Optional[str] = None
-

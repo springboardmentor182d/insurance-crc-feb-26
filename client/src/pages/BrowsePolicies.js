@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import Sidebar from '../layout/user/Sidebar';
-import FromInput from '../components/Form/FromInput';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Sidebar from '../layout/Sidebar';
+import FromInput from '../components/Form/FormInput';
 import { fetchPolicies } from '../features/policies/services/policiesService';
 
 const CATEGORY_FILTERS = [
@@ -9,88 +9,6 @@ const CATEGORY_FILTERS = [
   { id: 'AUTO', label: 'Auto' },
   { id: 'LIFE', label: 'Life' },
   { id: 'HEALTH', label: 'Health' },
-];
-
-
-const SAMPLE_POLICIES = [
-  {
-    id: 1,
-    category: 'HOME',
-    insurer_name: 'SafeGuard Insurance',
-    name: 'Premium Home Protection',
-    tagline: 'Comprehensive coverage for your home and belongings.',
-    premium_annual: 1200,
-    coverage_amount: 500000,
-    deductible_amount: 1000,
-    average_rating: 4.8,
-    rating_count: 124,
-    key_features: ['Fire & theft coverage', 'Natural disaster protection', 'Liability coverage'],
-  },
-  {
-    id: 2,
-    category: 'AUTO',
-    insurer_name: 'DriveSecure',
-    name: 'Comprehensive Auto Coverage',
-    tagline: 'Peace of mind for every drive.',
-    premium_annual: 850,
-    coverage_amount: 250000,
-    deductible_amount: 500,
-    average_rating: 4.6,
-    rating_count: 201,
-    key_features: ['Collision coverage', 'Comprehensive coverage', 'Roadside assistance'],
-  },
-  {
-    id: 3,
-    category: 'LIFE',
-    insurer_name: 'LifeGuard',
-    name: 'Life Insurance Plus',
-    tagline: 'Protect your family’s future.',
-    premium_annual: 2400,
-    coverage_amount: 1000000,
-    deductible_amount: null,
-    average_rating: 4.9,
-    rating_count: 89,
-    key_features: ['Term life coverage', 'Cash value accumulation', 'Living benefits'],
-  },
-  {
-    id: 4,
-    category: 'HEALTH',
-    insurer_name: 'HealthFirst',
-    name: 'Family Health Plan',
-    tagline: 'Complete protection for your family.',
-    premium_annual: 3600,
-    coverage_amount: 2000000,
-    deductible_amount: 2500,
-    average_rating: 4.7,
-    rating_count: 142,
-    key_features: ['Preventive care', 'Emergency services', 'Prescription coverage'],
-  },
-  {
-    id: 5,
-    category: 'HOME',
-    insurer_name: 'HomeShield',
-    name: 'Basic Home Insurance',
-    tagline: 'Essential coverage at an affordable price.',
-    premium_annual: 800,
-    coverage_amount: 300000,
-    deductible_amount: 2000,
-    average_rating: 4.4,
-    rating_count: 76,
-    key_features: ['Fire coverage', 'Theft protection', 'Liability coverage'],
-  },
-  {
-    id: 6,
-    category: 'AUTO',
-    insurer_name: 'AutoProtect',
-    name: 'Auto Essentials',
-    tagline: 'Solid coverage for everyday driving.',
-    premium_annual: 650,
-    coverage_amount: 150000,
-    deductible_amount: 1000,
-    average_rating: 4.3,
-    rating_count: 58,
-    key_features: ['Liability coverage', 'Medical payments', 'Uninsured motorist'],
-  },
 ];
 
 const PolicyCard = ({ policy, selected, onToggleSelect }) => {
@@ -211,31 +129,27 @@ const BrowsePolicies = () => {
   const [policies, setPolicies] = useState([]);
   const [selectedPolicyIds, setSelectedPolicyIds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const searchRef = useRef(search);
+  searchRef.current = search;
 
-  const loadPolicies = async () => {
+  const loadPolicies = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
-      const data = await fetchPolicies({ search, category: activeCategory });
-      if (data && data.length > 0) {
-        setPolicies(data);
-      } else {
-        setPolicies(SAMPLE_POLICIES);
-      }
-    } catch (err) {
-      // If the backend is not available, fall back to demo data
-      setPolicies(SAMPLE_POLICIES);
-      setError(null);
+      const data = await fetchPolicies({
+        search: searchRef.current,
+        category: activeCategory,
+      });
+      setPolicies(Array.isArray(data) ? data : []);
+    } catch {
+      setPolicies([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeCategory]);
 
   useEffect(() => {
     loadPolicies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]);
+  }, [loadPolicies]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -250,9 +164,6 @@ const BrowsePolicies = () => {
 
   const handleClearSelection = () => setSelectedPolicyIds([]);
 
-  // Apply category filter on the client as well so that
-  // the All / Home / Auto / Life / Health buttons always
-  // affect what the user sees, even when using demo data.
   const filteredPolicies = useMemo(() => {
     if (activeCategory === 'ALL') return policies;
     return policies.filter(
@@ -347,12 +258,6 @@ const BrowsePolicies = () => {
             </div>
           )}
 
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
           {/* Cards grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filteredPolicies.map((policy) => (
@@ -365,7 +270,7 @@ const BrowsePolicies = () => {
             ))}
           </div>
 
-          {!loading && policies.length === 0 && !error && (
+          {!loading && policies.length === 0 && (
             <div className="mt-8 text-center text-gray-500 text-sm">
               No policies found. Try adjusting your filters.
             </div>
@@ -377,4 +282,3 @@ const BrowsePolicies = () => {
 };
 
 export default BrowsePolicies;
-
