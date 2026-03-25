@@ -1,55 +1,70 @@
+import hashlib
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
-from typing import Dict
 
-# Internal Project Imports
 from src.database.core import get_db
-from src.auth.models import User
-from src.auth.service import (
-    hash_password, 
-    verify_password, 
-    create_access_token, 
-    create_refresh_token
-)
+from src.models import User
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter()
 
-@router.post("/signup", status_code=status.HTTP_201_CREATED)
-def signup(name: str, email: str, password: str, db: Session = Depends(get_db)):
-    # 1. Check if user already exists
-    existing_user = db.query(User).filter(User.email == email).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Email already registered"
-        )
 
-    # 2. Hash password and save new user
-    new_user = User(
-        name=name, 
-        email=email, 
-        password=hash_password(password)
-    )
-    db.add(new_user)
-    db.commit()
-    
-    return {"message": "User created successfully"}
+class AuthPayload(BaseModel):
+    full_name: str | None = None
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+
+def _hash_password(raw_password: str) -> str:
+    return hashlib.sha256(raw_password.encode("utf-8")).hexdigest()
+
 
 @router.post("/login")
-def login(data: Dict[str, str], db: Session = Depends(get_db)):
-    # 1. Find user by email
-    user = db.query(User).filter(User.email == data.get("email")).first()
-    
-    # 2. Verify existence and password
-    if not user or not verify_password(data.get("password"), user.password):
+def login(payload: AuthPayload, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == payload.email).first()
+    if user is None or user.password_hash != _hash_password(payload.password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Invalid credentials"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
         )
 
-    # 3. Return Access and Refresh tokens
     return {
-        "access_token": create_access_token({"sub": user.email}),
-        "refresh_token": create_refresh_token({"sub": user.email}),
-        "token_type": "bearer"
+        "message": "Login successful",
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "is_active": user.is_active,
+        },
+    }
+
+@router.post("/signup")
+def signup(payload: AuthPayload, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == payload.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User already exists",
+        )
+
+    full_name = (payload.full_name or "").strip() or payload.email.split("@")[0]
+
+    user = User(
+        full_name=full_name,
+        email=payload.email,
+        password_hash=_hash_password(payload.password),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "Signup successful",
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "is_active": user.is_active,
+        },
     }

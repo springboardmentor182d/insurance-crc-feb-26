@@ -1,49 +1,37 @@
 import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
-# Import local modules
-from . import models, database
-from .routers.admin import router as admin_router
-from .routers.catalog import router as catalog_router
-from .routers.recommendations import router as recommendations_router
+from src.api import api_router
+from src.database.core import init_db
 
-load_dotenv()
-database.init_db()
-
-app = FastAPI(
-    title="Insurance CRC Management API",
-    version="1.0.0"
-)
+app = FastAPI()
 
 
-allowed_origins = os.getenv(
-    "ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173"
-).split(",")
+origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-
 @app.on_event("startup")
-async def startup_event():
-    pass
+def on_startup() -> None:
+    init_db()
 
-app.include_router(admin_router)
-app.include_router(catalog_router)
-app.include_router(recommendations_router)
+
+app.include_router(api_router, prefix="/api")
 
 @app.get("/health")
 def health_check():
     return {"status": "Backend is running"}
-
-@app.get("/")
-def root():
-    return {"message": "Insurance CRC Management API", "docs": "/docs"}
 
