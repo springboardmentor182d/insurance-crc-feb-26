@@ -28,3 +28,97 @@ function App() {
 export default App;
 
 
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* ── Public Routes ── */}
+        <Route path={ROUTES.HOME}    element={<Home />} />
+        <Route path={ROUTES.LOGIN}   element={<Login />} />
+        <Route path={ROUTES.SIGNUP}  element={<Signup />} />
+
+        {/* Admin login redirects to dashboard if already logged in as admin */}
+        <Route
+          path={ROUTES.ADMIN_LOGIN}
+          element={
+            <AdminLoginGuard>
+              <AdminLogin />
+            </AdminLoginGuard>
+          }
+        />
+
+        {/* ── User Protected Routes ── */}
+        <Route
+          path={ROUTES.DASHBOARD}
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.PROFILE}
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.PREFERENCES}
+          element={
+            <ProtectedRoute>
+              <Preferences />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path={ROUTES.SETTINGS}
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Admin Protected Routes ── */}
+        {/* ROUTES.ADMIN_DASHBOARD = "/admin/dashboard" */}
+        <Route
+          path={ROUTES.ADMIN_DASHBOARD}
+          element={
+            <ProtectedRoute adminOnly>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/manage-policies"
+          element={
+            <ProtectedRoute adminOnly>
+              <ManagePolicies />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/fraud-rules"
+          element={
+            <ProtectedRoute adminOnly>
+              <FraudRules />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/flagged-claims"
+          element={
+            <ProtectedRoute adminOnly>
+              <FlaggedClaims />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Fallback ── */}
+        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
