@@ -5,13 +5,38 @@ Run this to ensure your PostgreSQL setup is working correctly
 
 import sys
 import os
+import pytest
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 def test_database_connection():
     """Pytest entrypoint: keep test style assert-based (no return value)."""
+    skip_reason = get_database_skip_reason()
+    if skip_reason:
+        pytest.skip(skip_reason)
     assert run_database_connection_check()
+
+
+def get_database_skip_reason():
+    """Return skip reason when DB integration prerequisites are not configured."""
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    database_url = os.getenv("DATABASE_URL", "").strip()
+    if not database_url:
+        return "DATABASE_URL not configured. Set server/.env before running DB integration tests."
+
+    placeholder_markers = [
+        "username:password",
+        "user:password",
+        "localhost:5432/insurance_db",
+        "localhost:5432/database_name",
+    ]
+    if any(marker in database_url for marker in placeholder_markers):
+        return "DATABASE_URL contains placeholder values. Update server/.env with real PostgreSQL credentials."
+
+    return None
 
 
 def run_database_connection_check():
@@ -27,6 +52,17 @@ def run_database_connection_check():
         
         database_url = os.getenv("DATABASE_URL")
         if database_url:
+            placeholder_markers = [
+                "username:password",
+                "user:password",
+                "localhost:5432/insurance_db",
+                "localhost:5432/database_name",
+            ]
+            if any(marker in database_url for marker in placeholder_markers):
+                print("   ❌ DATABASE_URL uses placeholder values")
+                print("      Update server/.env with your real PostgreSQL username/password/database")
+                return False
+
             # Mask password in output
             masked_url = database_url.split('@')[0].split(':')[0] + ":****@" + database_url.split('@')[1] if '@' in database_url else database_url
             print(f"   ✅ DATABASE_URL loaded: {masked_url}")
@@ -67,13 +103,10 @@ def run_database_connection_check():
             user_count = db.query(models.User).count()
             claim_count = db.query(models.Claim).count()
             policy_count = db.query(models.Policy).count()
-
+            
             print(f"   ✅ Users: {user_count}")
             print(f"   ✅ Claims: {claim_count}")
             print(f"   ✅ Policies: {policy_count}")
-        except Exception as sample_err:
-            print(f"   ⚠️  Sample ORM query skipped: {sample_err}")
-            print("   ⚠️  Connection is valid, but current DB schema differs from ORM models")
         finally:
             db.close()
         

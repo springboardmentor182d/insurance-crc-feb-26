@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from src.database.core import get_db
 from src.models import User
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter()
 
 
 class AuthPayload(BaseModel):
@@ -21,7 +21,7 @@ def _hash_password(raw_password: str) -> str:
 
 
 @router.post("/login")
-def login(payload: AuthPayload, db: Session = Depends(get_db)) -> dict:
+def login(payload: AuthPayload, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
     if user is None or user.password_hash != _hash_password(payload.password):
         raise HTTPException(
@@ -39,9 +39,8 @@ def login(payload: AuthPayload, db: Session = Depends(get_db)) -> dict:
         },
     }
 
-
 @router.post("/signup")
-def signup(payload: AuthPayload, db: Session = Depends(get_db)) -> dict:
+def signup(payload: AuthPayload, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == payload.email).first()
     if existing:
         raise HTTPException(

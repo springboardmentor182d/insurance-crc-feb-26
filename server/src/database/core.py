@@ -1,40 +1,116 @@
 import os
+from pathlib import Path
+from typing import Generator
 
-from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
-load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+def _load_env_file() -> None:
+	env_path = Path(__file__).resolve().parents[2] / ".env"
+	if not env_path.exists():
+		return
 
-if not DATABASE_URL:
-    raise ValueError(
-        "DATABASE_URL environment variable is not set. "
-        "Please configure PostgreSQL connection in server/.env"
-    )
+	for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+		line = raw_line.strip()
+		if not line or line.startswith("#") or "=" not in line:
+			continue
+		key, value = line.split("=", 1)
+		os.environ.setdefault(key.strip(), value.strip())
 
-if not DATABASE_URL.startswith("postgresql"):
-    raise ValueError(
-        f"Invalid DATABASE_URL '{DATABASE_URL}'. This backend supports PostgreSQL only."
-    )
+
+_load_env_file()
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./insurance.db")
+
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    pool_recycle=3600,
-    echo=False,
+	DATABASE_URL,
+	connect_args=connect_args,
+	pool_pre_ping=True,
 )
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_db() -> Generator[Session, None, None]:
+	db = SessionLocal()
+	try:
+		yield db
+	finally:
+		db.close()
+
+
+def init_db() -> None:
+	# Import models here so metadata is fully registered before create_all runs.
+	from src import models  # noqa: F401
+
+	Base.metadata.create_all(bind=engine)
+	_repair_schema()
+
+
+def _repair_schema() -> None:
+	inspector = inspect(engine)
+	dialect = engine.dialect.name
+
+	column_plan = {
+		"users": [
+			("email", "VARCHAR(200)", "''"),
+			("full_name", "VARCHAR(120)", "''"),
+			("password_hash", "VARCHAR(128)", "''"),
+			("is_active", "BOOLEAN", "TRUE"),
+			("created_at", "TIMESTAMP", "CURRENT_TIMESTAMP"),
+		],
+		"policies": [
+			("name", "VARCHAR(200)", "''"),
+			("provider", "VARCHAR(200)", "''"),
+			("policy_type", "VARCHAR(80)", "''"),
+			("coverage_amount", "DOUBLE PRECISION", "0"),
+			("premium_amount", "DOUBLE PRECISION", "0"),
+			("claim_ratio", "DOUBLE PRECISION", "0"),
+			("risk_level", "VARCHAR(20)", "'Low'"),
+			("is_active", "BOOLEAN", "TRUE"),
+			("user_id", "INTEGER", "NULL"),
+			("created_at", "TIMESTAMP", "CURRENT_TIMESTAMP"),
+		],
+		"claims": [
+			("claim_type", "VARCHAR(80)", "'General'"),
+			("amount", "DOUBLE PRECISION", "0"),
+			("risk_level", "VARCHAR(20)", "'Low'"),
+			("status", "VARCHAR(40)", "'pending'"),
+			("user_id", "INTEGER", "NULL"),
+			("policy_id", "INTEGER", "NULL"),
+			("created_at", "TIMESTAMP", "CURRENT_TIMESTAMP"),
+		],
+		"fraud_rules": [
+			("name", "VARCHAR(200)", "''"),
+			("condition", "VARCHAR(300)", "''"),
+			("severity", "VARCHAR(20)", "'Medium'"),
+			("is_active", "BOOLEAN", "TRUE"),
+			("created_at", "TIMESTAMP", "CURRENT_TIMESTAMP"),
+		],
+	}
+
+	with engine.begin() as connection:
+		for table_name, columns in column_plan.items():
+			if table_name not in inspector.get_table_names():
+				continue
+
+			existing_columns = {column["name"] for column in inspector.get_columns(table_name)}
+			for column_name, sql_type, default_value in columns:
+				if column_name in existing_columns:
+					continue
+
+				if dialect == "postgresql":
+					statement = (
+						f"ALTER TABLE {table_name} ADD COLUMN IF NOT EXISTS {column_name} "
+						f"{sql_type} DEFAULT {default_value}"
+					)
+				else:
+					statement = (
+						f"ALTER TABLE {table_name} ADD COLUMN {column_name} "
+						f"{sql_type} DEFAULT {default_value}"
+					)
+				connection.execute(text(statement))
