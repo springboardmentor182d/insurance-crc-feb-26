@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, Integer, String
 from src.database.core import Base
 
@@ -8,3 +7,6 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True, index=True)
     password = Column(String)
+income = Column(Integer, default=0)
+risk_level = Column(String, default="medium")
+insurance_type = Column(String, default="health")

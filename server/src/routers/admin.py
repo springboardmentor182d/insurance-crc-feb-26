@@ -664,9 +664,12 @@ def update_user(user_id: int, data: dict, db: Session = Depends(get_db)):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # ✅ update only provided fields
+        # Update allowed fields only
+        allowed_fields = ["full_name", "email", "income", "risk_level", "plan", "coverage"]
+
         for key, value in data.items():
-            setattr(user, key, value)
+            if key in allowed_fields:
+                setattr(user, key, value)
 
         db.commit()
         db.refresh(user)
@@ -677,16 +680,44 @@ def update_user(user_id: int, data: dict, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 @router.put("/users/{user_id}/preferences")
-def update_preferences(user_id: int, income: int, risk_level: str, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+def update_preferences(user_id: int, data: dict, db: Session = Depends(get_db)):
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    user.income = income
-    user.risk_level = risk_level
+        # ✅ Update from preference page
+        user.income = data.get("income")
+        user.risk_level = data.get("risk_level")
 
-    db.commit()
-    db.refresh(user)
+        # Optional: insurance type
+        selected_type = data.get("insurance_type")
 
-    return {"message": "Preferences updated"}        
+        # ✅ AI Recommendation Logic
+        if user.risk_level == "Low":
+            user.plan = "Safe Insurance Plan"
+            user.coverage = 300000
+        elif user.risk_level == "Medium":
+            user.plan = "Balanced Insurance Portfolio"
+            user.coverage = 500000
+        elif user.risk_level == "High":
+            user.plan = "High Growth Plan"
+            user.coverage = 1000000
+
+        # Override if frontend sends plan
+        if selected_type:
+            user.plan = selected_type
+
+        db.commit()
+        db.refresh(user)
+
+        return {
+            "message": "Preferences updated successfully",
+            "plan": user.plan,
+            "coverage": user.coverage
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
