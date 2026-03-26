@@ -22,7 +22,7 @@ function Preferences() {
   const userId = localStorage.getItem("userId") || 1;
 
   // =========================
-  // ✅ SAVE + REDIRECT
+  // SAVE PREFERENCES
   // =========================
   const handleSave = async () => {
     try {
@@ -43,9 +43,8 @@ function Preferences() {
 
       if (data.error) throw new Error();
 
-      setTimeout(() => navigate("/profile"), 800);
+      alert("Saved ✅");
 
-      // 🔥 redirect to profile
       navigate("/profile");
 
     } catch {
@@ -54,7 +53,7 @@ function Preferences() {
   };
 
   // =========================
-  // ✅ AI GENERATE + SAVE PLAN
+  // GENERATE AI PLAN
   // =========================
   const generateAIPlan = async () => {
     try {
@@ -80,11 +79,12 @@ function Preferences() {
 
       const data = await res.json();
 
-      if (data.error) throw new Error();
+      console.log("AI RESPONSE:", data);
 
       setAiPlan(data);
 
-    } catch {
+    } catch (err) {
+      console.error("AI ERROR:", err);
       alert("AI failed ❌");
     } finally {
       setLoadingAI(false);
@@ -92,7 +92,7 @@ function Preferences() {
   };
 
   // =========================
-  // CARD UI
+  // CARD COMPONENT
   // =========================
   const Card = ({ label, icon, value, selected, onClick }) => (
     <div
@@ -114,14 +114,14 @@ function Preferences() {
 
       <div className="max-w-7xl mx-auto grid grid-cols-3 gap-6">
 
-        {/* LEFT */}
+        {/* LEFT SECTION */}
         <div className="col-span-2 space-y-6">
 
           <h2 className="text-3xl font-bold">
             Tell Us Your Insurance Preferences
           </h2>
 
-          {/* WHO */}
+          {/* POLICY FOR */}
           <div className="bg-white p-6 rounded-xl shadow">
             <h3 className="mb-4 font-semibold">Who is this policy for?</h3>
 
@@ -140,7 +140,7 @@ function Preferences() {
             </div>
           </div>
 
-          {/* TYPE */}
+          {/* INSURANCE TYPE */}
           <div className="bg-white p-6 rounded-xl shadow">
             <h3 className="mb-4 font-semibold">What type of insurance?</h3>
 
@@ -230,22 +230,25 @@ function Preferences() {
             </button>
           </div>
 
-          {/* RESULT */}
-          {aiPlan?.plans && (
-  <div className="space-y-4">
-    {aiPlan.plans.map((plan, index) => (
-      <div key={index}
-        className="bg-green-100 p-4 rounded-xl border border-green-400 hover:scale-105 transition">
-        
-        <h3 className="font-bold">{plan.title}</h3>
-        <p>Provider: {plan.provider}</p>
-        <p>Coverage: {plan.coverage}</p>
-        <p>Match Score: {plan.match}%</p>
+          {/* AI RESULT */}
+          {aiPlan && (
+  <div className="mt-4 bg-green-100 p-4 rounded-xl border border-green-400">
+    
+    <h3 className="font-bold text-lg mb-2">
+      AI Recommended Plan
+    </h3>
 
-      </div>
-    ))}
+    <p><b>Plan:</b> {aiPlan.plan}</p>
+    <p><b>Provider:</b> {aiPlan.provider}</p>
+    <p>
+      <b>Coverage:</b> ₹
+      {aiPlan.coverage ? aiPlan.coverage.toLocaleString() : "N/A"}
+    </p>
+    <p><b>Match Score:</b> {aiPlan.match_score}%</p>
+
   </div>
 )}
+
         </div>
 
         {/* RIGHT SUMMARY */}
