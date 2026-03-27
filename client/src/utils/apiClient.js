@@ -28,7 +28,7 @@ apiClient.interceptors.response.use(
       // and the token is actually missing/invalid — not just a
       // background API call failing on a dashboard widget
       const token = localStorage.getItem(TOKEN_KEYS.ACCESS);
-      if (!token) {
+      if (!token  && currentPath !== "/login" && currentPath !== "/admin-login") {
         // Token is genuinely missing — redirect to login
         Object.values(TOKEN_KEYS).forEach((k) => localStorage.removeItem(k));
         window.location.href = ROUTES.ADMIN_LOGIN;
