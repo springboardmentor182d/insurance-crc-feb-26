@@ -9,6 +9,8 @@ from src.auth.controller import router as auth_router
 from src.browse_policies.controller import router as browse_policies_router
 from src.claims.controller import router as claims_router
 from src.users.controller import router as users_router
+from src.recommendations.controller import router as recommendations_router  # ⬅ add this
+# [web:19]
 
 api_router = APIRouter()
 
@@ -22,3 +24,8 @@ api_router.include_router(manage_policies_router, prefix="/admin", tags=["Admin 
 api_router.include_router(browse_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(active_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(claims_router)
+api_router.include_router(
+    recommendations_router,
+    prefix="/recommendations",
+    tags=["Recommendations"],
+)
