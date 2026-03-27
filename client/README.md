@@ -1,23 +1,20 @@
-# Client (React + Tailwind)
+# InsureHub Full Stack Project
 
-This is a folder-structure-first frontend starter matching the internship format.
+This project follows the internship structure:
 
-## Recommended quick setup
-The included source code is ready. For fastest run, create a React app or Vite app in this folder and replace `src/` with this one.
+- `client/` → React + Tailwind frontend
+- `server/` → FastAPI + PostgreSQL backend
 
-### Option A (Vite recommended)
+## Run Frontend
 ```bash
 cd client
-npm create vite@latest . -- --template react
 npm install
-npm install -D tailwindcss postcss autoprefixer
-npm install react-router-dom axios @heroicons/react
-npx tailwindcss init -p
+npm start
 ```
 
-Then keep/replace files with the provided ones.
-
-### Option B (CRA)
+## Run Backend
 ```bash
-npx create-react-app client
+cd server
+pip install -r requirements.txt
+uvicorn src.main:app --reload
 ```
