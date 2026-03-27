@@ -1,11 +1,8 @@
-/**
- * API Service for Insurance CRC Frontend
- * Handles all API calls to the backend with proper error handling
- */
+
 
 const API_BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:8000";
 
-// Helper function for API calls with error handling
+
 const apiCall = async (endpoint, options = {}) => {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -28,45 +25,40 @@ const apiCall = async (endpoint, options = {}) => {
   }
 };
 
-// ============================================================================
-// ADMIN ENDPOINTS
-// ============================================================================
 
 export const adminService = {
-  // Get overview statistics
   getOverview: async () => {
     return apiCall("/admin/overview");
   },
 
-  // Get quick stats
+ 
   getQuickStats: async () => {
     return apiCall("/admin/quick-stats");
   },
 
-  // Get system alerts
+
   getSystemAlerts: async () => {
     return apiCall("/admin/system-alerts");
   },
 
-  // Get recent activity
+ 
   getRecentActivity: async () => {
     return apiCall("/admin/recent-activity");
   },
 
-  // Get users
+ 
   getUsers: async () => {
     return apiCall("/admin/users");
   },
 
-  // Create user
-  createUser: async (userData) => {
+    createUser: async (userData) => {
     return apiCall("/admin/users", {
       method: "POST",
       body: JSON.stringify(userData),
     });
   },
 
-  // Update user
+
   updateUser: async (userId, userData) => {
     return apiCall(`/admin/users/${userId}`, {
       method: "PUT",
@@ -74,26 +66,25 @@ export const adminService = {
     });
   },
 
-  // Delete user
   deleteUser: async (userId) => {
     return apiCall(`/admin/users/${userId}`, {
       method: "DELETE",
     });
   },
 
-  // Toggle user status
+
   toggleUserStatus: async (userId) => {
     return apiCall(`/admin/users/${userId}/toggle-status`, {
       method: "PUT",
     });
   },
 
-  // Get fraud rules
+
   getFraudRules: async () => {
     return apiCall("/admin/fraud-rules");
   },
 
-  // Create fraud rule
+
   createFraudRule: async (ruleData) => {
     return apiCall("/admin/fraud-rules", {
       method: "POST",
@@ -101,7 +92,6 @@ export const adminService = {
     });
   },
 
-  // Update fraud rule
   updateFraudRule: async (ruleId, ruleData) => {
     return apiCall(`/admin/fraud-rules/${ruleId}`, {
       method: "PUT",
@@ -109,26 +99,24 @@ export const adminService = {
     });
   },
 
-  // Toggle fraud rule status
+ 
   toggleFraudRuleStatus: async (ruleId) => {
     return apiCall(`/admin/fraud-rules/${ruleId}/toggle-status`, {
       method: "PUT",
     });
   },
 
-  // Delete fraud rule
   deleteFraudRule: async (ruleId) => {
     return apiCall(`/admin/fraud-rules/${ruleId}`, {
       method: "DELETE",
     });
   },
 
-  // Get claims
+
   getClaims: async () => {
     return apiCall("/admin/claims");
   },
 
-  // Create claim
   createClaim: async (claimData) => {
     return apiCall("/admin/claims", {
       method: "POST",
@@ -136,41 +124,37 @@ export const adminService = {
     });
   },
 
-  // Delete claim
   deleteClaim: async (claimId) => {
     return apiCall(`/admin/claims/${claimId}`, {
       method: "DELETE",
     });
   },
 
-  // Get analytics
   getAnalytics: async () => {
     return apiCall("/admin/analytics");
   },
 
-  // Get comprehensive analytics
+  
   getComprehensiveAnalytics: async () => {
     return apiCall("/admin/analytics/comprehensive");
   },
 };
 
-// ============================================================================
-// CATALOG ENDPOINTS (Policies & Recommendations)
-// ============================================================================
+
 
 export const catalogService = {
-  // Get all policies
+ 
   getPolicies: async (filters = {}) => {
     const params = new URLSearchParams(filters).toString();
     return apiCall(`/catalog/policies?${params}`);
   },
 
-  // Get single policy
+y
   getPolicy: async (policyId) => {
     return apiCall(`/catalog/policies/${policyId}`);
   },
 
-  // Create policy
+
   createPolicy: async (policyData) => {
     return apiCall("/catalog/policies", {
       method: "POST",
@@ -178,7 +162,6 @@ export const catalogService = {
     });
   },
 
-  // Update policy
   updatePolicy: async (policyId, policyData) => {
     return apiCall(`/catalog/policies/${policyId}`, {
       method: "PUT",
@@ -186,30 +169,28 @@ export const catalogService = {
     });
   },
 
-  // Delete policy
+
   deletePolicy: async (policyId) => {
     return apiCall(`/catalog/policies/${policyId}`, {
       method: "DELETE",
     });
   },
 
-  // Get policy types
+
   getPolicyTypes: async () => {
     return apiCall("/catalog/policy-types");
   },
 
-  // Get all recommendations
   getRecommendations: async (filters = {}) => {
     const params = new URLSearchParams(filters).toString();
     return apiCall(`/catalog/recommendations?${params}`);
   },
 
-  // Get single recommendation
   getRecommendation: async (recommendationId) => {
     return apiCall(`/catalog/recommendations/${recommendationId}`);
   },
 
-  // Create recommendation
+
   createRecommendation: async (recommendationData) => {
     return apiCall("/catalog/recommendations", {
       method: "POST",
@@ -217,7 +198,7 @@ export const catalogService = {
     });
   },
 
-  // Update recommendation
+
   updateRecommendation: async (recommendationId, recommendationData) => {
     return apiCall(`/catalog/recommendations/${recommendationId}`, {
       method: "PUT",
@@ -225,19 +206,18 @@ export const catalogService = {
     });
   },
 
-  // Delete recommendation
   deleteRecommendation: async (recommendationId) => {
     return apiCall(`/catalog/recommendations/${recommendationId}`, {
       method: "DELETE",
     });
   },
 
-  // Get recommendation categories
+
   getRecommendationCategories: async () => {
     return apiCall("/catalog/recommendation-categories");
   },
 
-  // Get top recommendations
+
   getTopRecommendations: async (category = null) => {
     const params = new URLSearchParams({ top_only: true });
     if (category) {
@@ -252,10 +232,9 @@ export const catalogService = {
 // ============================================================================
 
 export const apiUtils = {
-  // Get API base URL
   getBaseURL: () => API_BASE_URL,
 
-  // Check if API is available
+  
   isAPIAvailable: async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/health`);
@@ -265,7 +244,7 @@ export const apiUtils = {
     }
   },
 
-  // Retry failed API calls
+  
   retryApiCall: async (
     endpoint,
     options = {},

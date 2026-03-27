@@ -24,7 +24,7 @@
 }
 
 .sidebar li:hover {
-  color: #1B5E20; /* Matching your theme's dark green */
+  color: #1B5E20; 
   background-color: #E8F5E9;
 }
 
