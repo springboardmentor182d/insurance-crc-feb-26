@@ -13,6 +13,9 @@ export const ROUTES = {
   SETTINGS:        "/settings",
   PROFILE:         "/profile",
   PREFERENCES:     "/preferences",
+  BROWSE_POLICIES: "/policies/browse",
+  ACTIVE_POLICIES: "/policies/active",
+  RECOMMENDATIONS: "/policies/recommendations",
 };
 
 export const TOKEN_KEYS = {
