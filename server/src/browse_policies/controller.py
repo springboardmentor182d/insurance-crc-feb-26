@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from src.database.core import get_db
 from src.browse_policies.models import PolicyCatalogResponse, PolicyFilter
 from src.browse_policies.service import list_policies
+from src.auth.jwt import get_current_user_id
 
 router = APIRouter()
 
