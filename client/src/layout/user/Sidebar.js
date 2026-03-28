@@ -8,8 +8,10 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Keep Policies submenu open whenever we are on any /policies route
-  const isPoliciesRoute = location.pathname.startsWith('/policies');
+  const isPoliciesRoute =
+    location.pathname.startsWith('/policies') &&
+    location.pathname !== ROUTES.RECOMMENDATIONS; // don't expand Policies for recommendations
+
   const [policiesOpen, setPoliciesOpen] = useState(isPoliciesRoute);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -27,27 +29,25 @@ const Sidebar = () => {
       icon: '📄',
       hasSubmenu: true,
       submenu: [
-        { path: '/policies/browse', label: 'Browse Policies', icon: '🔍' },
-        { path: '/policies/active', label: 'Active Policies', icon: '✓' },
+        { path: ROUTES.BROWSE_POLICIES, label: 'Browse Policies', icon: '🔍' },
+        { path: ROUTES.ACTIVE_POLICIES, label: 'Active Policies', icon: '✓' },
       ],
     },
-    { path: '/recommendations', label: 'Recommendations', icon: '💡' },
-    { path: '/claims', label: 'Claims', icon: '📋' },
-    { path: '/profile', label: 'Profile', icon: '👤' },
-    { path: '/preferences', label: 'Preferences', icon: '⚙️' },
+    // ── FIXED: was '/recommendations', must be ROUTES.RECOMMENDATIONS ──────
+    { path: ROUTES.RECOMMENDATIONS, label: 'Recommendations', icon: '💡' },
+    { path: '/claims',      label: 'Claims',       icon: '📋' },
+    { path: '/profile',     label: 'Profile',      icon: '👤' },
+    { path: '/preferences', label: 'Preferences',  icon: '⚙️' },
   ];
 
   const isActive = (path) => {
-    if (path === '/policies') {
-      return isPoliciesRoute;
-    }
+    if (path === '/policies') return isPoliciesRoute;
     return location.pathname === path;
   };
 
   const handleLogout = async () => {
     if (loggingOut) return;
     setLoggingOut(true);
-
     try {
       await logoutUser();
     } finally {
@@ -68,7 +68,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Navigation Menu */}
+      {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
           {menuItems.map((item) => (
@@ -133,7 +133,7 @@ const Sidebar = () => {
         </ul>
       </nav>
 
-      {/* Logout Button */}
+      {/* Logout */}
       <div className="p-4 border-t">
         <button
           onClick={handleLogout}
