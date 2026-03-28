@@ -1,26 +1,23 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+@import "./features/authentication/auth.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: #f8fafc;
+* {
+  box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
 
-nav a.active-link {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-left: 4px solid #ffffff;
 body {
   margin: 0;
   font-family: "Inter", sans-serif;
   background-color: #f6f8fb;
-}
-
-* {
-  box-sizing: border-box;
+  color: #0f172a;
 }

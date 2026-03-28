@@ -1,263 +1,141 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Navigate, NavLink, Route, Routes } from 'react-router-dom';
-import {
-  ArrowLeft,
-  ArrowLeftRight,
-  Check,
-  Clock3,
-  File,
-  LayoutDashboard,
-  LogOut,
-  Shield,
-  Sparkles,
-} from 'lucide-react';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import { adminService, catalogService } from './services/apiService';
-import './App.css';
+import React from "react";
+import { BrowserRouter, Link, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 
-const userNavItems = [
-  { key: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { key: 'compare', label: 'Compare', path: '/compare', icon: ArrowLeftRight },
-  { key: 'active-plan', label: 'Active Plan', path: '/active-plan', icon: Shield },
-];
+import AdminLogin from "./pages/AdminLogin";
+import ForgotPassword from "./pages/ForgotPassword";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import { ROLES, ROUTES, TOKEN_KEYS } from "./data/constants";
 
-function UserSidebar() {
-  return (
-    <aside className="ud-sidebar">
-      <div className="ud-brand">
-        <h2>InsureHub</h2>
-        <p>Client Portal</p>
-      </div>
 
-      <nav className="ud-nav">
-        {userNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.key}
-              to={item.path}
-              className={({ isActive }) => `ud-nav-item${isActive ? ' active' : ''}`}
-            >
-              <span className="ud-nav-icon"><Icon size={15} /></span>
-              <span>{item.label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
+const getStoredUser = () => {
+  const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
+  if (!userRaw || userRaw === "undefined") return null;
+  try {
+    return JSON.parse(userRaw);
+  } catch {
+    return null;
+  }
+};
 
-      <div className="ud-sidebar-footer">
-        <p>Logged in as</p>
-        <strong>User</strong>
-        <button type="button" className="ud-logout-btn">
-          <LogOut size={13} />
-          Logout
-        </button>
-      </div>
-    </aside>
-  );
-}
 
-function MetricCard({ title, value, icon: Icon }) {
-  const isClaimsStatus = title === 'Claims Status';
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+  const token = localStorage.getItem(TOKEN_KEYS.ACCESS);
+  const user = getStoredUser();
+
+  if (!token || !user) return <Navigate to={ROUTES.LOGIN} replace />;
+  if (adminOnly && user.role !== ROLES.ADMIN) return <Navigate to={ROUTES.DASHBOARD} replace />;
+  return children;
+};
+
+
+const UserDashboard = () => {
+  const navigate = useNavigate();
+  const user = getStoredUser();
+
+  const handleLogout = () => {
+    Object.values(TOKEN_KEYS).forEach((key) => localStorage.removeItem(key));
+    navigate(ROUTES.LOGIN);
+  };
 
   return (
-    <article className="ud-metric-card">
-      <div>
-        <p>{title}</p>
-        <h3>{value}</h3>
-      </div>
-      {isClaimsStatus ? (
-        <span className="ud-metric-icon claims-status-icon" aria-hidden="true">
-          <File size={20} className="claims-status-file" />
-          <Check size={12} className="claims-status-check" />
-        </span>
-      ) : (
-        <span className="ud-metric-icon">
-          <Icon size={20} />
-        </span>
-      )}
-    </article>
-  );
-}
-
-function ActionCard({ title, subtitle }) {
-  return (
-    <article className="ud-action-card">
-      <h4>{title}</h4>
-      <p>{subtitle}</p>
-    </article>
-  );
-}
-
-function DashboardPage({ metrics, recentMessage, loading }) {
-  return (
-    <div className="ud-page">
-      <h1 className="ud-title">Dashboard</h1>
-
-      <div className="ud-metric-grid">
-        <MetricCard title="Active Plans" value={loading ? '...' : String(metrics.activePlans)} icon={Shield} />
-        <MetricCard title="Claims Status" value={loading ? '...' : String(metrics.claims)} icon={Check} />
-        <MetricCard title="Recommended Policies" value={loading ? '...' : String(metrics.recommended)} icon={Sparkles} />
-        <MetricCard title="Recent Activity" value={loading ? '...' : String(metrics.recent)} icon={Clock3} />
-      </div>
-
-      <section className="ud-panel ud-recent-panel">
-        <h3>Recent Activity</h3>
-        <p>{loading ? 'Loading activity...' : recentMessage}</p>
-      </section>
-
-      <div className="ud-actions-grid">
-        <ActionCard title="Browse Policies" subtitle="Explore available insurance policies" />
-        <ActionCard title="File a Claim" subtitle="Submit a new insurance claim" />
-        <ActionCard title="Get Recommendations" subtitle="AI-powered policy suggestions" />
-      </div>
-    </div>
-  );
-}
-
-function ComparePage({ loading, policiesCount }) {
-  return (
-    <div className="ud-page">
-      <button type="button" className="ud-back-btn">
-        <ArrowLeft size={15} />
-        Back to Policies
-      </button>
-
-      <section className="ud-panel ud-empty-panel">
-        <p>
-          {loading
-            ? 'Loading policies...'
-            : policiesCount > 0
-              ? `${policiesCount} policies available for comparison`
-              : 'No policies selected for comparison'}
+    <div style={dashboardShellStyle}>
+      <div style={dashboardCardStyle}>
+        <h1 style={{ margin: 0, fontSize: "2rem" }}>Welcome, {user?.name || "User"}</h1>
+        <p style={{ margin: "12px 0 0", color: "#64748b" }}>
+          You are signed in to BimaVerse. The protected dashboard route is active and your auth flow is working.
         </p>
-        <button type="button" className="ud-primary-btn">Browse Policies</button>
-      </section>
-    </div>
-  );
-}
-
-function ActivePlanPage({ loading, activePlansCount }) {
-  return (
-    <div className="ud-page">
-      <div className="ud-title-row">
-        <div>
-          <h1 className="ud-title">Active Plan</h1>
-          <p className="ud-subtitle">Manage your insurance policies</p>
+        <div style={linkRowStyle}>
+          <Link to={ROUTES.FORGOT_PASSWORD} style={secondaryLinkStyle}>Forgot Password</Link>
+          <button type="button" onClick={handleLogout} style={primaryButtonStyle}>Logout</button>
         </div>
-        <article className="ud-mini-metric">
-          <div>
-            <p>Active Plans</p>
-            <h3>{loading ? '...' : activePlansCount}</h3>
-          </div>
-          <span className="ud-metric-icon">
-            <Shield size={20} />
-          </span>
-        </article>
       </div>
+    </div>
+  );
+};
 
-      <h3 className="ud-section-title">Current Active Plans</h3>
-      <section className="ud-panel ud-empty-panel active-plan-empty">
-        <Shield size={48} className="ud-empty-icon" />
-        <p>
-          {loading
-            ? 'Loading active policies...'
-            : activePlansCount > 0
-              ? `${activePlansCount} active policies found`
-              : 'No active policies yet'}
+
+const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const user = getStoredUser();
+
+  const handleLogout = () => {
+    Object.values(TOKEN_KEYS).forEach((key) => localStorage.removeItem(key));
+    navigate(ROUTES.ADMIN_LOGIN);
+  };
+
+  return (
+    <div style={dashboardShellStyle}>
+      <div style={dashboardCardStyle}>
+        <h1 style={{ margin: 0, fontSize: "2rem" }}>Admin Dashboard</h1>
+        <p style={{ margin: "12px 0 0", color: "#64748b" }}>
+          Signed in as {user?.email || "admin"} with protected admin access.
         </p>
-        <button type="button" className="ud-primary-btn">Browse Policies</button>
-      </section>
+        <div style={linkRowStyle}>
+          <Link to={ROUTES.LOGIN} style={secondaryLinkStyle}>Back to user login</Link>
+          <button type="button" onClick={handleLogout} style={primaryButtonStyle}>Logout</button>
+        </div>
+      </div>
     </div>
   );
-}
+};
 
-function UserDashboardShell() {
-  const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState({
-    activePlans: 0,
-    claims: 0,
-    recommended: 0,
-    recent: 0,
-  });
-  const [recentMessage, setRecentMessage] = useState('No recent activity');
-  const [policiesCount, setPoliciesCount] = useState(0);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadDashboardData = async () => {
-      setLoading(true);
-
-      const [overviewResult, policiesResult, recommendationsResult, activityResult] = await Promise.allSettled([
-        adminService.getOverview(),
-        catalogService.getPolicies({ is_active: true }),
-        catalogService.getRecommendations({ top_only: true, is_active: true }),
-        adminService.getRecentActivity(),
-      ]);
-
-      if (!isMounted) return;
-
-      const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
-      const policies = policiesResult.status === 'fulfilled' && Array.isArray(policiesResult.value)
-        ? policiesResult.value
-        : [];
-      const recommendations = recommendationsResult.status === 'fulfilled'
-        ? recommendationsResult.value
-        : { total_count: 0 };
-      const recentActivity = activityResult.status === 'fulfilled' ? activityResult.value : null;
-
-      setPoliciesCount(policies.length);
-      setMetrics({
-        activePlans: policies.length,
-        claims: overview?.claims ?? 0,
-        recommended: (recommendations?.total_count ?? 0) > 0 ? (recommendations?.total_count ?? 0) : 3,
-        recent: recentActivity?.total_count ?? 0,
-      });
-
-      const firstActivity = recentActivity?.activities?.[0];
-      if (firstActivity?.description) {
-        setRecentMessage(firstActivity.description);
-      } else {
-        setRecentMessage('No recent activity');
-      }
-
-      setLoading(false);
-    };
-
-    loadDashboardData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
+export default function App() {
   return (
-    <div className="ud-shell">
-      <UserSidebar />
-      <main className="ud-content">
-        <Routes>
-          <Route path="/dashboard" element={<DashboardPage metrics={metrics} recentMessage={recentMessage} loading={loading} />} />
-          <Route path="/compare" element={<ComparePage loading={loading} policiesCount={policiesCount} />} />
-          <Route path="/active-plan" element={<ActivePlanPage loading={loading} activePlansCount={metrics.activePlans} />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </main>
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <Router>
+    <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/*" element={<UserDashboardShell />} />
+        <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.LOGIN} replace />} />
+        <Route path={ROUTES.LOGIN} element={<Login />} />
+        <Route path={ROUTES.SIGNUP} element={<Signup />} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+        <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLogin />} />
+        <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+        <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to={ROUTES.LOGIN} replace />} />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
 
-export default App;
+
+const dashboardShellStyle = {
+  minHeight: "100vh",
+  display: "grid",
+  placeItems: "center",
+  padding: "24px",
+  background: "linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%)",
+};
+
+const dashboardCardStyle = {
+  width: "min(100%, 720px)",
+  background: "#ffffff",
+  border: "1px solid #dbe4ff",
+  borderRadius: "24px",
+  padding: "32px",
+  boxShadow: "0 18px 40px rgba(37, 99, 235, 0.12)",
+};
+
+const linkRowStyle = {
+  marginTop: "24px",
+  display: "flex",
+  gap: "12px",
+  alignItems: "center",
+  flexWrap: "wrap",
+};
+
+const primaryButtonStyle = {
+  border: 0,
+  borderRadius: "12px",
+  padding: "12px 18px",
+  background: "#2563eb",
+  color: "#ffffff",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const secondaryLinkStyle = {
+  color: "#1d4ed8",
+  fontWeight: 600,
+  textDecoration: "none",
+};
