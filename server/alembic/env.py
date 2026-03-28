@@ -26,7 +26,8 @@ if config.config_file_name is not None:
 env_path = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(dotenv_path=env_path)
 
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+# ConfigParser treats "%" as interpolation; escape literal percent signs in passwords (e.g. URL-encoded "@").
+config.set_main_option("sqlalchemy.url", DATABASE_URL.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

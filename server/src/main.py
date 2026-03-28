@@ -10,7 +10,10 @@ from src.database.seeds import seed_fraud_rules
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
 from src.database.core import engine, Base
-# This line creates all tables that are currently imported in your app
+
+import src.entities.BrowsePolicy  # noqa: F401 - register catalog_policies ORM with Base.metadata
+
+# Creates tables for any ORM models imported above (use Alembic migrations as source of truth in prod).
 Base.metadata.create_all(bind=engine)
 
 setup_logging()

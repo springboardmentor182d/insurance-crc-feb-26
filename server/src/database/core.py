@@ -13,8 +13,15 @@ load_dotenv(dotenv_path=env_path)
 def _build_database_url() -> str:
     explicit_url = os.getenv("DATABASE_URL")
     if explicit_url:
-        # Replace asyncpg with psycopg2 if needed
-        return explicit_url.replace("asyncpg", "psycopg2")
+        url = explicit_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+        if "+asyncpg" in url:
+            url = url.replace("+asyncpg", "+psycopg2")
+        # Plain postgresql:// uses the sync psycopg2 driver with SQLAlchemy
+        if url.startswith("postgresql://") and not url.startswith("postgresql+"):
+            url = "postgresql+psycopg2://" + url[len("postgresql://") :]
+        elif url.startswith("postgres://") and not url.startswith("postgres+"):
+            url = "postgresql+psycopg2://" + url[len("postgres://") :]
+        return url
 
     user = os.getenv("POSTGRES_USER", "bimaverse_user")
     password = os.getenv("POSTGRES_PASSWORD", "bimaverse_pass")
@@ -43,5 +50,6 @@ def create_tables() -> None:
     # Ensure all ORM models are registered before create_all
     import src.database.admin_dashboard.models  # noqa: F401
     import src.database.manage_policies.models  # noqa: F401
+    import src.entities.BrowsePolicy  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
