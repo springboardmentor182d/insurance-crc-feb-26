@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 
+const BASE_URL = process.env.REACT_APP_BASE_URL;
+
 function Policies() {
   const [policies, setPolicies] = useState([]);
   const [selected, setSelected] = useState([]);
@@ -8,6 +10,7 @@ function Policies() {
 
   useEffect(() => {
     fetch("http://localhost:8000/policies/")
+    fetch(`${BASE_URL}/policies/`)
       .then(res => res.json())
       .then(data => setPolicies(data));
   }, []);
@@ -20,6 +23,7 @@ function Policies() {
 
   const compareSelected = () => {
     fetch("http://localhost:8000/policies/compare", {
+    fetch(`${BASE_URL}/policies/compare`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(selected)

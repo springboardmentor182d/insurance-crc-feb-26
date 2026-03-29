@@ -1,8 +1,11 @@
 # server/src/policies/service.py
 from .models import Policy
+from ..database import SessionLocal
 
 def get_policies():
     return [
+    db = SessionLocal()
+    sample_policies = [
         Policy(name="Comprehensive Health Insurance", provider="HDFC Ergo",
                coverage="₹10,00,000", premium="₹12,000/year",
                features=["Cashless Claims", "No Room Rent Limit", "Pre & Post Hospitalization"]),
@@ -27,4 +30,13 @@ def get_policies():
         Policy(name="Business Liability Cover",provider="SBI General",
                coverage="₹1,00,00,000",premium="₹45,000/year",
                features=["Professional Indemnity", "Cyber Risk Cover", "Employee Liability"])
-    ]
+    ]    ]
+    db.add_all(sample_policies)
+    db.commit()
+    db.close()
+    
+    try:
+        return db.query(Policy).all()
+    finally:
+        db.close()
+    
