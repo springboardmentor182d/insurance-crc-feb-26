@@ -3,7 +3,6 @@ from .models import Policy
 from ..database import SessionLocal
 
 def get_policies():
-    return [
     db = SessionLocal()
     sample_policies = [
         Policy(name="Comprehensive Health Insurance", provider="HDFC Ergo",
@@ -30,7 +29,7 @@ def get_policies():
         Policy(name="Business Liability Cover",provider="SBI General",
                coverage="₹1,00,00,000",premium="₹45,000/year",
                features=["Professional Indemnity", "Cyber Risk Cover", "Employee Liability"])
-    ]    ]
+    ]
     db.add_all(sample_policies)
     db.commit()
     db.close()
