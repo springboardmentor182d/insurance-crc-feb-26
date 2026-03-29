@@ -17,6 +17,10 @@ import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
 import FlaggedClaims from "./pages/admin/FlaggedClaims";
 import FraudRules from "./pages/admin/FraudRules";
+//import Recommendations from "./pages/Recommendations";
+
+
+
 
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
@@ -153,6 +157,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        
+
 
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>

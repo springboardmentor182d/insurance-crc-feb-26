@@ -9,9 +9,6 @@ from src.database.core import SessionLocal
 from src.database.seeds import seed_fraud_rules
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
-from src.database.core import engine, Base
-# This line creates all tables that are currently imported in your app
-Base.metadata.create_all(bind=engine)
 
 setup_logging()
 app = FastAPI(

@@ -97,6 +97,7 @@ class AuthService:
             first_name=first_name or None,
             last_name=last_name,
             full_name=full_name,
+            date_of_birth=data.date_of_birth,
             role=UserRole.CUSTOMER,
         )
         self.db.add(user)

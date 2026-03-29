@@ -1,27 +1,49 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '../utils/apiClient'; // Note the '../' because we are now in the 'pages' folder
-import FormInput from '../components/Form/FormInput';
-import Formselect from '../components/Form/Formselect'; 
 import Sidebar from '../layout/user/Sidebar';
+import { fetchActivePolicies } from '../features/policies/services/policiesService';
+import { TOKEN_KEYS } from '../data/constants';
 import {
   FileText, Activity, AlertCircle, CheckCircle,
-  ArrowRight, Plus, ArrowLeft
+  ArrowRight, Plus
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 
 function DashboardPage() {
-  const [view, setView] = useState('dashboard');
+  
   const [policies, setPolicies] = useState([]);
   const [claims, setClaims] = useState([]);
+  const [userName, setUserName] = useState('User');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
+    if (!userRaw || userRaw === 'undefined') return;
+
+    try {
+      const user = JSON.parse(userRaw);
+      const displayName = user?.name || user?.full_name || user?.first_name || 'User';
+      setUserName(displayName);
+    } catch {
+      setUserName('User');
+    }
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const pRes = await apiClient.get("/admin/dashboard/policies");
-        console.log("Check this data structure:", pRes.data); // Look at this in F12 console
-        const policiesPayload = pRes.data?.data ?? pRes.data;
-        setPolicies(Array.isArray(policiesPayload) ? policiesPayload : []);
-        const cRes = await apiClient.get("/admin/dashboard/claims");
-        console.log("Check this data structure:", cRes.data); // Look at this in F12 console
+        const activePolicies = await fetchActivePolicies();
+        const policiesPayload = Array.isArray(activePolicies) ? activePolicies : [];
+        const normalizedPolicies = policiesPayload.map((policy) => ({
+          id: policy.id,
+          policy_type: policy.category || 'Policy',
+          policy_number: policy.policy_number,
+          premium_amount: Number(policy.premium_annual || 0),
+        }));
+        setPolicies(normalizedPolicies);
+
+        const cRes = await apiClient.get("/claims");
         const claimsPayload = cRes.data?.data ?? cRes.data;
         setClaims(Array.isArray(claimsPayload) ? claimsPayload : []);
       } catch (error) {
@@ -60,11 +82,11 @@ function DashboardPage() {
       <Sidebar />
       <div className="flex-1 ml-64 overflow-y-auto">
         <div className="max-w-6xl mx-auto p-8">
-          {view === 'dashboard' ? (
+         
             <div className="animate-in fade-in duration-700">
           {/* Header */}
           <div className="mb-8 text-left">
-            <h1 className="text-3xl font-bold text-gray-900">Welcome Back, John!</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Welcome Back, {userName}!</h1>
             <p className="text-gray-500 mt-1 font-medium">Overview of your insurance portfolio</p>
           </div>
 
@@ -108,15 +130,23 @@ function DashboardPage() {
 
           {/* Action Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-blue-600 p-8 rounded-3xl text-white flex justify-between items-center group cursor-pointer">
+            <div
+              onClick={() => navigate('/policies/browse')}
+              className="bg-blue-600 p-8 rounded-3xl text-white flex justify-between items-center group cursor-pointer"
+            >
               <div className="text-left"><h4 className="text-xl font-bold mb-1">Browse Policies</h4><p className="text-blue-100 text-sm">Find the perfect coverage</p></div>
               <ArrowRight size={28} className="group-hover:translate-x-1 transition-transform" />
             </div>
-            <div className="bg-purple-600 p-8 rounded-3xl text-white flex justify-between items-center group cursor-pointer">
+
+            <div
+              onClick={() => navigate('/recommendations')}
+              className="bg-purple-600 p-8 rounded-3xl text-white flex justify-between items-center group cursor-pointer"
+            >
               <div className="text-left"><h4 className="text-xl font-bold mb-1">Recommendations</h4><p className="text-purple-100 text-sm">AI-powered suggestions</p></div>
               <ArrowRight size={28} className="group-hover:translate-x-1 transition-transform" />
             </div>
-            <div onClick={() => setView('claim')} className="bg-green-600 p-8 rounded-3xl text-white flex justify-between items-center cursor-pointer group">
+
+            <div onClick={() => navigate('/claims')} className="bg-green-600 p-8 rounded-3xl text-white flex justify-between items-center cursor-pointer group">
               <div className="text-left"><h4 className="text-xl font-bold mb-1">File a Claim</h4><p className="text-green-100 text-sm">Quick submission</p></div>
               <Plus size={28} className="group-hover:rotate-90 transition-transform" />
             </div>
@@ -127,7 +157,12 @@ function DashboardPage() {
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-extrabold text-gray-800">Active Policies</h3>
-                <button className="text-blue-600 text-sm font-semibold hover:underline">View All</button>
+                <button
+                  onClick={() => navigate('/policies/active')}
+                  className="text-blue-600 text-sm font-semibold hover:underline"
+                >
+                  View All
+                </button>
               </div>
               <div className="space-y-4">
                 {policies.map((policy, i) => (
@@ -152,7 +187,12 @@ function DashboardPage() {
             <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-extrabold text-gray-800">Recent Claims</h3>
-                <button className="text-blue-600 text-sm font-semibold hover:underline">View All</button>
+                <button
+                  onClick={() => navigate('/claims')}
+                  className="text-blue-600 text-sm font-semibold hover:underline"
+                >
+                  View All
+                </button>
               </div>
               <div className="space-y-4">
                 {claims.map((claim, i) => (
@@ -165,18 +205,9 @@ function DashboardPage() {
             </div>
           </div>
             </div>
-          ) : (
-        /* Form View */
-        <div className="max-w-2xl mx-auto bg-white p-10 rounded-3xl border border-gray-100 shadow-xl text-left">
-          <button onClick={() => setView('dashboard')} className="flex items-center text-blue-600 mb-8 font-bold text-xs"><ArrowLeft size={16} className="mr-2" /> BACK TO DASHBOARD</button>
-          <h2 className="text-3xl font-black text-gray-900 mb-6">File a New Claim</h2>
-          <form className="space-y-8">
-            <FormInput label="POLICY IDENTIFICATION" placeholder="e.g. BIMA-4492-X" />
-            <Formselect label="CLAIM CATEGORY" options={[{ value: 'health', label: 'Health' }, { value: 'auto', label: 'Auto' }]} />
-            <button type="button" className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black text-lg">SUBMIT CLAIM</button>
-          </form>
-          </div>
-        )}
+          
+        
+        
         </div>
       </div>
     </div>

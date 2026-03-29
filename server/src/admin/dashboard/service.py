@@ -1,11 +1,11 @@
+from datetime import date, datetime
+from decimal import Decimal
+from typing import Any, TypedDict
+
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from src.database.admin_dashboard.models.claims import Claim
-try:
-    from src.database.admin_dashboard.models.policies import Policy
-except ImportError:
-    # If the above fails, we might need to look in the 'admin' models
-    from src.admin.models import Policy
+from src.database.admin_dashboard.models.policies import Policy
 from src.admin.dashboard.models import (
     AdminStatsData,
     AdminStatsResponse,
@@ -33,10 +33,26 @@ from src.database.admin_dashboard.repository import (
     get_top_adjusters_snapshot,
 )
 
-ADMIN_SECRET = "bimaverse-admin-2026"
+class DashboardPolicyItem(TypedDict):
+    id: int
+    policy_number: str
+    policy_type: str
+    status: str
+    premium_amount: float
+    coverage_amount: float
+    start_date: str
+    end_date: str
 
 
-def admin_signup(data: RegisterRequest, db: Session):
+class DashboardClaimItem(TypedDict):
+    id: str
+    type: str
+    date: str
+    amount: str
+    status: str
+
+
+def admin_signup(data: RegisterRequest, db: Session) -> dict[str, str]:
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
         raise HTTPException(
@@ -61,48 +77,122 @@ def admin_signup(data: RegisterRequest, db: Session):
     return {"message": "Admin created successfully"}
 
 
-def admin_login(data: AdminLogin, db: Session):
+def admin_login(data: AdminLogin, db: Session) -> dict[str, Any]:
     # Reuse AuthService so /admin/login and /auth/admin/login behave consistently.
     return AuthService(db).admin_login(data)
 
 
-async def get_admin_stats():
+async def get_admin_stats() -> AdminStatsResponse:
     stats = get_admin_stats_snapshot()
     policies_stats = get_policy_stats()
     stats["activePolicies"] = policies_stats.activePolicies
     return AdminStatsResponse(data=AdminStatsData(**stats))
 
 
-async def get_claims_trends():
+async def get_claims_trends() -> ClaimsTrendsResponse:
     trends = [ClaimsTrend(**row) for row in get_claims_trends_snapshot()]
     return ClaimsTrendsResponse(data=trends)
 
 
-async def get_revenue_data():
+async def get_revenue_data() -> RevenueResponse:
     revenue = [RevenuePoint(**row) for row in get_revenue_snapshot()]
     return RevenueResponse(data=revenue)
 
 
-async def get_policy_distribution():
+async def get_policy_distribution() -> PolicyDistributionResponse:
     distribution = [
         PolicyDistributionItem(**row) for row in get_policy_distribution_snapshot()
     ]
     return PolicyDistributionResponse(data=distribution)
 
 
-async def get_top_adjusters():
+async def get_top_adjusters() -> TopAdjustersResponse:
     adjusters = [TopAdjuster(**row) for row in get_top_adjusters_snapshot()]
     return TopAdjustersResponse(data=adjusters)
 
 
-async def get_recent_activity():
+async def get_recent_activity() -> RecentActivityResponse:
     activities = [
         RecentActivityItem(**row) for row in get_recent_activity_snapshot(limit=5)
     ]
     return RecentActivityResponse(data=activities)
 
-async def get_all_policies(db: Session):
-    return db.query(Policy).all()
 
-async def get_all_claims(db: Session):
-    return db.query(Claim).all()
+def _to_title(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.replace("_", " ").title()
+
+
+def _enum_value(value: Any) -> str:
+    return getattr(value, "value", str(value))
+
+
+def _to_float(value: Decimal | float | int | None) -> float:
+    if value is None:
+        return 0.0
+    return float(value)
+
+
+def _to_iso_date(value: datetime | date | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    return value.isoformat()
+
+
+def _serialize_policy(policy: Policy) -> DashboardPolicyItem:
+    return {
+        "id": policy.id,
+        "policy_number": policy.policy_number,
+        "policy_type": _to_title(_enum_value(policy.policy_type)),
+        "status": _to_title(_enum_value(policy.status)),
+        "premium_amount": _to_float(policy.premium_amount),
+        "coverage_amount": _to_float(policy.coverage_amount),
+        "start_date": _to_iso_date(policy.start_date),
+        "end_date": _to_iso_date(policy.end_date),
+    }
+
+
+def _serialize_claim(claim: Claim) -> DashboardClaimItem:
+    raw_status = _enum_value(claim.status).lower()
+    status_map = {
+        "pending": "Pending",
+        "approved": "Resolved",
+        "rejected": "Rejected",
+        "fraudulent": "Fraudulent",
+    }
+    policy_type = (
+        _to_title(_enum_value(claim.policy.policy_type))
+        if claim.policy is not None
+        else "Policy"
+    )
+
+    return {
+        "id": claim.claim_number or f"CLM-{claim.id}",
+        "type": policy_type,
+        "date": _to_iso_date(claim.submitted_at),
+        "amount": f"${_to_float(claim.claim_amount):,.2f}",
+        "status": status_map.get(raw_status, _to_title(raw_status)),
+    }
+
+
+async def get_all_policies(
+    db: Session, current_user: User
+) -> list[DashboardPolicyItem]:
+    query = db.query(Policy)
+    if current_user.role != UserRole.ADMIN:
+        query = query.filter(Policy.user_id == current_user.id)
+    policies = query.order_by(Policy.created_at.desc()).all()
+    return [_serialize_policy(policy) for policy in policies]
+
+
+async def get_all_claims(
+    db: Session, current_user: User
+) -> list[DashboardClaimItem]:
+    query = db.query(Claim).options(joinedload(Claim.policy))
+    if current_user.role != UserRole.ADMIN:
+        query = query.filter(Claim.user_id == current_user.id)
+    claims = query.order_by(Claim.submitted_at.desc()).all()
+    return [_serialize_claim(claim) for claim in claims]
