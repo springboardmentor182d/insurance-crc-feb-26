@@ -1,8 +1,3 @@
-"""
-recommendations/service.py
-Returns real DB recommendations when available, falls back to dummy data.
-"""
-
 from decimal import Decimal
 from typing import Any, Optional
 from datetime import date
@@ -19,91 +14,6 @@ try:
     HAS_ACTIVE_POLICY_MODEL = True
 except ImportError:
     HAS_ACTIVE_POLICY_MODEL = False
-
-
-# ── Dummy fallback data ───────────────────────────────────────────────────────
-DUMMY_RECOMMENDATIONS = [
-    {
-        "id": 9001,
-        "title": "Health Insurance Coverage Gap",
-        "policy": "Family Health Plan",
-        "provider": "HealthFirst Insurance",
-        "premium": "$3,600/year",
-        "coverage": "$500,000",
-        "match": "95%",
-        "priority": "high",
-        "category": "high_priority",
-        "policyCategory": "HEALTH",
-        "benefits": [
-            "Age-appropriate coverage",
-            "Covers pre-existing conditions",
-            "Includes preventive care",
-            "Family coverage available",
-        ],
-        "premium_annual": Decimal("3600.00"),
-        "coverage_amount": Decimal("500000.00"),
-    },
-    {
-        "id": 9002,
-        "title": "Save on Auto Insurance",
-        "policy": "Comprehensive Auto Plan",
-        "provider": "Shield General Insurance",
-        "premium": "$1,200/year",
-        "coverage": "$150,000",
-        "match": "88%",
-        "priority": "medium",
-        "category": "cost_savings",
-        "policyCategory": "AUTO",
-        "benefits": [
-            "Same coverage limits as your current plan",
-            "Better claim satisfaction rating",
-            "Includes roadside assistance",
-            "Lower deductible options",
-        ],
-        "premium_annual": Decimal("1200.00"),
-        "coverage_amount": Decimal("150000.00"),
-    },
-    {
-        "id": 9003,
-        "title": "Increase Life Insurance Coverage",
-        "policy": "Term Life 20-Year Plan",
-        "provider": "SecureLife Insurance",
-        "premium": "$2,400/year",
-        "coverage": "$1,000,000",
-        "match": "82%",
-        "priority": "high",
-        "category": "coverage_upgrades",
-        "policyCategory": "LIFE",
-        "benefits": [
-            "Matches 10x annual income rule",
-            "Cash value accumulation",
-            "Living benefits included",
-            "Premium guaranteed for 20 years",
-        ],
-        "premium_annual": Decimal("2400.00"),
-        "coverage_amount": Decimal("1000000.00"),
-    },
-    {
-        "id": 9004,
-        "title": "Home Contents Protection",
-        "policy": "Home Contents Shield",
-        "provider": "HomeSafe Insurance",
-        "premium": "$900/year",
-        "coverage": "$200,000",
-        "match": "74%",
-        "priority": "low",
-        "category": "additional_coverage",
-        "policyCategory": "HOME",
-        "benefits": [
-            "Covers theft and damage",
-            "Includes electronics and jewellery",
-            "No-claims discount available",
-            "24/7 claims support",
-        ],
-        "premium_annual": Decimal("900.00"),
-        "coverage_amount": Decimal("200000.00"),
-    },
-]
 
 
 # ── Scoring maps ──────────────────────────────────────────────────────────────
@@ -229,57 +139,47 @@ def list_recommendations(
     user_id: int,
     filters: Optional[RecommendationFilter] = None,
 ) -> list[dict[str, Any]]:
-    """
-    1. Try to build recommendations from real DB policies.
-    2. If DB returns nothing, fall back to DUMMY_RECOMMENDATIONS.
-    3. Apply category tab filter either way.
-    4. Sort by match score descending.
-    """
-    # ── Real DB path ──────────────────────────────────────────────────────────
-    try:
-        stmt = (
-            select(Policy, PolicyProfile)
-            .outerjoin(PolicyProfile, PolicyProfile.policy_id == Policy.id)
-            .where(Policy.status == PolicyStatus.ACTIVE)
-        )
+    """Return real DB recommendations only. Empty list if none found."""
 
-        existing_categories = _get_user_categories(db, user_id)
-        if existing_categories:
-            excluded_types = [
-                PolicyType[c]
-                for c in existing_categories
-                if c in PolicyType.__members__
-            ]
-            if excluded_types:
-                stmt = stmt.where(Policy.policy_type.notin_(excluded_types))
+    stmt = (
+        select(Policy, PolicyProfile)
+        .outerjoin(PolicyProfile, PolicyProfile.policy_id == Policy.id)
+        .where(Policy.status == PolicyStatus.ACTIVE)
+    )
 
-        if filters and filters.policy_type:
-            pt = filters.policy_type.strip().upper()
-            if pt in PolicyType.__members__:
-                stmt = stmt.where(Policy.policy_type == PolicyType[pt])
-
-        if filters and filters.max_premium:
-            stmt = stmt.where(Policy.premium_amount <= filters.max_premium)
-
-        rows = db.execute(stmt.order_by(Policy.created_at.desc())).all()
-        recommendations = [
-            _build_recommendation(policy, profile, idx)
-            for idx, (policy, profile) in enumerate(rows)
+    # Exclude policy types the user already holds
+    existing_categories = _get_user_categories(db, user_id)
+    if existing_categories:
+        excluded_types = [
+            PolicyType[c]
+            for c in existing_categories
+            if c in PolicyType.__members__
         ]
+        if excluded_types:
+            stmt = stmt.where(Policy.policy_type.notin_(excluded_types))
 
-    except Exception:
-        recommendations = []
+    # Optional filters
+    if filters and filters.policy_type:
+        pt = filters.policy_type.strip().upper()
+        if pt in PolicyType.__members__:
+            stmt = stmt.where(Policy.policy_type == PolicyType[pt])
 
-    # ── Fallback to dummy data if DB returned nothing ─────────────────────────
-    if not recommendations:
-        recommendations = list(DUMMY_RECOMMENDATIONS)
+    if filters and filters.max_premium:
+        stmt = stmt.where(Policy.premium_amount <= filters.max_premium)
 
-    # ── Tab-category filter ───────────────────────────────────────────────────
+    rows = db.execute(stmt.order_by(Policy.created_at.desc())).all()
+
+    recommendations = [
+        _build_recommendation(policy, profile, idx)
+        for idx, (policy, profile) in enumerate(rows)
+    ]
+
+    # Tab-category filter
     if filters and filters.category and filters.category in _TAB_TO_INTERNAL:
         target = _TAB_TO_INTERNAL[filters.category]
         recommendations = [r for r in recommendations if r["category"] == target]
 
-    # ── Sort by match score ───────────────────────────────────────────────────
+    # Sort by match score descending
     recommendations.sort(
         key=lambda r: int(str(r["match"]).replace("%", "")),
         reverse=True,
