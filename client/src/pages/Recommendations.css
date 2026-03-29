@@ -1,0 +1,522 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap');
+
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+.rec-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+  font-family: 'DM Sans', sans-serif;
+  color: #1e293b;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+.rec-page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.rec-page-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.rec-page-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: #0f172a;
+}
+
+.rec-page-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ── Profile banner ───────────────────────────────────────────────────────── */
+.profile-banner {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 70%, #3b82f6 100%);
+  border-radius: 14px;
+  padding: 28px 32px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  gap: 20px;
+}
+
+.profile-heading {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.profile-fields {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.profile-fields > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-label {
+  font-size: 12px;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 2px;
+}
+
+.profile-fields strong {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.profile-coverage-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coverage-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.coverage-pill {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Coverage Score Box (replaces old match-box) ──────────────────────────── */
+.profile-score-box {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  padding: 16px 24px;
+  text-align: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(6px);
+  min-width: 140px;
+}
+
+.score-label {
+  font-size: 11px;
+  opacity: 0.8;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: white;
+}
+
+.score-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: white;
+  line-height: 1.1;
+}
+
+.score-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+/* Keep old match-box class in case used elsewhere */
+.profile-match-box {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  padding: 16px 24px;
+  text-align: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(6px);
+}
+
+.match-score-label {
+  font-size: 12px;
+  opacity: 0.8;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.match-score-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+.rec-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.rec-tab {
+  padding: 8px 18px;
+  border-radius: 24px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.rec-tab:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.rec-tab.active {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+/* ── Recommendation card ──────────────────────────────────────────────────── */
+.rec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rec-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  animation: slideUp 0.35s ease both;
+  transition: box-shadow 0.2s ease;
+}
+
+.rec-card:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.rec-card-top {
+  display: flex;
+  gap: 16px;
+}
+
+.rec-icon-wrap {
+  width: 48px;
+  height: 48px;
+  background: #fef2f2;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.rec-main { flex: 1; min-width: 0; }
+
+.rec-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rec-header-text { flex: 1; min-width: 0; }
+
+.rec-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: #0f172a;
+}
+
+.rec-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+/* Priority badges */
+.rec-priority-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-high   { background: #fef2f2; color: #dc2626; }
+.badge-medium { background: #fff7ed; color: #d97706; }
+.badge-low    { background: #f0fdf4; color: #16a34a; }
+
+/* Match badge */
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.match-arrow { font-size: 12px; }
+
+/* Details grid */
+.rec-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 6px;
+}
+
+.detail-policy-name {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: #0f172a;
+}
+
+.detail-provider {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 12px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-row:last-of-type { border-bottom: none; }
+
+.detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.rec-promo {
+  font-size: 13px;
+  color: #d97706;
+  font-weight: 500;
+  margin: 10px 0 0;
+}
+
+/* Benefits */
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.benefits-list li {
+  font-size: 13px;
+  color: #475569;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.benefit-tick {
+  color: #16a34a;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ── Learn More expanded section ──────────────────────────────────────────── */
+.rec-expanded {
+  margin-top: 4px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background: #f0f7ff;
+  border-left: 3px solid #2563eb;
+  border-radius: 0 8px 8px 0;
+  animation: fadeIn 0.2s ease;
+}
+
+.rec-expanded .detail-label {
+  color: #2563eb;
+  margin-bottom: 8px;
+}
+
+.rec-expanded-text {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.7;
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Action buttons ───────────────────────────────────────────────────────── */
+.rec-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-quote {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.btn-quote:hover { background: #1d4ed8; }
+
+.btn-learn {
+  background: white;
+  color: #1e293b;
+  border: 1.5px solid #e2e8f0;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.btn-learn:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.btn-dismiss {
+  background: transparent;
+  color: #94a3b8;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.18s;
+}
+
+.btn-dismiss:hover { color: #ef4444; }
+
+/* ── Loading / error / empty ──────────────────────────────────────────────── */
+.rec-loading {
+  text-align: center;
+  padding: 60px 0;
+  color: #64748b;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.rec-error, .rec-empty {
+  text-align: center;
+  padding: 60px 0;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.rec-error button {
+  margin-top: 12px;
+  padding: 8px 20px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .profile-banner   { flex-direction: column; }
+  .profile-fields   { gap: 16px; }
+  .rec-details-grid { grid-template-columns: 1fr; }
+  .rec-header-row   { flex-direction: column; }
+  .profile-score-box,
+  .profile-match-box { width: 100%; }
+}

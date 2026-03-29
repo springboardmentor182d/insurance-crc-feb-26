@@ -18,7 +18,7 @@ const Signup = () => {
           <div className="auth-features">
             {[
               "Free policy comparisons",
-              "Personalized AI recommendations",
+              "Personalized recommendations",
               "Guided claim filing",
               "Real-time claim tracking",
             ].map((f) => (
