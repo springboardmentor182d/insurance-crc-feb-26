@@ -16,7 +16,7 @@ const useSignup = () => {
       localStorage.setItem(TOKEN_KEYS.ACCESS, data.access_token);
       localStorage.setItem(TOKEN_KEYS.REFRESH, data.refresh_token);
       localStorage.setItem(TOKEN_KEYS.USER, JSON.stringify(data.user));
-      navigate(ROUTES.DASHBOARD);
+      navigate(ROUTES.AUTH_STATUS);
     } catch (err) {
       setError(err.message || "Signup failed");
     } finally {

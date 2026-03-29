@@ -2,10 +2,8 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import List
-
 from sqlalchemy import Boolean, DateTime, Enum as SQLEnum, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database.core import Base
 
@@ -45,8 +43,3 @@ class User(Base):
         nullable=False,
     )
 
-    policies: Mapped[List["Policy"]] = relationship("Policy", back_populates="user")
-    claims: Mapped[List["Claim"]] = relationship("Claim", back_populates="user")
-    activity_logs: Mapped[List["ActivityLog"]] = relationship(
-        "ActivityLog", back_populates="user"
-    )

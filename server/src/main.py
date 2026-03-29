@@ -6,7 +6,6 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from src.api import api_router
 from src.database.core import SessionLocal
-from src.database.seeds import seed_fraud_rules
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
 from src.database.core import engine, Base
@@ -44,11 +43,6 @@ def startup_db_check():
             session.execute(text("SELECT 1"))
     except SQLAlchemyError as exc:
         raise RuntimeError("Database connection failed on startup.") from exc
-    try:
-        seed_fraud_rules()
-    except SQLAlchemyError:
-        # Let the API boot even if optional admin seed data targets an older schema.
-        pass
 
 
 @app.get("/health", tags=["Health"])

@@ -25,7 +25,7 @@ const LoginForm = () => {
       localStorage.setItem(TOKEN_KEYS.ACCESS, data.access_token);
       localStorage.setItem(TOKEN_KEYS.REFRESH, data.refresh_token);
       localStorage.setItem(TOKEN_KEYS.USER, JSON.stringify(data.user));
-      navigate(data.user.role === "admin" ? ROUTES.ADMIN_DASHBOARD : ROUTES.DASHBOARD);
+      navigate(ROUTES.AUTH_STATUS);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -126,7 +126,7 @@ const LoginForm = () => {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
-        <Link to={ROUTES.ADMIN_LOGIN} className="auth-link">Login as Admin</Link>
+        <span className="auth-link">Login as Admin</span>
       </div>
     </form>
   );
