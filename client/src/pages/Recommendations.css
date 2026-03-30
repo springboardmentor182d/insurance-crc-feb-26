@@ -113,6 +113,43 @@
   backdrop-filter: blur(4px);
 }
 
+/* ── Coverage Score Box (replaces old match-box) ──────────────────────────── */
+.profile-score-box {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  padding: 16px 24px;
+  text-align: center;
+  flex-shrink: 0;
+  backdrop-filter: blur(6px);
+  min-width: 140px;
+}
+
+.score-label {
+  font-size: 11px;
+  opacity: 0.8;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: white;
+}
+
+.score-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: white;
+  line-height: 1.1;
+}
+
+.score-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+/* Keep old match-box class in case used elsewhere */
 .profile-match-box {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -226,6 +263,8 @@
   margin-bottom: 16px;
 }
 
+.rec-header-text { flex: 1; min-width: 0; }
+
 .rec-title {
   font-family: 'Sora', sans-serif;
   font-size: 18px;
@@ -241,6 +280,20 @@
   max-width: 480px;
   line-height: 1.5;
 }
+
+/* Priority badges */
+.rec-priority-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badge-high   { background: #fef2f2; color: #dc2626; }
+.badge-medium { background: #fff7ed; color: #d97706; }
+.badge-low    { background: #f0fdf4; color: #16a34a; }
 
 /* Match badge */
 .match-badge {
@@ -339,7 +392,35 @@
   flex-shrink: 0;
 }
 
-/* Action buttons */
+/* ── Learn More expanded section ──────────────────────────────────────────── */
+.rec-expanded {
+  margin-top: 4px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background: #f0f7ff;
+  border-left: 3px solid #2563eb;
+  border-radius: 0 8px 8px 0;
+  animation: fadeIn 0.2s ease;
+}
+
+.rec-expanded .detail-label {
+  color: #2563eb;
+  margin-bottom: 8px;
+}
+
+.rec-expanded-text {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.7;
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Action buttons ───────────────────────────────────────────────────────── */
 .rec-actions {
   display: flex;
   gap: 10px;
@@ -374,7 +455,10 @@
   transition: all 0.18s;
 }
 
-.btn-learn:hover { border-color: #94a3b8; }
+.btn-learn:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+}
 
 .btn-dismiss {
   background: transparent;
@@ -429,9 +513,10 @@
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .profile-banner    { flex-direction: column; }
-  .profile-fields    { gap: 16px; }
-  .rec-details-grid  { grid-template-columns: 1fr; }
-  .rec-header-row    { flex-direction: column; }
+  .profile-banner   { flex-direction: column; }
+  .profile-fields   { gap: 16px; }
+  .rec-details-grid { grid-template-columns: 1fr; }
+  .rec-header-row   { flex-direction: column; }
+  .profile-score-box,
   .profile-match-box { width: 100%; }
 }

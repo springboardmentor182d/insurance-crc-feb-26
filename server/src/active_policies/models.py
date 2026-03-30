@@ -2,7 +2,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ActivePolicyBase(BaseModel):
@@ -22,9 +22,22 @@ class ActivePolicyBase(BaseModel):
     warning_text: Optional[str] = None
 
 
+class PolicyDocumentResponse(BaseModel):
+    id: int
+    active_policy_id: int
+    file_name: str
+    content_type: str
+    file_size: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 class ActivePolicyResponse(ActivePolicyBase):
     id: int
     is_expiring_soon: bool = False
+    documents: list[PolicyDocumentResponse] = Field(default_factory=list)
     created_at: datetime
     updated_at: Optional[datetime] = None
 

@@ -4,7 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from src.auth import get_current_user_id
 from src.database.core import get_db, SessionLocal
@@ -25,6 +25,54 @@ router = APIRouter(prefix="/claims", tags=["Claims"])
 def run_fraud_checks_background(claim_id: int) -> None:
     with SessionLocal() as session:
         run_fraud_checks(claim_id, session)
+
+
+def _to_title(value: str | None) -> str:
+    if not value:
+        return ""
+    return value.replace("_", " ").title()
+
+
+def _enum_value(value) -> str:
+    return getattr(value, "value", str(value))
+
+
+def _serialize_claim(claim: Claim) -> dict[str, str]:
+    raw_status = _enum_value(claim.status).lower()
+    status_map = {
+        "pending": "Pending",
+        "approved": "Resolved",
+        "rejected": "Rejected",
+        "fraudulent": "Fraudulent",
+    }
+    claim_type = (
+        _to_title(_enum_value(claim.policy.policy_type))
+        if claim.policy is not None
+        else "Policy"
+    )
+
+    return {
+        "id": claim.claim_number or f"CLM-{claim.id}",
+        "type": claim_type,
+        "date": claim.submitted_at.date().isoformat() if claim.submitted_at else "",
+        "amount": f"${float(claim.claim_amount):,.2f}",
+        "status": status_map.get(raw_status, _to_title(raw_status)),
+    }
+
+
+@router.get("")
+def list_claims(
+    db: Session = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id),
+):
+    claims = (
+        db.query(Claim)
+        .options(joinedload(Claim.policy))
+        .filter(Claim.user_id == current_user_id)
+        .order_by(Claim.submitted_at.desc())
+        .all()
+    )
+    return [_serialize_claim(claim) for claim in claims]
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)

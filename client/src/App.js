@@ -72,6 +72,8 @@ export default function App() {
         <Route path="/admin/policy-approvals" element={<ProtectedRoute adminOnly><PolicyApprovals /></ProtectedRoute>} />
         {/* ── Fallback ── */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+        console.log("Recommendations component:", Recommendations);
+
       </Routes>
     </BrowserRouter>
   );
