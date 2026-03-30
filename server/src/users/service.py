@@ -21,15 +21,26 @@ def update_user_profile(db: Session, user_id: int, profile_data: ProfileBase) ->
         raise ValueError("User not found")
 
     update_data = profile_data.model_dump(exclude_unset=True)
+    profile_fields = {
+        "email",
+        "phone",
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "gender",
+        "address",
+        "city",
+        "state",
+        "zip_code",
+        "country",
+        "occupation",
+        "company",
+        "insurance_preferences",
+    }
 
-    if "email" in update_data:
-        user.email = update_data["email"]
-    if "phone" in update_data:
-        user.phone = update_data["phone"]
-    if "first_name" in update_data:
-        user.first_name = update_data["first_name"]
-    if "last_name" in update_data:
-        user.last_name = update_data["last_name"]
+    for field, value in update_data.items():
+        if field in profile_fields:
+            setattr(user, field, value)
 
     user.full_name = _merge_full_name(user.first_name, user.last_name, user.full_name)
 

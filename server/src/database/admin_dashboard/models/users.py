@@ -1,10 +1,19 @@
 ﻿from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import List
 
-from sqlalchemy import Boolean, DateTime, Enum as SQLEnum, Integer, String, func
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Enum as SQLEnum,
+    Integer,
+    JSON,
+    String,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.database.core import Base
@@ -27,6 +36,18 @@ class User(Base):
         String(255), nullable=False, unique=True, index=True
     )
     phone: Mapped[str | None] = mapped_column(String(25), nullable=True)
+    date_of_birth: Mapped[date | None] = mapped_column(Date, nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    zip_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    country: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    occupation: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    insurance_preferences: Mapped[dict[str, bool] | None] = mapped_column(
+        JSON, nullable=True
+    )
     role: Mapped[UserRole] = mapped_column(
         SQLEnum(UserRole, name="user_role"),
         nullable=False,

@@ -9,6 +9,8 @@ from alembic import context
 from src.database.core import Base, DATABASE_URL
 import src.database.admin_dashboard.models  # noqa: F401
 import src.database.manage_policies.models  # noqa: F401
+import src.entities.active_policy  # noqa: F401
+import src.entities.policy_document  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
