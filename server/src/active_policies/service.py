@@ -8,6 +8,9 @@ from src.entities.active_policy import ActivePolicy
 from src.active_policies.models import ActivePoliciesSummary
 
 
+def get_pending_policies(db):
+    return db.query(ActivePolicy).filter(ActivePolicy.status == "PENDING").all()
+
 EXPIRING_SOON_DAYS = 30
 
 

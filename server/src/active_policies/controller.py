@@ -17,7 +17,7 @@ router = APIRouter()
 class ActivePolicyCreate(BaseModel):
   policy_id: int | None = None
   policy_number: str
-  status: str = "ACTIVE"
+  status: str = "PENDING"
   category: str
   insurer_name: str
   product_name: str
@@ -29,7 +29,21 @@ class ActivePolicyCreate(BaseModel):
   tags: str | None = None
   warning_text: str | None = None
 
+@router.get("/")
+def get_pending_policies(db: Session = Depends(get_db)):
+    policies = db.query(ActivePolicy).filter(ActivePolicy.status == "PENDING").all()
 
+    return [
+        {
+            "id": p.id,
+            "policy_number": p.policy_number,
+            "product_name": p.product_name,
+            "category": p.category,
+            "insurer": p.insurer_name,
+            "status": p.status,
+        }
+        for p in policies
+    ]
 @router.get("/active", response_model=List[ActivePolicyResponse])
 def get_active_policies(
     current_user_id: int = Depends(get_current_user_id),

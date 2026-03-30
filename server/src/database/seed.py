@@ -567,7 +567,32 @@ def seed_database() -> None:
             submitted_at=now - timedelta(days=96),
             processed_at=now - timedelta(days=90),
         )
-    
+        policy_pending_1 = _upsert_policy(
+            db,
+            policy_number="POL-PENDING-0005",
+            user_id=customer_one.id,
+            policy_type=PolicyType.HEALTH,
+            status=PolicyStatus.PENDING,   # 🔥 IMPORTANT
+            premium_amount=Decimal("2000.00"),
+            coverage_amount=Decimal("600000.00"),
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=365),
+            created_at=now,
+        )
+
+        policy_pending_2 = _upsert_policy(
+            db,
+            policy_number="POL-PENDING-0006",
+            user_id=customer_two.id,
+            policy_type=PolicyType.AUTO,
+            status=PolicyStatus.PENDING,   # 🔥 IMPORTANT
+            premium_amount=Decimal("1500.00"),
+            coverage_amount=Decimal("350000.00"),
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=365),
+            created_at=now,
+        )
+            
         rules = {
             rule.rule_name: rule
             for rule in db.execute(select(FraudRule)).scalars().all()
