@@ -122,8 +122,9 @@ const AdminDashboard = () => {
               description="+18% increase from last month"
               color="admin-action-revenue"
               icon={<FiTrendingUp />}
-              onClick={() => navigate("/admin/analytics")}
+              onClick={() => navigate("/admin/revenue")}
             />
+
           </div>
         </div>
       </div>
