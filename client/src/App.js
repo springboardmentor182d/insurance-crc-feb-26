@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ROUTES } from "./data/constants";
 
 import AdminLogin from "./pages/AdminLogin";
+import AdminSignup from "./pages/AdminSignup";
 import AuthStatus from "./pages/AuthStatus";
 import ForgotPassword from "./pages/ForgotPassword";
 import Login from "./pages/Login";
@@ -19,6 +20,7 @@ export default function App() {
         <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={ROUTES.AUTH_STATUS} element={<AuthStatus />} />
         <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLogin />} />
+        <Route path={ROUTES.ADMIN_SIGNUP} element={<AdminSignup />} />
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
       </Routes>
     </BrowserRouter>
