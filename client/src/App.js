@@ -4,6 +4,7 @@ import Profile from "./pages/Profile";
 import Preferences from "./pages/Preferences";
 import FlaggedClaims from "./pages/admin/FlaggedClaims";
 import ActivePolicies from './pages/ActivePolicies';
+import BrowsePolicies from "./pages/BrowsePolicies";
 //import Recommendations from "./pages/Recommendations";
 
 
@@ -20,6 +21,7 @@ function App() {
    
         {/* Sidebar routes */}
          { <Route path="/Activepolicies" element={<ActivePolicies />} /> }
+        { <Route path="/browsepolicies" element={<BrowsePolicies />} /> }
         {/* <Route path="/recommendations" element={<Recommendations />} /> */}
         { <Route path="/claims" element={<FlaggedClaims />} /> }
         <Route path="/profile" element={<Profile />} />

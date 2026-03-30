@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from '../layout/user/Sidebar';
-import FromInput from '../components/Form/FromInput';
+import FromInput from '../components/Form/FormInput';
 import { fetchPolicies } from '../features/policies/services/policiesService';
 
 const CATEGORY_FILTERS = [

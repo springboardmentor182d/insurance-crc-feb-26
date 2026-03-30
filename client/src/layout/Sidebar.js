@@ -47,7 +47,7 @@ const Sidebar = () => {
           <button
             key={item.name}
             onClick={() => navigate(item.path)}   // 🔥 MAIN FIX
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
           >
             {item.icon}
             <span>{item.name}</span>
@@ -59,7 +59,7 @@ const Sidebar = () => {
       <div className="border-t border-gray-100 pt-4 mt-auto">
         <button
           onClick={handleLogout}   // 🔥 LOGOUT FIX
-          className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-100 rounded-xl transition-colors"
         >
           <LogOut size={20} />
           <span className="font-medium">Logout</span>
