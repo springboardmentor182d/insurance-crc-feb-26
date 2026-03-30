@@ -31,7 +31,6 @@ ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 
 
 class ActivePolicyCreate(BaseModel):
-<<<<<<< HEAD
   policy_id: int | None = None
   policy_number: str
   status: str = "PENDING"
@@ -45,99 +44,6 @@ class ActivePolicyCreate(BaseModel):
   end_date: date
   tags: str | None = None
   warning_text: str | None = None
-=======
-    policy_id: int | None = None
-    policy_number: str
-    status: str = "ACTIVE"
-    category: str
-    insurer_name: str
-    product_name: str
-    premium_annual: float
-    coverage_amount: float
-    deductible_amount: float | None = None
-    start_date: date
-    end_date: date
-    tags: str | None = None
-    warning_text: str | None = None
-
-
-class ActivePolicyUpdate(BaseModel):
-    policy_number: str
-    status: str = "ACTIVE"
-    category: str
-    insurer_name: str
-    product_name: str
-    premium_annual: float
-    coverage_amount: float
-    deductible_amount: float | None = None
-    start_date: date
-    end_date: date
-    tags: str | None = None
-    warning_text: str | None = None
-
-
-def _serialize_document(document: PolicyDocument) -> PolicyDocumentResponse:
-    return PolicyDocumentResponse.model_validate(document)
-
-
-def _serialize_policy(policy: ActivePolicy) -> ActivePolicyResponse:
-    today = date.today()
-    expiring_threshold = today + timedelta(days=EXPIRING_SOON_DAYS)
-    is_expiring_soon = (
-        policy.end_date is not None and today <= policy.end_date <= expiring_threshold
-    )
-
-    return ActivePolicyResponse(
-        id=policy.id,
-        user_id=policy.user_id,
-        policy_id=policy.policy_id,
-        policy_number=policy.policy_number,
-        status=policy.status,
-        category=policy.category,
-        insurer_name=policy.insurer_name,
-        product_name=policy.product_name,
-        premium_annual=policy.premium_annual,
-        coverage_amount=policy.coverage_amount,
-        deductible_amount=policy.deductible_amount,
-        start_date=policy.start_date,
-        end_date=policy.end_date,
-        tags=policy.tags,
-        warning_text=policy.warning_text,
-        is_expiring_soon=is_expiring_soon,
-        documents=[_serialize_document(document) for document in policy.documents],
-        created_at=policy.created_at,
-        updated_at=policy.updated_at,
-    )
-
-
-def _get_user_active_policy(db: Session, current_user_id: int, active_policy_id: int) -> ActivePolicy:
-    policy = (
-        db.query(ActivePolicy)
-        .filter(
-            ActivePolicy.id == active_policy_id,
-            ActivePolicy.user_id == current_user_id,
-        )
-        .first()
-    )
-    if not policy:
-        raise HTTPException(status_code=404, detail="Active policy not found")
-    return policy
-
-
-def _validate_document(upload: UploadFile) -> None:
-    file_name = upload.filename or ""
-    file_extension = Path(file_name).suffix.lower()
-    content_type = (upload.content_type or "").lower()
-
-    if (
-        content_type not in ALLOWED_DOCUMENT_CONTENT_TYPES
-        and file_extension not in ALLOWED_DOCUMENT_EXTENSIONS
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail=f"{file_name or 'Uploaded file'} must be a PDF, JPG, or PNG document",
-        )
->>>>>>> e943cd264605155dc5f4c5d5f1577578dac55395
 
 @router.get("/")
 def get_pending_policies(db: Session = Depends(get_db)):
