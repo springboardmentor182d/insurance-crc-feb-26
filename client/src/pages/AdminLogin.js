@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import GoogleAuthButton from "../features/authentication/components/GoogleAuthButton";
 import adminLoginService from "../features/authentication/services/adminLogin";
 import { ROUTES, TOKEN_KEYS } from "../data/constants";
 
@@ -193,11 +192,6 @@ const AdminLogin = () => {
               </span>
             </div>
 
-            <div className="auth-row">
-              <span />
-              <Link to={ROUTES.FORGOT_PASSWORD} className="auth-link">Forgot password?</Link>
-            </div>
-
             <button type="submit" className="auth-btn-primary admin-btn-submit" disabled={loading}>
               {loading ? (
                 <span className="auth-spinner" />
@@ -210,10 +204,6 @@ const AdminLogin = () => {
                 </>
               )}
             </button>
-
-            <div className="auth-divider"><span>Or continue with</span></div>
-
-            <GoogleAuthButton label="Sign in with Google" onError={setError} />
           </form>
 
           <div className="admin-back-link">

@@ -10,7 +10,6 @@ export const ROUTES = {
   FORGOT_PASSWORD: "/forgot-password",
   AUTH_STATUS:     "/auth/status",
   ADMIN_LOGIN:     "/admin/login",
-  ADMIN_SIGNUP:    "/admin/signup",
 };
 
 export const TOKEN_KEYS = {
