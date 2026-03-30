@@ -260,13 +260,11 @@ function DashboardPage() {
           </span>
         </div>
       </div>
-    ))}
-  </div>
-</div>
-
-      </div>
-
+       ))}
+     </div>
     </div>
+   </div>
+   </div>
   </PageContainer>
   );
 }

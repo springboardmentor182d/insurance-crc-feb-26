@@ -7,7 +7,6 @@ import ActivePolicies from './pages/ActivePolicies';
 import BrowsePolicies from "./pages/BrowsePolicies";
 //import Recommendations from "./pages/Recommendations";
 
-
 function App() {
   return (
     <BrowserRouter>

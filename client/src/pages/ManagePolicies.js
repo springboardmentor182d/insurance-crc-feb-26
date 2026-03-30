@@ -163,3 +163,4 @@ const ManagePolicies = () => {
 };
 
 export default ManagePolicies;
+

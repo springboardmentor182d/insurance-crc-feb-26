@@ -9,5 +9,4 @@ const PageContainer = ({ children, showNav = true, className = "" }) => {
     </div>
   );
 };
-
 export default PageContainer;

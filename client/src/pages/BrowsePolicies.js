@@ -11,7 +11,6 @@ const CATEGORY_FILTERS = [
   { id: 'HEALTH', label: 'Health' },
 ];
 
-
 const SAMPLE_POLICIES = [
   {
     id: 1,

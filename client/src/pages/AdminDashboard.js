@@ -12,7 +12,6 @@ import { useNavigate } from "react-router-dom";
 import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
 import { HiOutlineChartBar } from "react-icons/hi";
 
-
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const {
