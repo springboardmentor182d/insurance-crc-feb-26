@@ -1,51 +1,12 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Insurance App</title>
+  <meta charset="UTF-8" />
+  <title>Insurance App</title>
 </head>
 <body>
 
-<h1>Insurance Policies</h1>
-
-<button onclick="loadPolicies()">Load Policies</button>
-<button onclick="filter('Health')">Health</button>
-<button onclick="filter('Life')">Life</button>
-
-<div id="policies"></div>
-
-<script>
-const BASE_URL = "http://127.0.0.1:8000/policy";
-
-async function loadPolicies() {
-    const res = await fetch(BASE_URL);
-    const data = await res.json();
-    display(data);
-}
-
-async function filter(category) {
-    const res = await fetch(`${BASE_URL}/category/${category}`);
-    const data = await res.json();
-    display(data);
-}
-
-function display(policies) {
-    const container = document.getElementById("policies");
-    container.innerHTML = "";
-
-    policies.forEach(p => {
-        container.innerHTML += `
-            <div style="border:1px solid black; margin:10px; padding:10px;">
-                <h3>${p.name}</h3>
-                <p>Company: ${p.company}</p>
-                <p>Price: $${p.price}</p>
-                <p>Coverage: ${p.coverage}</p>
-                <p>Rating: ${p.rating}</p>
-                <p>Category: ${p.category}</p>
-            </div>
-        `;
-    });
-}
-</script>
+  <div id="root"></div>
 
 </body>
 </html>

@@ -5,12 +5,8 @@ class Policy(BaseModel):
     name: str
     company: str
     price: int
-    coverage: int
-    deductible: int
+    coverage: str   
     rating: float
-    benefits: List[str]
     category: str
-
-
-class CompareRequest(BaseModel):
-    ids: List[int]
+    deductible: int
+    benefits: List[str] 

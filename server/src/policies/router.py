@@ -1,51 +1,64 @@
 from fastapi import APIRouter
-from .schema import Policy, CompareRequest
-from .service import policies, create_policy_service
+from sqlalchemy.orm import Session
+from src.database.core import SessionLocal
+from src.entities.policy import PolicyDB
+from .schema import Policy
 
 router = APIRouter(prefix="/policy", tags=["Policy"])
 
 
+# CREATE
 @router.post("/")
 def create_policy(policy: Policy):
-    return create_policy_service(policy)
+    db: Session = SessionLocal()
+
+    new_policy = PolicyDB(
+        name=policy.name,
+        company=policy.company,
+        price=policy.price,
+        coverage=policy.coverage,
+        rating=policy.rating,
+        category=policy.category,
+        deductible=policy.deductible
+    )
+
+    db.add(new_policy)
+    db.commit()
+    db.refresh(new_policy)
+
+    return new_policy
 
 
+# GET ALL
 @router.get("/")
 def get_all_policies():
-    return policies
+    db: Session = SessionLocal()
+    return db.query(PolicyDB).all()
 
 
+# GET BY ID
 @router.get("/{id}")
 def get_policy(id: int):
-    for p in policies:
-        if p["id"] == id:
-            return p
-    return {"error": "Policy not found"}
+    db: Session = SessionLocal()
+    return db.query(PolicyDB).filter(PolicyDB.id == id).first()
 
 
-@router.put("/{id}")
-def update_policy(id: int, policy: Policy):
-    for p in policies:
-        if p["id"] == id:
-            p.update(policy.dict())
-            return {"message": "Policy updated", "data": p}
-    return {"error": "Policy not found"}
-
-
+# DELETE
 @router.delete("/{id}")
 def delete_policy(id: int):
-    for p in policies:
-        if p["id"] == id:
-            policies.remove(p)
-            return {"message": "Policy deleted"}
-    return {"error": "Policy not found"}
+    db: Session = SessionLocal()
+    policy = db.query(PolicyDB).filter(PolicyDB.id == id).first()
+
+    if policy:
+        db.delete(policy)
+        db.commit()
+        return {"message": "Deleted"}
+
+    return {"error": "Not found"}
 
 
+# FILTER
 @router.get("/category/{category}")
 def filter_policy(category: str):
-    return [p for p in policies if p["category"].lower() == category.lower()]
-
-
-@router.post("/compare")
-def compare_policies(request: CompareRequest):
-    return [p for p in policies if p["id"] in request.ids]
+    db: Session = SessionLocal()
+    return db.query(PolicyDB).filter(PolicyDB.category == category).all()
