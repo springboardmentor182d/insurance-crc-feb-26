@@ -19,6 +19,7 @@ import Signup from "./pages/Signup";
 import FlaggedClaims from "./pages/admin/FlaggedClaims";
 import FraudRules from "./pages/admin/FraudRules";
 import PolicyApprovals from "./pages/admin/PolicyApprovals";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
@@ -50,7 +51,7 @@ export default function App() {
         <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route path={ROUTES.SIGNUP} element={<Signup />} />
         <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginGuard><AdminLogin /></AdminLoginGuard>} />
-
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
         {/* ── User protected ── */}
         <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path={ROUTES.PROFILE} element={<ProtectedRoute><Profile /></ProtectedRoute>} />
