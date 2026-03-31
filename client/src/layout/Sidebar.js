@@ -7,21 +7,33 @@ import {
   User, 
   Settings, 
   LogOut 
-} from 'lucide-react'; // Using lucide-react for the icons shown in your UI
+} from 'lucide-react';
+
+import { useNavigate } from 'react-router-dom'; // ✅ ADD THIS
 
 const Sidebar = () => {
+  const navigate = useNavigate(); // ✅ ADD THIS
+
+  // ✅ ADD PATH HERE
   const menuItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard size={20} />, active: true },
-    { name: 'Policies', icon: <ShieldCheck size={20} />, active: false },
-    { name: 'Recommendations', icon: <Lightbulb size={20} />, active: false },
-    { name: 'Claims', icon: <FileText size={20} />, active: false },
-    { name: 'Profile', icon: <User size={20} />, active: false },
-    { name: 'Preferences', icon: <Settings size={20} />, active: false },
+    { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
+    { name: 'Policies', icon: <ShieldCheck size={20} />, path: '/policies' },
+    { name: 'Recommendations', icon: <Lightbulb size={20} />, path: '/recommendations' },
+    { name: 'Claims', icon: <FileText size={20} />, path: '/claims' },
+    { name: 'Profile', icon: <User size={20} />, path: '/profile' },
+    { name: 'Preferences', icon: <Settings size={20} />, path: '/preferences' },
   ];
+
+  // ✅ LOGOUT FUNCTION
+  const handleLogout = () => {
+    localStorage.removeItem("token");   // remove login token
+    navigate("/login");                 // redirect to login
+  };
 
   return (
     <div className="flex flex-col h-screen w-64 bg-white border-r border-gray-100 p-4">
-      {/* Logo Section */}
+      
+      {/* Logo */}
       <div className="flex items-center gap-2 px-4 mb-10">
         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
           <ShieldCheck size={20} />
@@ -29,16 +41,13 @@ const Sidebar = () => {
         <span className="text-xl font-bold text-blue-600">BimaVerse</span>
       </div>
 
-      {/* Navigation Links */}
+      {/* Navigation */}
       <nav className="flex-1 space-y-1">
         {menuItems.map((item) => (
           <button
             key={item.name}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-              item.active 
-                ? 'bg-blue-50 text-blue-600 font-semibold' 
-                : 'text-gray-500 hover:bg-gray-50'
-            }`}
+            onClick={() => navigate(item.path)}   // 🔥 MAIN FIX
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:bg-gray-100 transition-colors"
           >
             {item.icon}
             <span>{item.name}</span>
@@ -46,9 +55,12 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Logout Section */}
+      {/* Logout */}
       <div className="border-t border-gray-100 pt-4 mt-auto">
-        <button className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors">
+        <button
+          onClick={handleLogout}   // 🔥 LOGOUT FIX
+          className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-red-100 rounded-xl transition-colors"
+        >
           <LogOut size={20} />
           <span className="font-medium">Logout</span>
         </button>
@@ -56,5 +68,4 @@ const Sidebar = () => {
     </div>
   );
 };
-
 export default Sidebar;

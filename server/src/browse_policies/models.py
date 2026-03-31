@@ -31,4 +31,3 @@ class PolicyResponse(PolicyBase):
 class PolicyFilter(BaseModel):
     search: Optional[str] = None
     category: Optional[str] = None
-

@@ -15,7 +15,7 @@ from .models.policy_details import PolicyDetailsResponse
 from .models.policy_create import CreatePolicyRequest
 from .models.policy_update import UpdatePolicyRequest
 
-router = APIRouter()
+router = APIRouter(prefix="/admin", tags=["Admin - Manage Policies"])
 
 
 @router.get("/policies/stats", response_model=PolicyStatsResponse)

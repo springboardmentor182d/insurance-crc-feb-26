@@ -12,7 +12,7 @@ const Navbar = () => {
     await logoutUser();
     navigate(ROUTES.LOGIN);
   };
-
+  
   return (
     <nav className="navbar">
       <div className="navbar-brand">

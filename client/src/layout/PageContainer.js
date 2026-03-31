@@ -22,5 +22,4 @@ const PageContainer = ({ children, currentView, onNavigate }) => {
     </div>
   );
 };
-
 export default PageContainer;

@@ -80,7 +80,6 @@ const AdminLogin = () => {
             </div>
           </div>
         </div>
-
         <p className="auth-copyright">© 2026 BimaVerse. All rights reserved.</p>
       </div>
 

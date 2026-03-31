@@ -11,3 +11,4 @@ class ClaimsTrend(BaseModel):
 
 class ClaimsTrendsResponse(BaseModel):
     data: List[ClaimsTrend]
+    

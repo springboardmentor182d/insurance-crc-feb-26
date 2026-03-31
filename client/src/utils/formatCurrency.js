@@ -15,4 +15,3 @@ export const formatCurrency = (value, options = {}) => {
     return `$${Number(value).toLocaleString()}`;
   }
 };
-

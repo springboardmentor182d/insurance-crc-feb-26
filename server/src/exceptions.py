@@ -26,3 +26,4 @@ def setup_exception_handlers(app: FastAPI) -> None:
             status_code=500,
             content={"detail": "Internal server error"},
         )
+    

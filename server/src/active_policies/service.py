@@ -59,4 +59,3 @@ def compute_summary(policies: List[ActivePolicy]) -> ActivePoliciesSummary:
         total_coverage=total_coverage,
         annual_premium=annual_premium,
     )
-
