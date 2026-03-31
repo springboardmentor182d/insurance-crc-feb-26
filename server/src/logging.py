@@ -9,3 +9,4 @@ def setup_logging() -> None:
         handlers=[logging.StreamHandler(sys.stdout)],
     )
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    

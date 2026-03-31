@@ -60,3 +60,5 @@ class PreferencesResponse(PreferencesBase):
 
     class Config:
         from_attributes = True
+
+    

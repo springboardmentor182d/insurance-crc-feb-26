@@ -37,4 +37,3 @@ class ActivePoliciesSummary(BaseModel):
     expiring_soon_count: int
     total_coverage: Decimal
     annual_premium: Decimal
-

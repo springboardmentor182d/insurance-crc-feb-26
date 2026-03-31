@@ -17,3 +17,4 @@ class ActivityType(str, Enum):
     CLAIM_REJECTED = "claim_rejected"
     FRAUD_RULE_ACTIVATED = "fraud_rule_activated"
     SYSTEM_EVENT = "system_event"
+    

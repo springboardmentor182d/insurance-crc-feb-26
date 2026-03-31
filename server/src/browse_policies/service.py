@@ -28,4 +28,3 @@ def list_policies(db: Session, filters: Optional[PolicyFilter] = None) -> List[B
     # For the catalog view it is helpful to have a stable ordering
     query = query.order_by(BrowsePolicy.category.asc(), BrowsePolicy.premium_annual.asc())
     return query.all()
-

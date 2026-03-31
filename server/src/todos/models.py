@@ -9,3 +9,4 @@ class TodoItem(BaseModel):
 
 class CreateTodoRequest(BaseModel):
     title: str
+    

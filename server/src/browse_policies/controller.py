@@ -27,4 +27,3 @@ def get_policies(
     """
     filters = PolicyFilter(search=search, category=category)
     return list_policies(db, filters)
-
