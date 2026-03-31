@@ -3,24 +3,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List
+
+# Routers
 from src.auth.routes import router as auth_router
+from src.users.controller import router as user_router
+from src.fraud_detection.controller import router as fraud_router  # 🔥 YOUR MODULE
+
+# Database
 from src.database.core import Base, engine, SessionLocal
+
+# Models & Schemas
 from src.entities.user import User
 from src.entities.dashboard import DashboardData
 from src.schemas.user_schema import UserCreate, UserResponse
-from src.users.controller import router as user_router
+
 app = FastAPI()
-from src.auth.routes import router as auth_router
 
-app.include_router(auth_router)   # ✅ ADD THIS
-
-
+# ================= ROUTERS =================
+app.include_router(auth_router)
 app.include_router(user_router)
+app.include_router(fraud_router, prefix="/fraud")  # 🔥 FRAUD ROUTES
 
-
-
-
-# Create tables automatically
+# ================= DATABASE SETUP =================
 Base.metadata.create_all(bind=engine)
 
 try:
@@ -29,8 +33,7 @@ try:
 except Exception:
     pass
 
-
-# Database dependency
+# ================= DB DEPENDENCY =================
 def get_db():
     db = SessionLocal()
     try:
@@ -38,24 +41,27 @@ def get_db():
     finally:
         db.close()
 
-
-# Allow frontend to connect
+# ================= CORS =================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ================= ROOT =================
+@app.get("/")
+def root():
+    return {"message": "InsureLogic API Running 🚀"}
 
+# ================= DASHBOARD =================
 @app.get("/api/dashboard-data")
 def get_dashboard_data(db: Session = Depends(get_db)):
     total_users = db.query(User).count()
-    
-    # Fetch from DB to satisfy PR requirement "get the data from db"
+
     dashboard = db.query(DashboardData).first()
-    
+
     if not dashboard:
         return {
             "active_policies": total_users,
@@ -77,8 +83,7 @@ def get_dashboard_data(db: Session = Depends(get_db)):
         "recent_claims": dashboard.recent_claims
     }
 
-
-# Create User
+# ================= USERS =================
 @app.post("/users", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = User(name=user.name, email=user.email)
@@ -87,8 +92,6 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-
-# Get All Users
 @app.get("/users", response_model=List[UserResponse])
 def get_users(db: Session = Depends(get_db)):
     return db.query(User).all()

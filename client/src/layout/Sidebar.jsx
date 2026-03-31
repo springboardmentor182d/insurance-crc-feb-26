@@ -8,7 +8,6 @@ import {
     AlertCircle,
     PlusCircle,
     User,
-    LogOut,
     Users,
     BarChart3,
     Settings,
@@ -19,8 +18,9 @@ import {
 
 export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
     const navigate = useNavigate();
-    const location = useLocation(); // ✅ auto detect active route
+    const location = useLocation();
 
+    // ================= USER MENU =================
     const userMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
         { icon: FileSearch, label: 'Browse Policies', path: '/browse-policies' },
@@ -32,12 +32,17 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
         { icon: User, label: 'Profile', path: '/settings' },
     ];
 
+    // ================= ADMIN MENU =================
     const adminMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admin-dashboard' },
         { icon: Users, label: 'Manage Users', path: '/manage-users' },
         { icon: FileText, label: 'Manage Policies', path: '/manage-policies' },
         { icon: AlertCircle, label: 'Claims Management', path: '/claims-management' },
-        { icon: ShieldAlert, label: 'Fraud Detection', path: '/fraud-detection' },
+
+        // 🔥 YOUR FRAUD MODULE ADDED HERE
+        { icon: ShieldAlert, label: 'Fraud Dashboard', path: '/fraud-dashboard' },
+        { icon: ShieldAlert, label: 'Fraud Rules', path: '/fraud-rules' },
+
         { icon: BarChart3, label: 'Analytics', path: '/analytics' },
         { icon: PlusCircle, label: 'Add Policy Manually', path: '/add-policy' },
         { icon: ScrollText, label: 'Admin Logs', path: '/admin-logs' },
@@ -51,12 +56,10 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
         setSidebarOpen(false);
     };
 
-
-
     return (
         <aside
             className={`fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-40 transition-transform duration-300
-      ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
         >
             <div className="p-6 h-full flex flex-col">
 
@@ -90,14 +93,13 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
                                 key={index}
                                 onClick={() => handleNavigation(item.path)}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
-                ${isActive
-                                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md'
-                                        : 'text-gray-700 hover:bg-gray-100'
-                                    }`}
+                                ${isActive
+                                    ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md'
+                                    : 'text-gray-700 hover:bg-gray-100'
+                                }`}
                             >
                                 <item.icon
-                                    className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-600'
-                                        }`}
+                                    className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-600'}`}
                                 />
                                 <span className="text-sm font-medium">
                                     {item.label}
@@ -106,7 +108,6 @@ export function Sidebar({ sidebarOpen, setSidebarOpen, userType = 'user' }) {
                         );
                     })}
                 </nav>
-
 
             </div>
         </aside>

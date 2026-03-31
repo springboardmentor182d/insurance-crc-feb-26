@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# ✅ Correct import after restructuring
-from src.auth.routes import router as auth_router
-
 app = FastAPI()
 
 # ==============================
@@ -12,22 +9,27 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development only
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # ==============================
-# Include Auth Routes
-# ==============================
-
-app.include_router(auth_router)
-
-# ==============================
-# Root Endpoint
+# ROOT ENDPOINT
 # ==============================
 
 @app.get("/")
 def root():
-    return {"message": "InsureLogic API Running"}
+    return {"message": "InsureLogic API Running 🚀"}
+
+# ==============================
+# AUTH ROUTES (SAFE LOAD)
+# ==============================
+
+try:
+    from src.auth.routes import router as auth_router
+    app.include_router(auth_router)
+    print("✅ Auth routes loaded")
+except Exception as e:
+    print("❌ Auth route error:", e)
