@@ -10,7 +10,7 @@ from src.browse_policies.controller import router as browse_policies_router
 from src.claims.controller import router as claims_router
 from src.users.controller import router as users_router
 from src.recommendations.controller import router as recommendations_router  # ⬅ add this
-# [web:19]
+from src.admin.manage_claims.controller import router as manage_claims_router  # ⬅ add this
 
 api_router = APIRouter()
 
@@ -24,8 +24,5 @@ api_router.include_router(manage_policies_router, prefix="/admin", tags=["Admin 
 api_router.include_router(browse_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(active_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(claims_router)
-api_router.include_router(
-    recommendations_router,
-    prefix="/recommendations",
-    tags=["Recommendations"],
-)
+api_router.include_router(recommendations_router,prefix="/recommendations",tags=["Recommendations"])
+api_router.include_router(manage_claims_router, prefix="/claims", tags=["Claims"])
