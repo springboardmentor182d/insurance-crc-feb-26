@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 
 from src.database.core import SessionLocal
-from src.database.admin_dashboard.models.claims import Claim, ClaimStatus
+from src.database.admin_dashboard.models.claims import Claim
 
 
 def _month_starts_for_last_three(now: datetime) -> list[datetime]:
@@ -42,17 +42,20 @@ def get_claims_trends_snapshot() -> list[dict[str, int | str]]:
 
     for submitted_at, status in rows:
         key = (submitted_at.year, submitted_at.month)
-        if status == ClaimStatus.APPROVED:
+
+        # ✅ FIX: use STRING instead of ClaimStatus
+        if status == "approved":
             counts[key]["approved"] += 1
-        elif status == ClaimStatus.REJECTED:
+        elif status == "rejected":
             counts[key]["rejected"] += 1
-        elif status == ClaimStatus.FRAUDULENT:
+        elif status == "fraudulent":
             counts[key]["fraudulent"] += 1
 
     result: list[dict[str, int | str]] = []
     for month_start in month_starts:
         key = (month_start.year, month_start.month)
         month_counts = counts[key]
+
         result.append(
             {
                 "month": month_start.strftime("%b"),

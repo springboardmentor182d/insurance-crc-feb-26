@@ -7,7 +7,7 @@ from decimal import Decimal
 from sqlalchemy import select
 
 from src.database.core import SessionLocal
-from src.database.admin_dashboard.models.claims import Claim, ClaimStatus
+from src.database.admin_dashboard.models.claims import Claim
 from src.database.admin_dashboard.models.policies import Policy
 
 

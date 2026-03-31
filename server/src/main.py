@@ -10,6 +10,7 @@ from src.database.seeds import seed_fraud_rules
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
 from src.database.core import engine, Base
+from src.claims.controller import router as claims_router
 # This line creates all tables that are currently imported in your app
 Base.metadata.create_all(bind=engine)
 
@@ -20,19 +21,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origins=["*"],  # or ["http://localhost:3000"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+    
 
 setup_exception_handlers(app)
 
@@ -60,3 +58,4 @@ async def root():
 # Keep /api/v1 (new client) and root-prefixed routes (backward compatibility)
 app.include_router(api_router, prefix="/api/v1")
 app.include_router(api_router)
+app.include_router(claims_router, prefix="/api/v1")
