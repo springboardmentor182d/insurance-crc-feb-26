@@ -8,7 +8,7 @@ import {
   FiFileText,
 } from "react-icons/fi";
 import { Lightbulb } from "lucide-react";
-import { TOKEN_KEYS, ROUTES } from "../../data/constants";
+import { TOKEN_KEYS, ROUTES } from "../../src/data/constants";
 
 const Sidebar = () => {
   const navigate = useNavigate();

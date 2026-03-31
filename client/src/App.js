@@ -18,6 +18,10 @@ import Settings         from "./pages/Settings";
 import Signup           from "./pages/Signup";
 import FlaggedClaims    from "./pages/admin/FlaggedClaims";
 import FraudRules       from "./pages/admin/FraudRules";
+import ManageClaims from "./pages/admin/ManageClaims";
+import Claims from "./pages/claims";
+import NewClaim from "./pages/NewClaim";
+import ClaimDetails from "./pages/ClaimDetails";
 
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
@@ -58,12 +62,16 @@ export default function App() {
         <Route path={ROUTES.BROWSE_POLICIES} element={<ProtectedRoute><BrowsePolicies /></ProtectedRoute>} />
         <Route path={ROUTES.ACTIVE_POLICIES} element={<ProtectedRoute><ActivePolicies /></ProtectedRoute>} />
         <Route path={ROUTES.RECOMMENDATIONS} element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
+         <Route path="/claims" element={<Claims />} />
+         <Route path="/claims/new" element={<NewClaim />} />
+          <Route path="/claims/:id" element={<ClaimDetails />} />
 
         {/* ── Admin protected ── */}
         <Route path={ROUTES.ADMIN_DASHBOARD}    element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/manage-policies"    element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
         <Route path="/admin/fraud-rules"        element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
         <Route path="/admin/flagged-claims"     element={<ProtectedRoute adminOnly><FlaggedClaims /></ProtectedRoute>} />
+        <Route path="/admin/manage-claims" element={<ManageClaims />} />
 
         {/* ── Fallback ── */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
