@@ -9,8 +9,8 @@ import RecentActivity from "../features/admin/dashboard/components/RecentActivit
 import ActionCard from "../features/admin/dashboard/components/ActionCard";
 import "../features/admin/dashboardColors.css";
 import { useNavigate } from "react-router-dom";
-import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiTrendingUp } from "react-icons/fi";
-import { HiOutlineChartBar } from "react-icons/hi";
+import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiClipboard, FiCheckCircle } from "react-icons/fi";
+
 
 
 const AdminDashboard = () => {
@@ -110,19 +110,19 @@ const AdminDashboard = () => {
             />
 
             <ActionCard
-              title="Advanced Analytics"
-              description="Deep dive into performance metrics"
+              title="Manage Policies"
+              description="Approve and manage insurance policies"
               color="admin-action-analytics"
-              icon={<HiOutlineChartBar />}
-              onClick={() => navigate("/admin/analytics")}
+              icon={<FiFileText />}
+              onClick={() => navigate("/admin/manage-policies")}
             />
 
             <ActionCard
-              title="Revenue Growth"
-              description="+18% increase from last month"
+              title="Manage Claims"
+              description="Review, approve, and manage all insurance claims"
               color="admin-action-revenue"
-              icon={<FiTrendingUp />}
-              onClick={() => navigate("/admin/revenue")}
+              icon={<FiCheckCircle />}
+              onClick={() => navigate("/admin/manage-claims")}
             />
 
           </div>

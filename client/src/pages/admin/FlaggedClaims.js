@@ -4,10 +4,12 @@ import { FiSearch } from "react-icons/fi";
 
 import AdminLayout from "../../layout/admin/AdminLayout";
 import "../../features/admin/dashboardColors.css";
-import FlaggedClaimCard from "../../components/admin/FlaggedClaimCard";
 import ClaimDetailDrawer from "../../components/admin/ClaimDetailDrawer";
 import { useFlaggedClaims } from "../../hooks/useFlaggedClaims";
 import { fetchClaimDetails } from "../../api/flaggedClaims";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import apiClient from "../../utils/apiClient";
 
 const statusOptions = ["all", "pending", "fraudulent", "approved", "rejected"];
 
@@ -17,27 +19,84 @@ const FlaggedClaims = () => {
   const [page, setPage] = useState(1);
   const [selectedClaim, setSelectedClaim] = useState(null);
 
-  const { listQuery, statsQuery, confirmMutation, clearMutation, optimisticRemove } = useFlaggedClaims({
-    status,
-    search,
-    page,
-    pageSize: 8
-  });
+  const [sortField, setSortField] = useState("submitted_at");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  const { listQuery, statsQuery, confirmMutation, clearMutation, optimisticRemove } =
+    useFlaggedClaims({
+      status,
+      search,
+      page,
+      pageSize: 8
+    });
+
+  const claims = listQuery.data?.items || [];
+  const stats = statsQuery.data;
+
+  // ✅ Sorting
+  const sortedClaims = useMemo(() => {
+    return [...claims].sort((a, b) => {
+      const valA = a[sortField];
+      const valB = b[sortField];
+
+      if (sortOrder === "asc") return valA > valB ? 1 : -1;
+      return valA < valB ? 1 : -1;
+    });
+  }, [claims, sortField, sortOrder]);
+
+  // ✅ Export current page
+  const handleExportExcel = () => {
+    const data = sortedClaims.map((c) => ({
+      "Claim Number": c.claim_number,
+      User: c.user_name,
+      Amount: c.claim_amount,
+      "Risk %": c.fraud_risk_percentage,
+      Status: c.status,
+      "Submitted At": c.submitted_at
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Flagged Claims");
+
+    const buffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array"
+    });
+
+    saveAs(new Blob([buffer]), "flagged_claims_page.xlsx");
+  };
+
+  // ✅ Export ALL data from backend
+  const handleExportAll = async () => {
+    try {
+      const res = await apiClient.get("/admin/flagged-claims/export");
+
+      const worksheet = XLSX.utils.json_to_sheet(res.data);
+      const workbook = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "All Claims");
+
+      const buffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array"
+      });
+
+      saveAs(new Blob([buffer]), "all_flagged_claims.xlsx");
+    } catch (error) {
+      console.error("Export failed", error);
+    }
+  };
 
   const detailQuery = useQuery({
     queryKey: ["claim-details", selectedClaim?.claim_id],
-    // FIX: Added optional chaining — queryFn can be called while selectedClaim
-    // is nullish during React state transitions even with `enabled` guard.
     queryFn: () => fetchClaimDetails(selectedClaim?.claim_id),
     enabled: Boolean(selectedClaim)
   });
 
-  const stats = statsQuery.data;
-  const claims = listQuery.data?.items || [];
-
-  // FIX: Destructure total before useMemo to avoid the react-hooks/exhaustive-deps
-  // warning about object expressions changing on every render (seen in the BOM screenshot).
   const listTotal = listQuery.data?.total || 0;
+
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(listTotal / 8));
   }, [listTotal]);
@@ -45,6 +104,8 @@ const FlaggedClaims = () => {
   return (
     <AdminLayout>
       <div className="admin-dashboard-theme space-y-6 lg:space-y-8">
+
+        {/* HEADER */}
         <div>
           <h1 className="text-3xl font-semibold admin-text-primary">Flagged Claims</h1>
           <p className="mt-2 text-base admin-text-secondary md:text-lg">
@@ -52,6 +113,7 @@ const FlaggedClaims = () => {
           </p>
         </div>
 
+        {/* STATS */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {[
             { label: "Total Flagged", value: stats?.total_flagged ?? 0, color: "text-orange-500" },
@@ -59,37 +121,54 @@ const FlaggedClaims = () => {
             { label: "Fraud Confirmed", value: stats?.fraud_confirmed ?? 0, color: "text-red-600" },
             { label: "Cleared", value: stats?.cleared ?? 0, color: "text-green-600" }
           ].map((stat) => (
-            <div
-              key={stat.label}
-              className="admin-surface rounded-3xl border border-gray-200 p-6 shadow-sm"
-            >
+            <div key={stat.label} className="admin-surface rounded-3xl border border-gray-200 p-6 shadow-sm">
               <p className="text-sm uppercase tracking-wide admin-text-secondary">{stat.label}</p>
               <h2 className={`mt-3 text-3xl font-semibold ${stat.color}`}>{stat.value}</h2>
             </div>
           ))}
         </div>
 
+        {/* FILTERS + EXPORT */}
         <div className="admin-surface rounded-3xl border border-gray-200 p-4 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
+
+            {/* SEARCH */}
             <div className="relative flex-1">
-              <FiSearch className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-gray-500" />
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
                 placeholder="Search by claim number or user name"
                 value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
+                onChange={(e) => {
+                  setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="h-12 w-full rounded-2xl border border-gray-200 bg-white pl-12 pr-4 text-sm focus:border-blue-500 focus:outline-none"
+                className="h-12 w-full rounded-2xl border border-gray-200 pl-12 pr-4"
               />
             </div>
+
+            {/* EXPORT BUTTONS */}
+            <button
+              onClick={handleExportExcel}
+              className="bg-green-600 text-white px-4 py-2 rounded-xl"
+            >
+              Export Page
+            </button>
+
+            <button
+              onClick={handleExportAll}
+              className="bg-blue-600 text-white px-4 py-2 rounded-xl"
+            >
+              Export All
+            </button>
+
+            {/* STATUS FILTER */}
             <select
               value={status}
-              onChange={(event) => {
-                setStatus(event.target.value);
+              onChange={(e) => {
+                setStatus(e.target.value);
                 setPage(1);
               }}
-              className="h-12 rounded-2xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700"
+              className="h-12 rounded-2xl border border-gray-200 px-4"
             >
               {statusOptions.map((option) => (
                 <option key={option} value={option}>
@@ -100,81 +179,124 @@ const FlaggedClaims = () => {
           </div>
         </div>
 
-        {listQuery.isLoading && (
-          <div className="space-y-4">
-            {[1, 2].map((item) => (
-              <div
-                key={item}
-                className="admin-surface rounded-3xl border border-gray-200 p-6 shadow-sm"
-              >
-                <div className="h-4 w-1/3 rounded bg-gray-100" />
-                <div className="mt-4 h-16 rounded bg-gray-100" />
-              </div>
-            ))}
+        {/* TABLE */}
+        {!listQuery.isLoading && claims.length > 0 && (
+          <div className="admin-surface rounded-3xl border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-3 text-left">Claim #</th>
+                  <th className="p-3 text-left">User</th>
+
+                  <th
+                    className="p-3 text-left cursor-pointer"
+                    onClick={() => {
+                      setSortField("claim_amount");
+                      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                    }}
+                  >
+                    Amount ⬍
+                  </th>
+
+                  <th className="p-3 text-left">Risk</th>
+                  <th className="p-3 text-left">Status</th>
+                  <th className="p-3 text-left">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sortedClaims.map((claim) => (
+                  <tr
+                    key={claim.claim_id}
+                    className={`border-t hover:bg-gray-50 ${claim.fraud_risk_percentage > 80 ? "bg-red-50" : ""
+                      }`}
+                  >
+                    <td className="p-3 font-semibold">{claim.claim_number}</td>
+                    <td className="p-3">{claim.user_name}</td>
+                    <td className="p-3">₹{claim.claim_amount}</td>
+
+                    <td className="p-3 text-red-600 font-semibold">
+                      {claim.fraud_risk_percentage}%
+                    </td>
+
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${claim.status === "fraudulent"
+                            ? "bg-red-100 text-red-600"
+                            : claim.status === "approved"
+                              ? "bg-green-100 text-green-600"
+                              : claim.status === "pending"
+                                ? "bg-yellow-100 text-yellow-600"
+                                : "bg-gray-100 text-gray-600"
+                          }`}
+                      >
+                        {claim.status}
+                      </span>
+                    </td>
+
+                    <td className="p-3 flex gap-2">
+                      <button
+                        onClick={() =>
+                          confirmMutation.mutate(claim.claim_id, {
+                            onSuccess: () => optimisticRemove(claim.claim_id)
+                          })
+                        }
+                        className="px-3 py-1 bg-red-500 text-white rounded-lg text-xs"
+                      >
+                        Fraud
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          clearMutation.mutate(claim.claim_id, {
+                            onSuccess: () => optimisticRemove(claim.claim_id)
+                          })
+                        }
+                        className="px-3 py-1 bg-green-500 text-white rounded-lg text-xs"
+                      >
+                        Clear
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedClaim(claim)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded-lg text-xs"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
-        {listQuery.isError && (
-          <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
-            Failed to load flagged claims. Please try again.
-          </div>
-        )}
-
-        {!listQuery.isLoading && !listQuery.isError && claims.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center">
-            <p className="text-base admin-text-secondary">No flagged claims found.</p>
-          </div>
-        )}
-
-        {!listQuery.isLoading && !listQuery.isError && claims.length > 0 && (
-          <div className="space-y-4">
-            {claims.map((claim) => (
-              <FlaggedClaimCard
-                key={claim.claim_id}
-                claim={claim}
-                onConfirm={(selected) => {
-                  confirmMutation.mutate(selected.claim_id, {
-                    onSuccess: () => optimisticRemove(selected.claim_id)
-                  });
-                }}
-                onClear={(selected) => {
-                  clearMutation.mutate(selected.claim_id, {
-                    onSuccess: () => optimisticRemove(selected.claim_id)
-                  });
-                }}
-                onView={(selected) => setSelectedClaim(selected)}
-              />
-            ))}
-          </div>
-        )}
-
+        {/* PAGINATION */}
         {!listQuery.isLoading && totalPages > 1 && (
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between">
             <button
               disabled={page === 1}
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              className="rounded-2xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40"
+              onClick={() => setPage((p) => p - 1)}
+              className="bg-gray-100 px-4 py-2 rounded-xl"
             >
               Previous
             </button>
-            <p className="text-sm text-gray-500">
-              Page {page} of {totalPages}
-            </p>
+
+            <p>Page {page} of {totalPages}</p>
+
             <button
               disabled={page === totalPages}
-              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-              className="rounded-2xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-700 disabled:opacity-40"
+              onClick={() => setPage((p) => p + 1)}
+              className="bg-gray-100 px-4 py-2 rounded-xl"
             >
               Next
             </button>
           </div>
         )}
 
+        {/* DRAWER */}
         <ClaimDetailDrawer
           isOpen={Boolean(selectedClaim)}
-          // FIX: Was detailQuery.isLoading — which is true even when the query is
-          // disabled (no claim selected yet), causing a flash of skeleton on open.
-          // isFetching is only true when a network request is actually in-flight.
           isLoading={detailQuery.isFetching}
           onClose={() => setSelectedClaim(null)}
           data={detailQuery.data}

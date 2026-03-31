@@ -143,3 +143,32 @@ def delete_fraud_rule(
     )
     db.commit()
     return None
+@router.patch("/{rule_id}/toggle", response_model=FraudRuleResponse)
+def toggle_fraud_rule(
+    rule_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
+    rule = db.execute(
+        select(FraudRule).where(FraudRule.id == rule_id)
+    ).scalar_one_or_none()
+
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    rule.is_active = not rule.is_active
+
+    db.add(
+        ActivityLog(
+            user_id=current_user.id,
+            title=f"Fraud rule {'activated' if rule.is_active else 'deactivated'}: {rule.rule_name}",
+            action_type=ActivityType.FRAUD_RULE_ACTIVATED,
+            severity=ActivitySeverity.INFO,
+            entity_type="fraud_rule",
+            entity_id=rule.id,
+        )
+    )
+
+    db.commit()
+    db.refresh(rule)
+    return FraudRuleResponse.model_validate(rule)

@@ -1,7 +1,4 @@
-import { useNavigate } from "react-router-dom";
-
 const TopAdjusters = ({ data }) => {
-  const navigate = useNavigate();
   return (
     <div className="admin-surface rounded-3xl p-8 shadow-sm border admin-border-soft flex flex-col h-full">
 
@@ -34,15 +31,6 @@ const TopAdjusters = ({ data }) => {
 
           </div>
         ))}
-      </div>
-
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={() => navigate("/admin/analytics")}
-          className="admin-link text-sm font-medium"
-        >
-          View All Analytics <span className="ml-1 text-xl leading-none">&rarr;</span>
-        </button>
       </div>
 
     </div>

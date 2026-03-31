@@ -208,7 +208,33 @@ def clear_claim(
     )
     db.commit()
     return {"status": "ok"}
+@router.get("/export")
+def export_flagged_claims(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin),
+):
+    stmt = (
+        select(Claim, User, Policy)
+        .join(User, Claim.user_id == User.id)
+        .join(Policy, Claim.policy_id == Policy.id)
+        .where(Claim.fraud_score > 0)
+        .order_by(Claim.submitted_at.desc())
+    )
 
+    rows = db.execute(stmt).all()
+
+    result = []
+    for claim, user, policy in rows:
+        result.append({
+            "claim_number": claim.claim_number,
+            "user_name": user.full_name,
+            "amount": float(claim.claim_amount),
+            "status": claim.status.value,
+            "fraud_score": float(claim.fraud_score or 0),
+            "submitted_at": claim.submitted_at.isoformat()
+        })
+
+    return result
 
 @router.get("/{claim_id}/details", response_model=ClaimDetailResponse)
 def claim_details(

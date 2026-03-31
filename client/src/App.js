@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { ROLES, ROUTES, TOKEN_KEYS } from "./data/constants";
-
+import ManageClaims from "./pages/admin/ManageClaims";
 import ActivePolicies from "./pages/ActivePolicies";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
@@ -18,10 +18,8 @@ import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
 import FlaggedClaims from "./pages/admin/FlaggedClaims";
 import FraudRules from "./pages/admin/FraudRules";
-import AnalyticsPage from "./pages/admin/AnalyticsPage";
 import PolicyApprovals from "./pages/admin/PolicyApprovals";
 
-import RevenuePage from "./pages/admin/RevenuePage";
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
   if (!userRaw || userRaw === "undefined") return null;
@@ -67,9 +65,8 @@ export default function App() {
         <Route path="/admin/manage-policies" element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
         <Route path="/admin/fraud-rules" element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
         <Route path="/admin/flagged-claims" element={<ProtectedRoute adminOnly><FlaggedClaims /></ProtectedRoute>} />
-        <Route path="/admin/analytics" element={<ProtectedRoute adminOnly><AnalyticsPage /></ProtectedRoute>} />
-        <Route path="/admin/revenue" element={<ProtectedRoute adminOnly><RevenuePage /></ProtectedRoute>} />
         <Route path="/admin/policy-approvals" element={<ProtectedRoute adminOnly><PolicyApprovals /></ProtectedRoute>} />
+        <Route path="/admin/manage-claims" element={<ProtectedRoute adminOnly><ManageClaims /></ProtectedRoute>} />
         {/* ── Fallback ── */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
         console.log("Recommendations component:", Recommendations);

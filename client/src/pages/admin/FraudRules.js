@@ -6,6 +6,7 @@ import "../../features/admin/dashboardColors.css";
 import FraudRuleCard from "../../components/admin/FraudRuleCard";
 import FraudRuleModal from "../../components/admin/FraudRuleModal";
 import { useFraudRules } from "../../hooks/useFraudRules";
+import { motion } from "framer-motion";
 
 const tabs = [
   "All Rules",
@@ -43,8 +44,14 @@ const FraudRules = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
 
-  const rules = useMemo(() => data?.rules ?? [], [data?.rules]);
+  const rules = useMemo(() => {
+    if (!data?.rules) return [];
 
+    return [...data.rules].sort((a, b) => {
+      if (a.is_active === b.is_active) return a.id - b.id;
+      return a.is_active ? -1 : 1;
+    });
+  }, [data?.rules]);
   const filteredRules = useMemo(() => {
     if (activeTab === "All Rules") return rules;
     return rules.filter((rule) => categoryMap[rule.rule_name] === activeTab);
@@ -121,11 +128,10 @@ const FraudRules = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
-                  activeTab === tab
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${activeTab === tab
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
               >
                 {tab}
               </button>
@@ -160,24 +166,35 @@ const FraudRules = () => {
         )}
 
         {!isLoading && !isError && filteredRules.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <motion.div
+            layout
+            className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+          >
             {filteredRules.map((rule) => (
-              <FraudRuleCard
+              <motion.div
                 key={rule.id}
-                rule={rule}
-                category={categoryMap[rule.rule_name] || "Other"}
-                conditions={conditionsMap[rule.rule_name] || []}
-                onEdit={(selected) => {
-                  setEditingRule(selected);
-                  setShowModal(true);
-                }}
-                onDelete={(selected) => deleteRule.mutate(selected.id)}
-                onToggle={(selected) =>
-                  toggleRule.mutate({ id: selected.id, is_active: !selected.is_active })
-                }
-              />
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.25 }}
+              >
+                <FraudRuleCard
+                  rule={rule}
+                  category={categoryMap[rule.rule_name] || "Other"}
+                  conditions={conditionsMap[rule.rule_name] || []}
+                  onEdit={(selected) => {
+                    setEditingRule(selected);
+                    setShowModal(true);
+                  }}
+                  onDelete={(selected) => deleteRule.mutate(selected.id)}
+                  onToggle={(selected) =>
+                    toggleRule.mutate({ id: selected.id })
+                  }
+                />
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         <FraudRuleModal

@@ -46,43 +46,51 @@ const PolicyApprovals = () => {
                     </thead>
 
                     <tbody>
-                        {policies.map((p) => (
-                            <tr key={p.id} className="border-t">
-                                <td className="p-3">{p.id}</td>
-
-                                <td className="p-3 font-medium">
-                                    {p.product_name || "N/A"}
-                                </td>
-
-                                <td className="p-3">
-                                    <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded">
-                                        {p.category}
-                                    </span>
-                                </td>
-
-                                <td className="p-3">
-                                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">
-                                        Pending
-                                    </span>
-                                </td>
-
-                                <td className="p-3 flex gap-2">
-                                    <button
-                                        className="bg-green-600 text-white px-3 py-1 rounded"
-                                        onClick={() => handleApprove(p.id)}
-                                    >
-                                        Approve
-                                    </button>
-
-                                    <button
-                                        className="bg-red-500 text-white px-3 py-1 rounded"
-                                        onClick={() => handleReject(p.id)}
-                                    >
-                                        Reject
-                                    </button>
+                        {policies.length === 0 ? (
+                            <tr>
+                                <td colSpan="5" className="p-10 text-center text-gray-500">
+                                    🚫 No policies to approve
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            policies.map((p) => (
+                                <tr key={p.id} className="border-t">
+                                    <td className="p-3">{p.id}</td>
+
+                                    <td className="p-3 font-medium">
+                                        {p.product_name || "N/A"}
+                                    </td>
+
+                                    <td className="p-3">
+                                        <span className="px-2 py-1 bg-blue-100 text-blue-600 rounded">
+                                            {p.category}
+                                        </span>
+                                    </td>
+
+                                    <td className="p-3">
+                                        <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">
+                                            Pending
+                                        </span>
+                                    </td>
+
+                                    <td className="p-3 flex gap-2">
+                                        <button
+                                            className="bg-green-600 text-white px-3 py-1 rounded"
+                                            onClick={() => handleApprove(p.id)}
+                                        >
+                                            Approve
+                                        </button>
+
+                                        <button
+                                            className="bg-red-500 text-white px-3 py-1 rounded"
+                                            onClick={() => handleReject(p.id)}
+                                        >
+                                            Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
