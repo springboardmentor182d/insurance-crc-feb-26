@@ -2,14 +2,36 @@ from datetime import datetime, timedelta
 import os
 from pathlib import Path
 from typing import Optional
+import json
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 from fastapi import HTTPException, status
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
+from src.auth.oauth_models import OAuthAccount
+from src.auth.db_models import AuthCredential
 from src.auth.jwt import create_access_token, verify_token
-from src.auth.models import AdminLogin, LoginRequest, RegisterRequest, TokenResponse
+from src.auth.models import (
+    AdminLogin,
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    GoogleAuthRequest,
+    LoginRequest,
+    MessageResponse,
+    RegisterRequest,
+    ResetPasswordRequest,
+    TokenResponse,
+)
+from src.auth.security import (
+    create_password_reset_token,
+    hash_password,
+    hash_reset_token,
+    verify_password,
+)
 from src.database.admin_dashboard.models.users import User, UserRole
 
 # Load .env from project root
@@ -22,6 +44,8 @@ REFRESH_SECRET_KEY = os.getenv(
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 REFRESH_EXPIRE_DAYS = int(os.getenv("JWT_REFRESH_EXPIRE_DAYS", "7"))
 ADMIN_SECRET = os.getenv("ADMIN_SECRET", "bimaverse-admin-2026")
+PASSWORD_RESET_EXPIRE_MINUTES = int(os.getenv("PASSWORD_RESET_EXPIRE_MINUTES", "30"))
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 
 
 def _role_as_frontend_value(role: object) -> str:
@@ -97,10 +121,11 @@ class AuthService:
             first_name=first_name or None,
             last_name=last_name,
             full_name=full_name,
-            date_of_birth=data.date_of_birth,
             role=UserRole.CUSTOMER,
         )
         self.db.add(user)
+        self.db.flush()
+        self._set_password(user.id, data.password)
         self.db.commit()
         self.db.refresh(user)
 
@@ -109,6 +134,13 @@ class AuthService:
     def login(self, data: LoginRequest) -> TokenResponse:
         user = self.db.query(User).filter(User.email == data.email).first()
         if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
+
+        credentials = self._get_credentials(user.id)
+        if not credentials or not verify_password(data.password, credentials.password_hash):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
@@ -136,6 +168,13 @@ class AuthService:
                 detail="Invalid admin credentials",
             )
 
+        credentials = self._get_credentials(user.id)
+        if not credentials or not verify_password(data.password, credentials.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin credentials",
+            )
+
         return self._make_tokens(user, admin=True)
 
     def refresh(self, refresh_token: str) -> TokenResponse:
@@ -155,6 +194,100 @@ class AuthService:
             )
 
         return self._make_tokens(user)
+
+    def forgot_password(self, data: ForgotPasswordRequest) -> ForgotPasswordResponse:
+        user = self.db.query(User).filter(User.email == data.email).first()
+        if user:
+            credentials = self._get_credentials(user.id)
+            if credentials:
+                raw_token = create_password_reset_token()
+                credentials.password_reset_token_hash = hash_reset_token(raw_token)
+                credentials.password_reset_requested_at = datetime.utcnow()
+                credentials.password_reset_expires_at = datetime.utcnow() + timedelta(
+                    minutes=PASSWORD_RESET_EXPIRE_MINUTES
+                )
+                self.db.commit()
+
+        return ForgotPasswordResponse(
+            message="If an account with that email exists, password reset instructions have been sent.",
+            email=data.email,
+        )
+
+    def google_auth(self, data: GoogleAuthRequest) -> TokenResponse:
+        profile = self._fetch_google_profile(data.access_token)
+        google_subject = profile["sub"]
+        email = profile["email"].lower()
+        name = profile.get("name") or email
+
+        oauth_account = (
+            self.db.query(OAuthAccount)
+            .filter(
+                OAuthAccount.provider == "google",
+                OAuthAccount.provider_subject == google_subject,
+            )
+            .first()
+        )
+
+        if oauth_account:
+            user = self.db.query(User).filter(User.id == oauth_account.user_id).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Linked Google account is invalid",
+                )
+            return self._make_tokens(user)
+
+        user = self.db.query(User).filter(User.email == email).first()
+        if user is None:
+            first_name, _, remaining = name.strip().partition(" ")
+            user = User(
+                email=email,
+                first_name=first_name or None,
+                last_name=remaining.strip() or None,
+                full_name=name.strip() or email,
+                role=UserRole.CUSTOMER,
+                is_active=True,
+            )
+            self.db.add(user)
+            self.db.flush()
+
+        oauth_account = OAuthAccount(
+            user_id=user.id,
+            provider="google",
+            provider_subject=google_subject,
+            email=email,
+        )
+        self.db.add(oauth_account)
+        self.db.commit()
+        self.db.refresh(user)
+        return self._make_tokens(user)
+
+    def reset_password(self, data: ResetPasswordRequest) -> MessageResponse:
+        token_hash = hash_reset_token(data.token)
+        credentials = (
+            self.db.query(AuthCredential)
+            .filter(AuthCredential.password_reset_token_hash == token_hash)
+            .first()
+        )
+        if not credentials or not credentials.password_reset_expires_at:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired password reset link",
+            )
+
+        if credentials.password_reset_expires_at < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired password reset link",
+            )
+
+        credentials.password_hash = hash_password(data.password)
+        credentials.password_reset_token_hash = None
+        credentials.password_reset_expires_at = None
+        credentials.password_reset_requested_at = None
+        self.db.commit()
+
+        return MessageResponse(message="Password reset successful")
 
     def _make_tokens(self, user: User, admin: bool = False) -> TokenResponse:
         user_role = _role_as_frontend_value(user.role)
@@ -178,3 +311,67 @@ class AuthService:
                 "role": user_role,
             },
         )
+
+    def _get_credentials(self, user_id: int) -> AuthCredential | None:
+        return self.db.query(AuthCredential).filter(AuthCredential.user_id == user_id).first()
+
+    def _set_password(self, user_id: int, password: str) -> AuthCredential:
+        credentials = self._get_credentials(user_id)
+        if credentials is None:
+            credentials = AuthCredential(
+                user_id=user_id,
+                password_hash=hash_password(password),
+            )
+            self.db.add(credentials)
+            self.db.flush()
+            return credentials
+
+        credentials.password_hash = hash_password(password)
+        return credentials
+
+    def _fetch_google_profile(self, access_token: str) -> dict:
+        try:
+            token_info_url = "https://oauth2.googleapis.com/tokeninfo?" + urlencode(
+                {"access_token": access_token}
+            )
+            with urlopen(token_info_url, timeout=10) as response:
+                token_info = json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unable to verify Google sign-in",
+            ) from exc
+
+        audience = token_info.get("aud")
+        if GOOGLE_CLIENT_ID and audience != GOOGLE_CLIENT_ID:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Google token was issued for a different client",
+            )
+
+        if token_info.get("email_verified") not in {"true", True}:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Google email is not verified",
+            )
+
+        try:
+            request = Request(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            with urlopen(request, timeout=10) as response:
+                profile = json.loads(response.read().decode("utf-8"))
+        except (HTTPError, URLError, TimeoutError, ValueError) as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Unable to fetch Google profile",
+            ) from exc
+
+        if not profile.get("email") or not profile.get("sub"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incomplete Google profile",
+            )
+
+        return profile
