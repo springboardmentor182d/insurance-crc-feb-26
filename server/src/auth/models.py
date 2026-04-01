@@ -10,9 +10,8 @@ class RegisterRequest(BaseModel):
     password: str
     date_of_birth: Optional[date] = None
 
-    @field_validator("password")
-    @classmethod
-    def password_strength(cls, value: str) -> str:
+    @staticmethod
+    def _validate_password_strength(value: str) -> str:
         if len(value) < 8:
             raise ValueError("Password must be at least 8 characters")
         if not any(char.isupper() for char in value):
@@ -20,6 +19,11 @@ class RegisterRequest(BaseModel):
         if not any(char.isdigit() for char in value):
             raise ValueError("Password must contain at least one number")
         return value
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        return cls._validate_password_strength(value)
 
 
 class LoginRequest(BaseModel):
@@ -50,6 +54,33 @@ class TokenResponse(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, value: str) -> str:
+        return RegisterRequest._validate_password_strength(value)
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
+class GoogleAuthRequest(BaseModel):
+    access_token: str
 
 
 # Backward compatibility aliases
