@@ -8,6 +8,7 @@ import AdminDashboard   from "./pages/AdminDashboard";
 import AdminLogin       from "./pages/AdminLogin";
 import BrowsePolicies   from "./pages/BrowsePolicies";
 import DashboardPage    from "./pages/Dashboard";
+import ForgotPassword   from "./pages/ForgotPassword";
 import Home             from "./pages/Home";
 import Login            from "./pages/Login";
 import ManagePolicies   from "./pages/ManagePolicies";
@@ -61,6 +62,7 @@ export default function App() {
         <Route path={ROUTES.HOME} element={<Home />} />
         <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route path={ROUTES.SIGNUP} element={<Signup />} />
+<<<<<<< HEAD
         <Route
           path={ROUTES.ADMIN_LOGIN}
           element={
@@ -69,6 +71,10 @@ export default function App() {
             </AdminLoginGuard>
           }
         />
+=======
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+        <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginGuard><AdminLogin /></AdminLoginGuard>} />
+>>>>>>> 8e4b66ad0c7dfd042e2fd6d882788e4e1d90f620
 
         {/* ── User protected ── */}
         <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
@@ -85,6 +91,7 @@ export default function App() {
         <Route path="/claims/:id" element={<ProtectedRoute><ClaimDetails /></ProtectedRoute>} />
 
         {/* ── Admin protected ── */}
+<<<<<<< HEAD
         <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/manage-policies" element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
         <Route path="/admin/fraud-rules" element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
@@ -93,6 +100,16 @@ export default function App() {
 
         {/* ── Fallback ── */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+=======
+        <Route path={ROUTES.ADMIN_DASHBOARD}    element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/manage-policies"    element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
+        <Route path="/admin/fraud-rules"        element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
+        <Route path="/admin/flagged-claims"     element={<ProtectedRoute adminOnly><FlaggedClaims /></ProtectedRoute>} />
+ 
+        {/* ── Fallback ── */}
+        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+        console.log("Recommendations component:", Recommendations);
+>>>>>>> 8e4b66ad0c7dfd042e2fd6d882788e4e1d90f620
 
       </Routes>
     </BrowserRouter>

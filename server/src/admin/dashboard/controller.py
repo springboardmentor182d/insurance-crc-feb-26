@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from src.auth import get_current_user
 from src.database.core import get_db
+from src.database.admin_dashboard.models.users import User
 from src.auth.models import RegisterRequest, AdminLogin
 from src.admin.dashboard.service import (
     admin_signup,
@@ -113,9 +115,15 @@ async def recent_activity():
 #         }
 #     ]
 @router.get("/dashboard/policies")
-async def get_active_policies(db: Session = Depends(get_db)):
-    return await get_all_policies(db)
+async def get_active_policies(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await get_all_policies(db, current_user)
 
 @router.get("/dashboard/claims")
-async def get_recent_claims(db: Session = Depends(get_db)):
-    return await get_all_claims(db)
+async def get_recent_claims(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return await get_all_claims(db, current_user)

@@ -1,204 +1,107 @@
 import React, { useEffect, useState } from 'react';
+
 import Sidebar from '../layout/user/Sidebar';
 import {
+  createExternalActivePolicy,
+  deleteActivePolicy,
+  downloadPolicyDocument,
   fetchActivePolicies,
   fetchActivePoliciesSummary,
-  createExternalActivePolicy,
+  updateActivePolicy,
+  uploadPolicyDocuments,
 } from '../features/policies/services/policiesService';
-import { formatCurrency } from '../utils/formatCurrency';
-import { formatDate } from '../utils/formatDate';
+import ActivePoliciesPageContent from './active-policies/ActivePoliciesPageContent';
+import PolicyDetailsModal from './active-policies/PolicyDetailsModal';
+import { downloadPolicyPdf } from './active-policies/policyDownload';
 
-const SAMPLE_ACTIVE_POLICIES = [
-  {
-    id: 1,
-    policyNumber: 'AUTO-2025-1234',
-    status: 'Active',
-    category: 'AUTO',
-    insurerName: 'SafeDrive Insurance',
-    productName: 'Comprehensive Auto Insurance',
-    premiumAnnual: 850,
-    coverageAmount: 250000,
-    deductibleAmount: 500,
-    startDate: '2025-01-15',
-    endDate: '2026-01-15',
-    isExpiringSoon: false,
-    warningText: null,
-  },
-  {
-    id: 2,
-    policyNumber: 'HOME-2025-5678',
-    status: 'Active',
-    category: 'HOME',
-    insurerName: 'HomeGuard Insurance',
-    productName: 'Premium Home Protection',
-    premiumAnnual: 1200,
-    coverageAmount: 500000,
-    deductibleAmount: 1000,
-    startDate: '2025-03-01',
-    endDate: '2026-03-01',
-    isExpiringSoon: false,
-    warningText: null,
-  },
-  {
-    id: 3,
-    policyNumber: 'LIFE-2031-9012',
-    status: 'Active',
-    category: 'LIFE',
-    insurerName: 'LifeSecure',
-    productName: 'Life Insurance Plus',
-    premiumAnnual: 2400,
-    coverageAmount: 1000000,
-    deductibleAmount: null,
-    startDate: '2024-02-10',
-    endDate: '2026-02-28',
-    isExpiringSoon: true,
-    warningText:
-      'Policy expiring soon! Your policy will expire on 2026-02-28. Consider renewing to maintain coverage.',
-  },
-];
-
-const computeFallbackSummary = (policies) => {
-  const activeCount = policies.length;
-  const expiringSoonCount = policies.filter((p) => p.isExpiringSoon).length;
-  const totalCoverage = policies.reduce((sum, p) => sum + (p.coverageAmount || 0), 0);
-  const annualPremium = policies.reduce((sum, p) => sum + (p.premiumAnnual || 0), 0);
-
-  return { activeCount, expiringSoonCount, totalCoverage, annualPremium };
+const INITIAL_EXTERNAL_FORM = {
+  policyName: '',
+  policyType: 'AUTO',
+  insuranceProvider: '',
+  policyNumber: '',
+  annualPremium: '',
+  coverageAmount: '',
+  deductible: '',
+  startDate: '',
+  endDate: '',
+  notes: '',
 };
 
-const SummaryCard = ({ label, value, helper, valueClassName = '' }) => (
-  <div className="flex-1 min-w-[180px] bg-white rounded-xl shadow-sm px-5 py-4">
-    <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
-    <p className={`text-2xl font-bold ${valueClassName}`}>{value}</p>
-    {helper && <p className="text-xs text-gray-500 mt-1">{helper}</p>}
-  </div>
-);
+const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
+const ACCEPTED_DOCUMENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+const ACCEPTED_DOCUMENT_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png']);
 
-const StatusPill = ({ text, variant = 'default' }) => {
-  const variants = {
-    default: 'bg-gray-100 text-gray-700',
-    active: 'bg-green-100 text-green-700',
-    categoryHome: 'bg-blue-50 text-blue-700',
-    categoryAuto: 'bg-sky-50 text-sky-700',
-    categoryLife: 'bg-purple-50 text-purple-700',
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        variants[variant] || variants.default
-      }`}
-    >
-      {text}
-    </span>
-  );
+const formatFileSize = (sizeInBytes) => {
+  if (sizeInBytes < 1024) return `${sizeInBytes} B`;
+  if (sizeInBytes < 1024 * 1024) return `${(sizeInBytes / 1024).toFixed(1)} KB`;
+  return `${(sizeInBytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const ActivePolicyCard = ({ policy }) => {
-  const deductibleLabel =
+const getFileExtension = (fileName = '') => {
+  const lastDotIndex = fileName.lastIndexOf('.');
+  if (lastDotIndex === -1) return '';
+  return fileName.slice(lastDotIndex).toLowerCase();
+};
+
+const getSelectedFileKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
+
+const normalizePolicyDocument = (document) => ({
+  id: document.id,
+  activePolicyId: document.active_policy_id,
+  fileName: document.file_name,
+  contentType: document.content_type,
+  fileSize: document.file_size,
+  createdAt: document.created_at,
+});
+
+const normalizeActivePolicy = (policy) => ({
+  id: policy.id,
+  policyNumber: policy.policy_number,
+  status: policy.status,
+  category: policy.category,
+  insurerName: policy.insurer_name,
+  productName: policy.product_name,
+  premiumAnnual: policy.premium_annual,
+  coverageAmount: policy.coverage_amount,
+  deductibleAmount: policy.deductible_amount,
+  startDate: policy.start_date,
+  endDate: policy.end_date,
+  notes: policy.tags || '',
+  isExpiringSoon: policy.is_expiring_soon,
+  warningText: policy.warning_text,
+  documents: (Array.isArray(policy.documents) ? policy.documents : [])
+    .map(normalizePolicyDocument)
+    .sort((left, right) => new Date(right.createdAt) - new Date(left.createdAt)),
+});
+
+const toPolicyFormState = (policy) => ({
+  policyName: policy.productName || '',
+  policyType: policy.category || 'AUTO',
+  insuranceProvider: policy.insurerName || '',
+  policyNumber: policy.policyNumber || '',
+  annualPremium:
+    policy.premiumAnnual !== null && policy.premiumAnnual !== undefined
+      ? String(policy.premiumAnnual)
+      : '',
+  coverageAmount:
+    policy.coverageAmount !== null && policy.coverageAmount !== undefined
+      ? String(policy.coverageAmount)
+      : '',
+  deductible:
     policy.deductibleAmount !== null && policy.deductibleAmount !== undefined
-      ? formatCurrency(policy.deductibleAmount)
-      : 'N/A';
+      ? String(policy.deductibleAmount)
+      : '',
+  startDate: policy.startDate || '',
+  endDate: policy.endDate || '',
+  notes: policy.notes || '',
+});
 
-  const categoryVariant =
-    policy.category === 'HOME'
-      ? 'categoryHome'
-      : policy.category === 'AUTO'
-      ? 'categoryAuto'
-      : policy.category === 'LIFE'
-      ? 'categoryLife'
-      : 'default';
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm mb-4 border border-gray-100">
-      {/* Top row */}
-      <div className="flex items-start p-5 pb-4 border-b border-gray-100">
-        <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 mr-4">
-          <span className="text-blue-600 text-xl">🛡️</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="min-w-0">
-              <h3 className="text-base font-bold text-gray-900 truncate">{policy.productName}</h3>
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                {policy.insurerName} • Policy #{policy.policyNumber}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusPill text={policy.status || 'Active'} variant="active" />
-              <StatusPill text={policy.category} variant={categoryVariant} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Warning banner */}
-      {policy.isExpiringSoon && policy.warningText && (
-        <div className="px-5 py-3 bg-yellow-50 border-b border-yellow-100 text-xs text-yellow-800 flex items-start space-x-2">
-          <span className="mt-[2px]">⚠️</span>
-          <p>{policy.warningText}</p>
-        </div>
-      )}
-
-      {/* Details */}
-      <div className="px-5 py-4">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs text-gray-600">
-          <div>
-            <p className="text-gray-500 mb-1">Premium</p>
-            <p className="font-semibold text-gray-900">
-              {formatCurrency(policy.premiumAnnual)}
-              <span className="text-gray-500 text-[11px] ml-1">/year</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">Coverage</p>
-            <p className="font-semibold text-gray-900">{formatCurrency(policy.coverageAmount)}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">Deductible</p>
-            <p className="font-semibold text-gray-900">{deductibleLabel}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">Start Date</p>
-            <p className="font-semibold text-gray-900 flex items-center space-x-1">
-              <span>📅</span>
-              <span>{formatDate(policy.startDate)}</span>
-            </p>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">End Date</p>
-            <p className="font-semibold text-gray-900 flex items-center space-x-1">
-              <span>📅</span>
-              <span>{formatDate(policy.endDate)}</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="px-5 pb-4 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          className="inline-flex items-center rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-        >
-          <span className="mr-1">👁️</span> View Details
-        </button>
-        <button
-          type="button"
-          className="inline-flex items-center rounded-full border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
-        >
-          ⬇️ Download Policy
-        </button>
-        <button
-          type="button"
-          className="inline-flex items-center rounded-full border border-transparent px-4 py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
-        >
-          📝 File Claim
-        </button>
-      </div>
-    </div>
-  );
-};
+const computeFallbackSummary = (policies) => ({
+  activeCount: policies.length,
+  expiringSoonCount: policies.filter((policy) => policy.isExpiringSoon).length,
+  totalCoverage: policies.reduce((sum, policy) => sum + (policy.coverageAmount || 0), 0),
+  annualPremium: policies.reduce((sum, policy) => sum + (policy.premiumAnnual || 0), 0),
+});
 
 const ActivePolicies = () => {
   const [policies, setPolicies] = useState([]);
@@ -208,18 +111,18 @@ const ActivePolicies = () => {
   const [showExternalModal, setShowExternalModal] = useState(false);
   const [externalSubmitting, setExternalSubmitting] = useState(false);
   const [externalError, setExternalError] = useState(null);
-  const [externalForm, setExternalForm] = useState({
-    policyName: '',
-    policyType: 'AUTO',
-    insuranceProvider: '',
-    policyNumber: '',
-    annualPremium: '',
-    coverageAmount: '',
-    deductible: '',
-    startDate: '',
-    endDate: '',
-    notes: '',
-  });
+  const [externalUploadError, setExternalUploadError] = useState(null);
+  const [externalDocuments, setExternalDocuments] = useState([]);
+  const [isDraggingFiles, setIsDraggingFiles] = useState(false);
+  const [externalForm, setExternalForm] = useState(INITIAL_EXTERNAL_FORM);
+  const [selectedPolicy, setSelectedPolicy] = useState(null);
+  const [isEditingPolicy, setIsEditingPolicy] = useState(false);
+  const [policyForm, setPolicyForm] = useState(INITIAL_EXTERNAL_FORM);
+  const [policyDocumentsToUpload, setPolicyDocumentsToUpload] = useState([]);
+  const [policySubmitting, setPolicySubmitting] = useState(false);
+  const [policyError, setPolicyError] = useState(null);
+  const [policyUploadError, setPolicyUploadError] = useState(null);
+  const [exportingPolicyId, setExportingPolicyId] = useState(null);
 
   const loadData = async () => {
     try {
@@ -231,27 +134,12 @@ const ActivePolicies = () => {
         fetchActivePoliciesSummary(),
       ]);
 
-      if (policiesRes.status === 'fulfilled' && Array.isArray(policiesRes.value) && policiesRes.value.length > 0) {
-        // Normalize field names to match the UI expectations
-        const normalized = policiesRes.value.map((p) => ({
-          id: p.id,
-          policyNumber: p.policy_number,
-          status: p.status,
-          category: p.category,
-          insurerName: p.insurer_name,
-          productName: p.product_name,
-          premiumAnnual: p.premium_annual,
-          coverageAmount: p.coverage_amount,
-          deductibleAmount: p.deductible_amount,
-          startDate: p.start_date,
-          endDate: p.end_date,
-          isExpiringSoon: p.is_expiring_soon,
-          warningText: p.warning_text,
-        }));
-        setPolicies(normalized);
-      } else {
-        setPolicies(SAMPLE_ACTIVE_POLICIES);
-      }
+      const normalizedPolicies =
+        policiesRes.status === 'fulfilled' && Array.isArray(policiesRes.value)
+          ? policiesRes.value.map(normalizeActivePolicy)
+          : [];
+
+      setPolicies(normalizedPolicies);
 
       if (summaryRes.status === 'fulfilled' && summaryRes.value) {
         setSummary({
@@ -261,13 +149,15 @@ const ActivePolicies = () => {
           annualPremium: summaryRes.value.annual_premium,
         });
       } else {
-        setSummary(computeFallbackSummary(SAMPLE_ACTIVE_POLICIES));
+        setSummary(computeFallbackSummary(normalizedPolicies));
       }
-    } catch (err) {
-      // Fallback to sample data if backend is down
-      setPolicies(SAMPLE_ACTIVE_POLICIES);
-      setSummary(computeFallbackSummary(SAMPLE_ACTIVE_POLICIES));
-      setError(null);
+
+      return normalizedPolicies;
+    } catch (requestError) {
+      setPolicies([]);
+      setSummary(computeFallbackSummary([]));
+      setError('Failed to load policies.');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -284,17 +174,196 @@ const ActivePolicies = () => {
     return Number(numeric);
   };
 
-  const handleExternalChange = (e) => {
-    const { name, value } = e.target;
-    setExternalForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const validateIncomingFiles = (incomingFiles, existingFiles = []) => {
+    const selectedKeys = new Set(existingFiles.map(getSelectedFileKey));
+    const acceptedFiles = [];
+    const rejectedMessages = [];
+
+    incomingFiles.forEach((file) => {
+      const fileType = (file.type || '').toLowerCase();
+      const fileExtension = getFileExtension(file.name);
+      const fileKey = getSelectedFileKey(file);
+
+      if (
+        !ACCEPTED_DOCUMENT_TYPES.has(fileType) &&
+        !ACCEPTED_DOCUMENT_EXTENSIONS.has(fileExtension)
+      ) {
+        rejectedMessages.push(`${file.name}: only PDF, JPG, and PNG files are allowed.`);
+        return;
+      }
+
+      if (file.size > MAX_DOCUMENT_SIZE_BYTES) {
+        rejectedMessages.push(`${file.name}: file must be 10MB or smaller.`);
+        return;
+      }
+
+      if (selectedKeys.has(fileKey)) {
+        rejectedMessages.push(`${file.name}: this document is already selected.`);
+        return;
+      }
+
+      selectedKeys.add(fileKey);
+      acceptedFiles.push(file);
+    });
+
+    return {
+      acceptedFiles,
+      errorMessage: rejectedMessages.length > 0 ? rejectedMessages.join(' ') : null,
+    };
   };
 
-  const handleExternalSubmit = async (e) => {
-    e.preventDefault();
+  const resetExternalModal = () => {
+    setShowExternalModal(false);
     setExternalError(null);
+    setExternalUploadError(null);
+    setExternalDocuments([]);
+    setExternalForm(INITIAL_EXTERNAL_FORM);
+    setIsDraggingFiles(false);
+  };
+
+  const closePolicyDetails = () => {
+    setSelectedPolicy(null);
+    setIsEditingPolicy(false);
+    setPolicyForm(INITIAL_EXTERNAL_FORM);
+    setPolicyDocumentsToUpload([]);
+    setPolicyError(null);
+    setPolicyUploadError(null);
+    setPolicySubmitting(false);
+  };
+
+  const handleExternalChange = (event) => {
+    const { name, value } = event.target;
+    setExternalForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePolicyChange = (event) => {
+    const { name, value } = event.target;
+    setPolicyForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddDocuments = (fileList, existingFiles, setFiles, setUploadError) => {
+    const incomingFiles = Array.from(fileList || []);
+    if (incomingFiles.length === 0) return;
+
+    const { acceptedFiles, errorMessage } = validateIncomingFiles(incomingFiles, existingFiles);
+
+    if (acceptedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...acceptedFiles]);
+    }
+
+    setUploadError(errorMessage);
+  };
+
+  const handleDocumentSelection = (event) => {
+    handleAddDocuments(
+      event.target.files,
+      externalDocuments,
+      setExternalDocuments,
+      setExternalUploadError,
+    );
+    event.target.value = '';
+  };
+
+  const handlePolicyDocumentSelection = (event) => {
+    handleAddDocuments(
+      event.target.files,
+      policyDocumentsToUpload,
+      setPolicyDocumentsToUpload,
+      setPolicyUploadError,
+    );
+    event.target.value = '';
+  };
+
+  const handleRemoveDocument = (fileToRemove) => {
+    setExternalDocuments((prev) =>
+      prev.filter((file) => getSelectedFileKey(file) !== getSelectedFileKey(fileToRemove)),
+    );
+  };
+
+  const handleRemovePolicyDocument = (fileToRemove) => {
+    setPolicyDocumentsToUpload((prev) =>
+      prev.filter((file) => getSelectedFileKey(file) !== getSelectedFileKey(fileToRemove)),
+    );
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    setIsDraggingFiles(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    setIsDraggingFiles(false);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDraggingFiles(false);
+    handleAddDocuments(
+      event.dataTransfer.files,
+      externalDocuments,
+      setExternalDocuments,
+      setExternalUploadError,
+    );
+  };
+
+  const handlePreviewDocument = async (policyId, document) => {
+    try {
+      const blob = await downloadPolicyDocument(policyId, document.id);
+      const objectUrl = window.URL.createObjectURL(blob);
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 60000);
+    } catch (requestError) {
+      setError('Failed to preview the selected document.');
+    }
+  };
+
+  const handleDownloadDocument = async (policyId, document) => {
+    try {
+      const blob = await downloadPolicyDocument(policyId, document.id);
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = objectUrl;
+      link.download = document.fileName;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (requestError) {
+      setError('Failed to download the selected document.');
+    }
+  };
+
+  const handleOpenPolicyDetails = (policy) => {
+    setSelectedPolicy(policy);
+    setPolicyForm(toPolicyFormState(policy));
+    setPolicyDocumentsToUpload([]);
+    setPolicyError(null);
+    setPolicyUploadError(null);
+    setIsEditingPolicy(false);
+  };
+
+  const handleStartEditingPolicy = () => {
+    if (!selectedPolicy) return;
+    setPolicyForm(toPolicyFormState(selectedPolicy));
+    setPolicyDocumentsToUpload([]);
+    setPolicyError(null);
+    setPolicyUploadError(null);
+    setIsEditingPolicy(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingPolicy(false);
+    setPolicyForm(toPolicyFormState(selectedPolicy));
+    setPolicyDocumentsToUpload([]);
+    setPolicyError(null);
+    setPolicyUploadError(null);
+  };
+
+  const handleExternalSubmit = async (event) => {
+    event.preventDefault();
+    setExternalError(null);
+    setExternalUploadError(null);
     setExternalSubmitting(true);
 
     try {
@@ -313,47 +382,117 @@ const ActivePolicies = () => {
       };
 
       const created = await createExternalActivePolicy(payload);
+      let uploadMessage = null;
 
-      // Refresh from backend if possible
-      await loadData();
-
-      // Fallback update in case backend is using demo data
-      if (!created || !created.id) {
-        const fallbackPolicy = {
-          id: Date.now(),
-          policyNumber: externalForm.policyNumber,
-          status: 'Active',
-          category: externalForm.policyType,
-          insurerName: externalForm.insuranceProvider,
-          productName: externalForm.policyName,
-          premiumAnnual: parseNumber(externalForm.annualPremium) ?? 0,
-          coverageAmount: parseNumber(externalForm.coverageAmount) ?? 0,
-          deductibleAmount: parseNumber(externalForm.deductible),
-          startDate: externalForm.startDate,
-          endDate: externalForm.endDate,
-          isExpiringSoon: false,
-          warningText: null,
-        };
-        setPolicies((prev) => [...prev, fallbackPolicy]);
+      if (externalDocuments.length > 0) {
+        if (!created?.id) {
+          uploadMessage =
+            'Policy was added, but documents could not be linked because the server did not return a policy id.';
+        } else {
+          try {
+            await uploadPolicyDocuments(created.id, externalDocuments);
+          } catch (uploadError) {
+            uploadMessage =
+              uploadError.response?.data?.detail ||
+              'Policy was added, but the documents could not be uploaded.';
+          }
+        }
       }
 
-      setShowExternalModal(false);
-      setExternalForm({
-        policyName: '',
-        policyType: 'AUTO',
-        insuranceProvider: '',
-        policyNumber: '',
-        annualPremium: '',
-        coverageAmount: '',
-        deductible: '',
-        startDate: '',
-        endDate: '',
-        notes: '',
-      });
-    } catch (err) {
-      setExternalError(err.response?.data?.detail || 'Failed to add external policy');
+      await loadData();
+      if (uploadMessage) {
+        setError(uploadMessage);
+      }
+      resetExternalModal();
+    } catch (requestError) {
+      setExternalError(requestError.response?.data?.detail || 'Failed to add external policy');
     } finally {
       setExternalSubmitting(false);
+    }
+  };
+
+  const handleSavePolicyDetails = async (event) => {
+    event.preventDefault();
+    if (!selectedPolicy) return;
+
+    setPolicyError(null);
+    setPolicyUploadError(null);
+    setPolicySubmitting(true);
+
+    try {
+      const payload = {
+        policy_number: policyForm.policyNumber,
+        status: selectedPolicy.status || 'ACTIVE',
+        category: policyForm.policyType,
+        insurer_name: policyForm.insuranceProvider,
+        product_name: policyForm.policyName,
+        premium_annual: parseNumber(policyForm.annualPremium) ?? 0,
+        coverage_amount: parseNumber(policyForm.coverageAmount) ?? 0,
+        deductible_amount: parseNumber(policyForm.deductible),
+        start_date: policyForm.startDate,
+        end_date: policyForm.endDate,
+        tags: policyForm.notes || null,
+        warning_text: selectedPolicy.warningText || null,
+      };
+
+      await updateActivePolicy(selectedPolicy.id, payload);
+      let uploadMessage = null;
+
+      if (policyDocumentsToUpload.length > 0) {
+        try {
+          await uploadPolicyDocuments(selectedPolicy.id, policyDocumentsToUpload);
+        } catch (uploadError) {
+          uploadMessage =
+            uploadError.response?.data?.detail ||
+            'Policy details were saved, but new documents could not be uploaded.';
+        }
+      }
+
+      const refreshedPolicies = await loadData();
+      const refreshedPolicy =
+        refreshedPolicies.find((policy) => policy.id === selectedPolicy.id) || null;
+
+      if (refreshedPolicy) {
+        setSelectedPolicy(refreshedPolicy);
+        setPolicyForm(toPolicyFormState(refreshedPolicy));
+      }
+
+      if (uploadMessage) {
+        setPolicyError(uploadMessage);
+      } else {
+        setIsEditingPolicy(false);
+        setPolicyDocumentsToUpload([]);
+      }
+    } catch (requestError) {
+      setPolicyError(requestError.response?.data?.detail || 'Failed to update this policy.');
+    } finally {
+      setPolicySubmitting(false);
+    }
+  };
+
+  const handleDownloadPolicySummary = async (policy) => {
+    try {
+      setExportingPolicyId(policy.id);
+      await downloadPolicyPdf({ policy, downloadPolicyDocument });
+    } catch (requestError) {
+      setError('Failed to generate the policy PDF.');
+    } finally {
+      setExportingPolicyId(null);
+    }
+  };
+
+  const handleDeletePolicy = async (id) => {
+    const confirmed = window.confirm('Delete this active policy?');
+    if (!confirmed) return;
+
+    try {
+      await deleteActivePolicy(id);
+      if (selectedPolicy?.id === id) {
+        closePolicyDetails();
+      }
+      await loadData();
+    } catch (requestError) {
+      setError(requestError.response?.data?.detail || 'Failed to delete active policy.');
     }
   };
 
@@ -371,278 +510,67 @@ const ActivePolicies = () => {
     );
   }
 
-  const effectiveSummary = summary || computeFallbackSummary(policies.length ? policies : SAMPLE_ACTIVE_POLICIES);
+  const effectiveSummary = summary || computeFallbackSummary(policies);
 
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <div className="flex-1 ml-64 overflow-y-auto">
-        <div className="max-w-6xl mx-auto p-8">
-          {/* Header */}
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">My Active Policies</h1>
-              <p className="text-gray-600 text-sm">View and manage your insurance policies</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowExternalModal(true)}
-              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-            >
-              <span className="text-lg mr-1">+</span>
-              Add External Policy
-            </button>
-          </div>
+        <ActivePoliciesPageContent
+          effectiveSummary={effectiveSummary}
+          error={error}
+          policies={policies}
+          showExternalModal={showExternalModal}
+          externalSubmitting={externalSubmitting}
+          externalError={externalError}
+          externalUploadError={externalUploadError}
+          externalDocuments={externalDocuments}
+          isDraggingFiles={isDraggingFiles}
+          externalForm={externalForm}
+          formatFileSize={formatFileSize}
+          getSelectedFileKey={getSelectedFileKey}
+          exportingPolicyId={exportingPolicyId}
+          onOpenExternalModal={() => setShowExternalModal(true)}
+          onResetExternalModal={resetExternalModal}
+          onExternalChange={handleExternalChange}
+          onDocumentSelection={handleDocumentSelection}
+          onRemoveDocument={handleRemoveDocument}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onExternalSubmit={handleExternalSubmit}
+          onDeletePolicy={handleDeletePolicy}
+          onPreviewDocument={handlePreviewDocument}
+          onDownloadDocument={handleDownloadDocument}
+          onViewDetails={handleOpenPolicyDetails}
+          onDownloadPolicySummary={handleDownloadPolicySummary}
+        />
 
-          {/* Summary cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <SummaryCard
-              label="Active Policies"
-              value={effectiveSummary.activeCount}
-              helper="Policies currently in force"
-            />
-            <SummaryCard
-              label="Expiring Soon"
-              value={effectiveSummary.expiringSoonCount}
-              helper="Policies expiring in the next 30 days"
-              valueClassName="text-yellow-600"
-            />
-            <SummaryCard
-              label="Total Coverage"
-              value={formatCurrency(effectiveSummary.totalCoverage)}
-              helper="Combined coverage limit"
-              valueClassName="text-emerald-600"
-            />
-            <SummaryCard
-              label="Annual Premium"
-              value={formatCurrency(effectiveSummary.annualPremium)}
-              helper="Total yearly premium"
-              valueClassName="text-purple-600"
-            />
-          </div>
-
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Policy list */}
-          <div className="mt-2">
-            {policies.map((policy) => (
-              <ActivePolicyCard key={policy.id} policy={policy} />
-            ))}
-
-            {policies.length === 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-6 text-sm text-gray-600 mt-4">
-                You don't have any active policies yet. Browse the catalog to get started.
-              </div>
-            )}
-          </div>
-        </div>
+        <PolicyDetailsModal
+          selectedPolicy={selectedPolicy}
+          isEditingPolicy={isEditingPolicy}
+          policySubmitting={policySubmitting}
+          policyForm={policyForm}
+          policyDocumentsToUpload={policyDocumentsToUpload}
+          policyError={policyError}
+          policyUploadError={policyUploadError}
+          exportingPolicyId={exportingPolicyId}
+          formatFileSize={formatFileSize}
+          getSelectedFileKey={getSelectedFileKey}
+          onClose={closePolicyDetails}
+          onStartEditingPolicy={handleStartEditingPolicy}
+          onPreviewDocument={handlePreviewDocument}
+          onDownloadDocument={handleDownloadDocument}
+          onDownloadPolicySummary={handleDownloadPolicySummary}
+          onPolicyChange={handlePolicyChange}
+          onPolicyDocumentSelection={handlePolicyDocumentSelection}
+          onRemovePolicyDocument={handleRemovePolicyDocument}
+          onCancelEdit={handleCancelEdit}
+          onSavePolicyDetails={handleSavePolicyDetails}
+        />
       </div>
-
-      {/* Add External Policy Modal */}
-      {showExternalModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Add External Policy</h2>
-              <button
-                type="button"
-                onClick={() => setShowExternalModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleExternalSubmit} className="px-6 py-4 space-y-6">
-              {/* Policy information */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-4">Policy Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Policy Name *</label>
-                    <input
-                      type="text"
-                      name="policyName"
-                      value={externalForm.policyName}
-                      onChange={handleExternalChange}
-                      required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Comprehensive Auto Coverage"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Policy Type *</label>
-                    <select
-                      name="policyType"
-                      value={externalForm.policyType}
-                      onChange={handleExternalChange}
-                      required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="AUTO">Auto Insurance</option>
-                      <option value="HOME">Home Insurance</option>
-                      <option value="LIFE">Life Insurance</option>
-                      <option value="HEALTH">Health Insurance</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Insurance Provider *</label>
-                    <input
-                      type="text"
-                      name="insuranceProvider"
-                      value={externalForm.insuranceProvider}
-                      onChange={handleExternalChange}
-                      required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="SafeDrive Insurance"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Policy Number *</label>
-                    <input
-                      type="text"
-                      name="policyNumber"
-                      value={externalForm.policyNumber}
-                      onChange={handleExternalChange}
-                      required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="AUTO-2024-5678"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Annual Premium *</label>
-                    <input
-                      type="text"
-                      name="annualPremium"
-                      value={externalForm.annualPremium}
-                      onChange={handleExternalChange}
-                      required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="$850/year"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Coverage Amount *</label>
-                    <input
-                      type="text"
-                      name="coverageAmount"
-                      value={externalForm.coverageAmount}
-                      onChange={handleExternalChange}
-                      required
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="$250,000"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Deductible</label>
-                    <input
-                      type="text"
-                      name="deductible"
-                      value={externalForm.deductible}
-                      onChange={handleExternalChange}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="$500"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Start Date *</label>
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={externalForm.startDate}
-                        onChange={handleExternalChange}
-                        required
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">End Date *</label>
-                      <input
-                        type="date"
-                        name="endDate"
-                        value={externalForm.endDate}
-                        onChange={handleExternalChange}
-                        required
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional notes */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Additional Notes</label>
-                <textarea
-                  name="notes"
-                  value={externalForm.notes}
-                  onChange={handleExternalChange}
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Any additional information about this policy..."
-                />
-              </div>
-
-              {/* Upload section (UI only for now) */}
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">Upload Policy Documents</h3>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl px-4 py-6 text-center bg-gray-50">
-                  <p className="text-sm text-gray-600 mb-2">
-                    Drag and drop policy documents here, or click to select
-                  </p>
-                  <p className="text-xs text-gray-400 mb-4">PDF, JPG, PNG (Max 10MB each)</p>
-                  <label className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 cursor-pointer">
-                    Select Files
-                    <input type="file" multiple className="hidden" />
-                  </label>
-                </div>
-                <div className="mt-3 rounded-xl bg-blue-50 px-4 py-3 text-xs text-gray-700 text-left">
-                  <p className="font-medium mb-1">Recommended documents:</p>
-                  <ul className="list-disc list-inside space-y-0.5">
-                    <li>Policy declaration page</li>
-                    <li>Coverage details</li>
-                    <li>Premium schedule</li>
-                    <li>Terms and conditions</li>
-                  </ul>
-                </div>
-              </div>
-
-              {externalError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-xs">
-                  {externalError}
-                </div>
-              )}
-
-              {/* Modal footer */}
-              <div className="flex items-center justify-end gap-3 pt-2 pb-4">
-                <button
-                  type="button"
-                  onClick={() => setShowExternalModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-700 border border-gray-300 rounded-lg bg-white hover:bg-gray-50"
-                  disabled={externalSubmitting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={externalSubmitting}
-                  className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {externalSubmitting ? 'Adding...' : 'Add Policy'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
 export default ActivePolicies;
-

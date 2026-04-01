@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 from typing import List
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from src.entities.active_policy import ActivePolicy
 from src.active_policies.models import ActivePoliciesSummary
@@ -22,6 +22,7 @@ def list_active_policies(db: Session, user_id: int) -> List[ActivePolicy]:
     today = date.today()
     return (
         db.query(ActivePolicy)
+        .options(selectinload(ActivePolicy.documents))
         .filter(
             ActivePolicy.user_id == user_id,
             ActivePolicy.status == "ACTIVE",
