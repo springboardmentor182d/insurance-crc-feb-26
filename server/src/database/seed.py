@@ -69,6 +69,14 @@ def _upsert_user(
     role: UserRole,
     first_name: str | None = None,
     last_name: str | None = None,
+    phone: str | None = None,
+    address: str | None = None,
+    city: str | None = None,
+    state: str | None = None,
+    zip_code: str | None = None,
+    country: str | None = None,
+    occupation: str | None = None,
+    company: str | None = None,
 ) -> User:
     user = db.execute(select(User).where(User.email == email)).scalar_one_or_none()
     if user is None:
@@ -79,6 +87,14 @@ def _upsert_user(
             full_name=full_name,
             role=role,
             is_active=True,
+            phone=phone,
+            address=address,
+            city=city,
+            state=state,
+            zip_code=zip_code,
+            country=country,
+            occupation=occupation,
+            company=company,
         )
         db.add(user)
         db.flush()
@@ -88,6 +104,14 @@ def _upsert_user(
         user.full_name = full_name
         user.role = role
         user.is_active = True
+        user.phone = phone
+        user.address = address
+        user.city = city
+        user.state = state
+        user.zip_code = zip_code
+        user.country = country
+        user.occupation = occupation
+        user.company = company
 
     return user
 
@@ -191,6 +215,7 @@ def _upsert_claim(
     fraud_score: float,
     submitted_at: datetime,
     processed_at: datetime | None,
+    review_notes: str | None,
 ) -> Claim:
     claim = db.execute(
         select(Claim).where(Claim.claim_number == claim_number)
@@ -205,6 +230,7 @@ def _upsert_claim(
             claim_amount=claim_amount,
             approved_amount=approved_amount,
             description=description,
+            review_notes=review_notes,
             fraud_score=fraud_score,
             submitted_at=submitted_at,
             processed_at=processed_at,
@@ -220,6 +246,7 @@ def _upsert_claim(
         claim.claim_amount = claim_amount
         claim.approved_amount = approved_amount
         claim.description = description
+        claim.review_notes = review_notes
         claim.fraud_score = fraud_score
         claim.submitted_at = submitted_at
         claim.processed_at = processed_at
@@ -382,6 +409,12 @@ def seed_database() -> None:
             first_name="Admin",
             last_name="User",
             role=UserRole.ADMIN,
+            phone="+91 98765 10000",
+            city="Bengaluru",
+            state="Karnataka",
+            country="India",
+            occupation="Platform Administrator",
+            company="BimaVerse",
         )
         customer_one = _upsert_user(
             db,
@@ -390,6 +423,14 @@ def seed_database() -> None:
             first_name="John",
             last_name="Doe",
             role=UserRole.CUSTOMER,
+            phone="+91 98765 20001",
+            address="22 Residency Road",
+            city="Bengaluru",
+            state="Karnataka",
+            zip_code="560025",
+            country="India",
+            occupation="Software Engineer",
+            company="Acme Digital",
         )
         customer_two = _upsert_user(
             db,
@@ -398,6 +439,14 @@ def seed_database() -> None:
             first_name="Jane",
             last_name="Singh",
             role=UserRole.CUSTOMER,
+            phone="+91 98765 20002",
+            address="14 Lake View Colony",
+            city="Hyderabad",
+            state="Telangana",
+            zip_code="500034",
+            country="India",
+            occupation="Operations Manager",
+            company="Northstar Retail",
         )
     
         adjuster_one = _upsert_adjuster(
@@ -506,10 +555,11 @@ def seed_database() -> None:
             status=ClaimStatus.PENDING,
             claim_amount=Decimal("42000.00"),
             approved_amount=None,
-            description="Hospitalization reimbursement for emergency treatment",
+            description="Emergency hospitalization reimbursement for dengue treatment and diagnostics.",
             fraud_score=0.82,
             submitted_at=now - timedelta(days=3),
             processed_at=None,
+            review_notes=None,
         )
         claim_approved = _upsert_claim(
             db,
@@ -520,10 +570,11 @@ def seed_database() -> None:
             status=ClaimStatus.APPROVED,
             claim_amount=Decimal("18000.00"),
             approved_amount=Decimal("16500.00"),
-            description="Minor collision repair reimbursement",
+            description="Rear bumper and tail light repair reimbursement after a low-speed collision.",
             fraud_score=0.07,
             submitted_at=now - timedelta(days=36),
             processed_at=now - timedelta(days=32),
+            review_notes="Repair estimate and workshop invoice matched policy coverage after adjuster review.",
         )
         claim_rejected = _upsert_claim(
             db,
@@ -534,10 +585,11 @@ def seed_database() -> None:
             status=ClaimStatus.REJECTED,
             claim_amount=Decimal("25000.00"),
             approved_amount=None,
-            description="Water leakage claim outside coverage scope",
+            description="Kitchen water leakage claim reported after the home policy had already lapsed.",
             fraud_score=0.21,
             submitted_at=now - timedelta(days=62),
             processed_at=now - timedelta(days=59),
+            review_notes="Rejected because the reported loss happened after policy lapse and is outside coverage.",
         )
         claim_fraud = _upsert_claim(
             db,
@@ -548,10 +600,11 @@ def seed_database() -> None:
             status=ClaimStatus.FRAUDULENT,
             claim_amount=Decimal("250000.00"),
             approved_amount=None,
-            description="Suspicious duplicate life cover incident report",
+            description="High-value life event claim with inconsistent beneficiary evidence and duplicate attachments.",
             fraud_score=0.94,
             submitted_at=now - timedelta(days=11),
             processed_at=now - timedelta(days=9),
+            review_notes="Escalated to fraud review due to inconsistent beneficiary records and duplicate submissions.",
         )
         _upsert_claim(
             db,
@@ -562,10 +615,11 @@ def seed_database() -> None:
             status=ClaimStatus.APPROVED,
             claim_amount=Decimal("50000.00"),
             approved_amount=Decimal("42000.00"),
-            description="Routine approved payout for valid life policy event",
+            description="Critical illness rider payout supported by oncologist reports and discharge summary.",
             fraud_score=0.12,
             submitted_at=now - timedelta(days=96),
             processed_at=now - timedelta(days=90),
+            review_notes="Approved after validating hospital records, rider eligibility, and beneficiary confirmation.",
         )
     
         rules = {
