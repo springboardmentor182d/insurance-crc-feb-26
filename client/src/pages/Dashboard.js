@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import apiClient from '../utils/apiClient';
 import Sidebar from '../layout/user/Sidebar';
 import { fetchActivePolicies } from '../features/policies/services/policiesService';
-import { TOKEN_KEYS } from '../data/constants';
+import { TOKEN_KEYS ,ROUTES} from '../data/constants';
 import {
   FileText, Activity, AlertCircle, CheckCircle,
   ArrowRight, Plus
@@ -108,7 +108,7 @@ function DashboardPage() {
                 <ArrowRight size={28} className="group-hover:translate-x-1 transition-transform" />
               </div>
               <div
-                onClick={() => navigate('/recommendations')}
+                onClick={() => navigate(ROUTES.RECOMMENDATIONS)}
                 className="bg-purple-600 p-8 rounded-3xl text-white flex justify-between items-center group cursor-pointer"
               >
                 <div className="text-left"><h4 className="text-xl font-bold mb-1">Recommendations</h4><p className="text-purple-100 text-sm">AI-powered suggestions</p></div>

@@ -18,6 +18,7 @@ import Settings         from "./pages/Settings";
 import Signup           from "./pages/Signup";
 import FlaggedClaims    from "./pages/admin/FlaggedClaims";
 import FraudRules       from "./pages/admin/FraudRules";
+import ManageClaims     from './pages/admin/ManageClaims';
 
 const getStoredUser = () => {
   const userRaw = localStorage.getItem(TOKEN_KEYS.USER);
@@ -64,10 +65,10 @@ export default function App() {
         <Route path="/admin/manage-policies"    element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
         <Route path="/admin/fraud-rules"        element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
         <Route path="/admin/flagged-claims"     element={<ProtectedRoute adminOnly><FlaggedClaims /></ProtectedRoute>} />
+        <Route path="/admin/manage-claims"      element={<ProtectedRoute adminOnly><ManageClaims /></ProtectedRoute>} />
  
         {/* ── Fallback ── */}
         <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
-        console.log("Recommendations component:", Recommendations);
 
       </Routes>
     </BrowserRouter>

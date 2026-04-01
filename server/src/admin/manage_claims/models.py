@@ -11,7 +11,7 @@ Organised into 5 sections:
 ─────────────────────────────────────────────────────────────────────────────
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
@@ -130,7 +130,8 @@ class ClaimDetail(BaseModel):
     submitted_date:       str
     user:                 ClaimUserInfo
     incident_description: str
-    documents:            List[ClaimDocument]
+    review_notes:         Optional[str] = None
+    documents:            List[ClaimDocument] = Field(default_factory=list)
 
 
 # =============================================================================

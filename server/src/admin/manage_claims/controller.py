@@ -13,8 +13,13 @@ Endpoints:
   PATCH  /api/claims/{claim_id}/status     → approve or reject a claim
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from typing import Optional
+from src.auth import require_admin
+from sqlalchemy.orm import Session
+from src.database.core import get_db
+from sqlalchemy.orm import Session
+from src.database.core import get_db
 
 from src.admin.manage_claims.models import (
     ClaimsListResponse,
@@ -24,7 +29,7 @@ from src.admin.manage_claims.models import (
 )
 from src.admin.manage_claims.service import fetch_all_claims, fetch_claim_detail, process_claim_action
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_admin)])
 
 
 # ---------------------------------------------------------------------------
@@ -35,7 +40,8 @@ def get_all_claims(
     status: Optional[str] = Query(
         default=None,
         description="Filter by status: under_review | approved | rejected",
-    )
+    ),
+    db: Session = Depends(get_db),
 ):
     """
     Returns stats (total, under_review, approved, rejected) and
@@ -44,26 +50,30 @@ def get_all_claims(
     Pass ?status=under_review (or approved / rejected) to filter the list.
     Stats are always computed over ALL claims regardless of filter.
     """
-    return fetch_all_claims(status_filter=status)
+    return fetch_all_claims(db, status_filter=status)
 
 
 # ---------------------------------------------------------------------------
 # GET /api/claims/{claim_id}
 # ---------------------------------------------------------------------------
 @router.get("/{claim_id}", response_model=ClaimDetail)
-def get_claim_detail(claim_id: str):
+def get_claim_detail(claim_id: str, db: Session = Depends(get_db)):
     """
     Returns full detail for a single claim.
     Used when the admin clicks the eye (👁) icon to open the Claim Details modal.
     """
-    return fetch_claim_detail(claim_id)
+    return fetch_claim_detail(db, claim_id)
 
 
 # ---------------------------------------------------------------------------
 # PATCH /api/claims/{claim_id}/status
 # ---------------------------------------------------------------------------
 @router.patch("/{claim_id}/status", response_model=ClaimActionResponse)
-def update_claim_status(claim_id: str, body: UpdateClaimStatusRequest):
+def update_claim_status(
+    claim_id: str,
+    body: UpdateClaimStatusRequest,
+    db: Session = Depends(get_db),
+):
     """
     Approve or reject a claim.
 
@@ -80,7 +90,8 @@ def update_claim_status(claim_id: str, body: UpdateClaimStatusRequest):
       422 — rejection attempted without review_notes
     """
     return process_claim_action(
-        claim_id     = claim_id,
-        new_status   = body.status,
-        review_notes = body.review_notes,
+        db=db,
+        claim_id=claim_id,
+        new_status=body.status,
+        review_notes=body.review_notes,
     )

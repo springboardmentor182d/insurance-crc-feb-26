@@ -25,4 +25,4 @@ api_router.include_router(browse_policies_router, prefix="/api/policies", tags=[
 api_router.include_router(active_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(claims_router)
 api_router.include_router(recommendations_router,prefix="/recommendations",tags=["Recommendations"])
-api_router.include_router(manage_claims_router, prefix="/claims", tags=["Claims"])
+api_router.include_router(manage_claims_router, prefix="/admin/claims", tags=["Admin Claims"])
