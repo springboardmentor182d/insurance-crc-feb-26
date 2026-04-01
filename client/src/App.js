@@ -3,6 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { ROLES, ROUTES, TOKEN_KEYS } from "./data/constants";
 
+// ── NEW: theme imports ────────────────────────────────────────────────────────
+import { ThemeProvider } from "./context/ThemeContext";
+import "./styles/theme.css";
+
 import ActivePolicies   from "./pages/ActivePolicies";
 import AdminDashboard   from "./pages/AdminDashboard";
 import AdminLogin       from "./pages/AdminLogin";
@@ -52,26 +56,25 @@ export default function App() {
         <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
         <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginGuard><AdminLogin /></AdminLoginGuard>} />
 
-        {/* ── User protected ── */}
-        <Route path={ROUTES.DASHBOARD}       element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path={ROUTES.PROFILE}         element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path={ROUTES.PREFERENCES}     element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
-        <Route path={ROUTES.SETTINGS}        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path={ROUTES.BROWSE_POLICIES} element={<ProtectedRoute><BrowsePolicies /></ProtectedRoute>} />
-        <Route path={ROUTES.ACTIVE_POLICIES} element={<ProtectedRoute><ActivePolicies /></ProtectedRoute>} />
-        <Route path={ROUTES.RECOMMENDATIONS} element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
+          {/* ── User protected ── */}
+          <Route path={ROUTES.DASHBOARD}       element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path={ROUTES.PROFILE}         element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path={ROUTES.PREFERENCES}     element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
+          <Route path={ROUTES.SETTINGS}        element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path={ROUTES.BROWSE_POLICIES} element={<ProtectedRoute><BrowsePolicies /></ProtectedRoute>} />
+          <Route path={ROUTES.ACTIVE_POLICIES} element={<ProtectedRoute><ActivePolicies /></ProtectedRoute>} />
+          <Route path={ROUTES.RECOMMENDATIONS} element={<ProtectedRoute><Recommendations /></ProtectedRoute>} />
 
-        {/* ── Admin protected ── */}
-        <Route path={ROUTES.ADMIN_DASHBOARD}    element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/admin/manage-policies"    element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
-        <Route path="/admin/fraud-rules"        element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
-        <Route path="/admin/flagged-claims"     element={<ProtectedRoute adminOnly><FlaggedClaims /></ProtectedRoute>} />
- 
-        {/* ── Fallback ── */}
-        <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
-        console.log("Recommendations component:", Recommendations);
+          {/* ── Admin protected ── */}
+          <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/manage-policies" element={<ProtectedRoute adminOnly><ManagePolicies /></ProtectedRoute>} />
+          <Route path="/admin/fraud-rules"     element={<ProtectedRoute adminOnly><FraudRules /></ProtectedRoute>} />
+          <Route path="/admin/flagged-claims"  element={<ProtectedRoute adminOnly><FlaggedClaims /></ProtectedRoute>} />
 
-      </Routes>
-    </BrowserRouter>
+          {/* ── Fallback ── */}
+          <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
