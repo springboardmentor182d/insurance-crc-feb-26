@@ -9,9 +9,6 @@ from src.database.core import SessionLocal
 from src.database.seeds import seed_fraud_rules
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
-from src.database.core import engine, Base
-# This line creates all tables that are currently imported in your app
-Base.metadata.create_all(bind=engine)
 
 setup_logging()
 app = FastAPI(
@@ -42,9 +39,14 @@ def startup_db_check():
     try:
         with SessionLocal() as session:
             session.execute(text("SELECT 1"))
-        seed_fraud_rules()
     except SQLAlchemyError as exc:
         raise RuntimeError("Database connection failed on startup.") from exc
+
+    try:
+        seed_fraud_rules()
+    except SQLAlchemyError:
+        # Keep startup non-blocking if local DB schema is older than the seed model.
+        pass
 
 
 @app.get("/health", tags=["Health"])

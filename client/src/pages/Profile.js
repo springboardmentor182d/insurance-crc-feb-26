@@ -227,12 +227,12 @@ const Profile = () => {
                     {formData.fullName || 'John Doe'}
                   </h2>
                   <p className="text-gray-600 mb-2">{formData.email || 'john.doe@example.com'}</p>
-                  <button
+                  {/*<button
                     type="button"
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
                     Change Profile Picture
-                  </button>
+                  </button>*/}
                 </div>
               </div>
             </div>

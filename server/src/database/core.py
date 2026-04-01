@@ -43,6 +43,9 @@ def create_tables() -> None:
     # Ensure all ORM models are registered before create_all
     import src.database.admin_dashboard.models  # noqa: F401
     import src.database.manage_policies.models  # noqa: F401
+    import src.auth.db_models  # noqa: F401
+    import src.auth.oauth_models  # noqa: F401
     import src.entities.active_policy  # noqa: F401
+    import src.entities.policy_document  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

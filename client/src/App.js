@@ -12,6 +12,7 @@ import AdminDashboard   from "./pages/AdminDashboard";
 import AdminLogin       from "./pages/AdminLogin";
 import BrowsePolicies   from "./pages/BrowsePolicies";
 import DashboardPage    from "./pages/Dashboard";
+import ForgotPassword   from "./pages/ForgotPassword";
 import Home             from "./pages/Home";
 import Login            from "./pages/Login";
 import ManagePolicies   from "./pages/ManagePolicies";
@@ -46,15 +47,14 @@ const AdminLoginGuard = ({ children }) => {
 
 export default function App() {
   return (
-    // ── NEW: wrap everything with ThemeProvider ───────────────────────────────
-    <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* ── Public ── */}
-          <Route path={ROUTES.HOME}        element={<Home />} />
-          <Route path={ROUTES.LOGIN}       element={<Login />} />
-          <Route path={ROUTES.SIGNUP}      element={<Signup />} />
-          <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginGuard><AdminLogin /></AdminLoginGuard>} />
+    <BrowserRouter>
+      <Routes>
+        {/* ── Public ── */}
+        <Route path={ROUTES.HOME}   element={<Home />} />
+        <Route path={ROUTES.LOGIN}  element={<Login />} />
+        <Route path={ROUTES.SIGNUP} element={<Signup />} />
+        <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+        <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLoginGuard><AdminLogin /></AdminLoginGuard>} />
 
           {/* ── User protected ── */}
           <Route path={ROUTES.DASHBOARD}       element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

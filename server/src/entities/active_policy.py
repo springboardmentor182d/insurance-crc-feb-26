@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Numeric, Boolean, DateTime, Date, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Date, Text, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from src.database.core import Base
 
@@ -36,4 +37,11 @@ class ActivePolicy(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    documents = relationship(
+        "PolicyDocument",
+        back_populates="active_policy",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
