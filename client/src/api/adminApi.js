@@ -10,6 +10,10 @@ export const approvePolicy = async (id) => {
     await apiClient.post(`/admin/policy-approvals/${id}/approve`);
 };
 
-export const rejectPolicy = async (id) => {
-    await apiClient.post(`/admin/policy-approvals/${id}/reject`);
+export const rejectPolicy = async (id, reason) => {
+    await apiClient.post(`/admin/policy-approvals/${id}/reject`, { reason });
+};
+
+export const markUnderReview = async (id) => {
+    await apiClient.post(`/admin/policy-approvals/${id}/under-review`);
 };

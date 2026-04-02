@@ -22,7 +22,7 @@ import Settings from "./pages/Settings";
 import Signup from "./pages/Signup";
 import FlaggedClaims from "./pages/admin/FlaggedClaims";
 import FraudRules from "./pages/admin/FraudRules";
-import ManageClaims from './pages/admin/ManageClaims';
+
 import PolicyApprovals from "./pages/admin/PolicyApprovals";
 import ForgotPassword from "./pages/ForgotPassword";
 

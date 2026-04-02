@@ -36,7 +36,6 @@ const getLoginRoute = () => {
     return ROUTES.LOGIN;
   }
 };
-
 const redirectToLogin = () => {
   const loginRoute = getLoginRoute();
   clearStoredAuth();
