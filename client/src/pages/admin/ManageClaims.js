@@ -1,44 +1,133 @@
-import React from "react";
+import { useManageClaims } from '../../features/admin/manageclaims/hooks/useManageClaims';
+import StatsCards        from '../../features/admin/manageclaims/components/StatsCards';
+import ClaimsTable       from '../../features/admin/manageclaims/components/ClaimsTable';
+import ClaimDetailModal  from '../../features/admin/manageclaims/components/ClaimDetailModal';
+import ApproveClaimModal from '../../features/admin/manageclaims/components/ApproveClaimModal';
+import RejectClaimModal  from '../../features/admin/manageclaims/components/RejectClaimModal';
+import AdminLayout       from '../../layout/admin/AdminLayout';
+import '../../features/admin/manageclaims/styles/manageClaims.css';
+import '../../features/admin/dashboardColors.css';
 
 const ManageClaims = () => {
-  return (
-    <div style={{ padding: "20px" }}>
-      <h2>Manage Claims</h2>
-      <p>Review and process insurance claims</p>
+  const {
+    // data
+    stats,
+    claims,
+    loading,
+    error,
 
-      {/* Stats */}
-      <div style={{ display: "flex", gap: "10px", margin: "20px 0" }}>
-        <div>Total: 4</div>
-        <div>Pending: 1</div>
-        <div>Under Review: 1</div>
-        <div>Approved: 1</div>
-        <div>Rejected: 1</div>
+    // search & filter
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
+
+    // detail modal
+    selectedClaim,
+    detailLoading,
+    isDetailOpen,
+    openDetail,
+    closeDetail,
+
+    // approve modal
+    approveTarget,
+    approveNotes,
+    setApproveNotes,
+    isApproveOpen,
+    approveLoading,
+    openApprove,
+    closeApprove,
+    confirmApprove,
+
+    // reject modal
+    rejectTarget,
+    rejectNotes,
+    setRejectNotes,
+    isRejectOpen,
+    rejectLoading,
+    rejectNotesError,
+    openReject,
+    closeReject,
+    confirmReject,
+
+    // action error
+    actionError,
+  } = useManageClaims();
+
+  return (
+    <AdminLayout>
+      <div className="admin-dashboard-theme">
+
+      {/* ── Page Header ── */}
+      <div className="claims-page-header">
+        <h1 className="claims-page-title">Manage Claims</h1>
+        <p className="claims-page-subtitle">Review and process insurance claims</p>
       </div>
 
-      {/* Table */}
-      <table border="1" cellPadding="10">
-        <thead>
-          <tr>
-            <th>Claim #</th>
-            <th>User</th>
-            <th>Policy</th>
-            <th>Incident</th>
-            <th>Amount</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>CLM-2026-001</td>
-            <td>John Anderson</td>
-            <td>Auto Insurance</td>
-            <td>Vehicle Collision</td>
-            <td>$5200</td>
-            <td>Pending</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      {/* ── Error Banner ── */}
+      {error && <div className="claims-error-banner">{error}</div>}
+
+      {loading ? (
+        <div className="claims-loading">Loading claims…</div>
+      ) : (
+        <>
+          {/* ── Stats Cards ── */}
+          <StatsCards stats={stats} />
+
+          {/* ── Claims Table ── */}
+          <ClaimsTable
+            claims={claims}
+            search={search}
+            setSearch={setSearch}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            onView={openDetail}
+            onApprove={openApprove}
+            onReject={openReject}
+          />
+        </>
+      )}
+
+      {/* ── Detail Modal ── */}
+      {isDetailOpen && (
+        <ClaimDetailModal
+          claim={selectedClaim}
+          loading={detailLoading}
+          onClose={closeDetail}
+          onApprove={openApprove}
+          onReject={openReject}
+        />
+      )}
+
+      {/* ── Approve Modal ── */}
+      {isApproveOpen && (
+        <ApproveClaimModal
+          claim={approveTarget}
+          notes={approveNotes}
+          setNotes={setApproveNotes}
+          onConfirm={confirmApprove}
+          onClose={closeApprove}
+          loading={approveLoading}
+          actionError={actionError}
+        />
+      )}
+
+      {/* ── Reject Modal ── */}
+      {isRejectOpen && (
+        <RejectClaimModal
+          claim={rejectTarget}
+          notes={rejectNotes}
+          setNotes={setRejectNotes}
+          notesError={rejectNotesError}
+          onConfirm={confirmReject}
+          onClose={closeReject}
+          loading={rejectLoading}
+          actionError={actionError}
+        />
+      )}
+
+      </div>
+    </AdminLayout>
   );
 };
 
