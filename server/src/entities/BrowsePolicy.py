@@ -4,7 +4,9 @@ from src.database.core import Base
 
 
 class BrowsePolicy(Base):
-    __tablename__ = "policies"
+    """Insurance product catalog rows (distinct from user-owned `policies` records)."""
+
+    __tablename__ = "catalog_policies"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
