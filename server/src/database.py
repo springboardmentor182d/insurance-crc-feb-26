@@ -1,46 +1,67 @@
+# =========================
+# 1. Imports
+# =========================
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+# =========================
+# 2. Load .env
+# =========================
 load_dotenv()
 
+# =========================
+# 3. Get DATABASE_URL
+# =========================
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
-    raise ValueError(
-        "DATABASE_URL environment variable is not set. "
-        "Please configure PostgreSQL connection in server/.env"
-    )
+    raise ValueError("DATABASE_URL is not set in .env file")
 
+# ✅ Enforce PostgreSQL only (mentor requirement)
 if not DATABASE_URL.startswith("postgresql"):
-    raise ValueError(
-        f"Invalid DATABASE_URL '{DATABASE_URL}'. This backend supports PostgreSQL only."
-    )
+    raise ValueError("Only PostgreSQL is supported")
 
+# =========================
+# 4. Create Engine
+# =========================
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    pool_recycle=3600,
-    echo=False,
+    echo=True  # Optional: shows SQL logs (good for debugging)
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# =========================
+# 5. Session
+# =========================
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+# =========================
+# 6. Base Model
+# =========================
 Base = declarative_base()
 
-
+# =========================
+# 7. Dependency (DB Session)
+# =========================
 def get_db():
-    """Yield a request-scoped database session."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-
+# =========================
+# 8. Initialize DB
+# =========================
 def init_db():
-    """Create all declared tables in PostgreSQL if they do not exist."""
-    Base.metadata.create_all(bind=engine)
-
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("Database connected & tables created successfully")
+    except Exception as e:
+        print(" Database connection failed:", e)
+        raise e
