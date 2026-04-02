@@ -2,8 +2,10 @@ from .admin_stats import get_admin_stats_snapshot
 from .claims_trends import get_claims_trends_snapshot
 from .policy_distribution import get_policy_distribution_snapshot
 from .recent_activity import get_recent_activity_snapshot
-from .revenue import get_revenue_snapshot
 from .top_adjusters import get_top_adjusters_snapshot
+
+# ✅ FIXED IMPORT
+import src.database.admin_dashboard.repository.revenue as revenue
 
 __all__ = [
     "get_admin_stats_snapshot",
@@ -13,3 +15,6 @@ __all__ = [
     "get_revenue_snapshot",
     "get_top_adjusters_snapshot",
 ]
+
+# ✅ expose function manually
+get_revenue_snapshot = revenue.get_revenue_snapshot
