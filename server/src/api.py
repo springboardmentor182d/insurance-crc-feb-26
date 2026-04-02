@@ -13,6 +13,7 @@ from src.recommendations.controller import router as recommendations_router  # â
 # [web:19]
 from src.admin.policy_approvals.controller import router as policy_approvals_router
 
+from src.admin.manage_claims.controller import router as manage_claims_router  # â¬… add this
 
 api_router = APIRouter()
 
@@ -27,9 +28,5 @@ api_router.include_router(manage_policies_router, prefix="/admin", tags=["Admin 
 api_router.include_router(browse_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(active_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(claims_router)
-#api_router.include_router(api_router, prefix="/api/v1")
-api_router.include_router(
-    recommendations_router,
-    prefix="/recommendations",
-    tags=["Recommendations"],
-)
+api_router.include_router(recommendations_router,prefix="/recommendations",tags=["Recommendations"])
+api_router.include_router(manage_claims_router, prefix="/admin/claims", tags=["Admin Claims"])

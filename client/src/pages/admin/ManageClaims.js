@@ -1,43 +1,134 @@
-import AdminLayout from "../../layout/admin/AdminLayout";
-import { FiFileText } from "react-icons/fi";
+import { useManageClaims } from '../../features/admin/manageclaims/hooks/useManageClaims';
+import StatsCards from '../../features/admin/manageclaims/components/StatsCards';
+import ClaimsTable from '../../features/admin/manageclaims/components/ClaimsTable';
+import ClaimDetailModal from '../../features/admin/manageclaims/components/ClaimDetailModal';
+import ApproveClaimModal from '../../features/admin/manageclaims/components/ApproveClaimModal';
+import RejectClaimModal from '../../features/admin/manageclaims/components/RejectClaimModal';
+import AdminLayout from '../../layout/admin/AdminLayout';
+import '../../features/admin/manageclaims/styles/manageClaims.css';
+import '../../features/admin/dashboardColors.css';
 
 const ManageClaims = () => {
-    return (
-        <AdminLayout>
-            <div className="admin-dashboard-theme p-6 space-y-6">
+  const {
+    // data
+    stats,
+    claims,
+    loading,
+    error,
 
-                <div>
-                    <h1 className="text-3xl font-semibold text-gray-800">
-                        Manage Claims
-                    </h1>
-                    <p className="text-gray-500 mt-2">
-                        View and manage all insurance claims (Coming Soon 🚀)
-                    </p>
-                </div>
+    // search & filter
+    search,
+    setSearch,
+    statusFilter,
+    setStatusFilter,
 
-                <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 p-10 text-center">
-                    <FiFileText className="mx-auto text-5xl text-gray-400 mb-4" />
+    // detail modal
+    selectedClaim,
+    detailLoading,
+    isDetailOpen,
+    openDetail,
+    closeDetail,
 
-                    <h2 className="text-xl font-semibold text-gray-700">
-                        Feature Under Development
-                    </h2>
+    // approve modal
+    approveTarget,
+    approveNotes,
+    setApproveNotes,
+    isApproveOpen,
+    approveLoading,
+    openApprove,
+    closeApprove,
+    confirmApprove,
 
-                    <p className="text-gray-500 mt-2">
-                        This section will allow admins to review, approve, reject,
-                        and analyze all claims.
-                    </p>
+    // reject modal
+    rejectTarget,
+    rejectNotes,
+    setRejectNotes,
+    isRejectOpen,
+    rejectLoading,
+    rejectNotesError,
+    openReject,
+    closeReject,
+    confirmReject,
 
-                    <button
-                        className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
-                        onClick={() => alert("Coming soon 🚀")}
-                    >
-                        Explore Later
-                    </button>
-                </div>
+    // action error
+    actionError,
+  } = useManageClaims();
 
-            </div>
-        </AdminLayout>
-    );
+  return (
+    <AdminLayout>
+      <div className="admin-dashboard-theme">
+
+        {/* ── Page Header ── */}
+        <div className="claims-page-header">
+          <h1 className="claims-page-title">Manage Claims</h1>
+          <p className="claims-page-subtitle">Review and process insurance claims</p>
+        </div>
+
+        {/* ── Error Banner ── */}
+        {error && <div className="claims-error-banner">{error}</div>}
+
+        {loading ? (
+          <div className="claims-loading">Loading claims…</div>
+        ) : (
+          <>
+            {/* ── Stats Cards ── */}
+            <StatsCards stats={stats} />
+
+            {/* ── Claims Table ── */}
+            <ClaimsTable
+              claims={claims}
+              search={search}
+              setSearch={setSearch}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              onView={openDetail}
+              onApprove={openApprove}
+              onReject={openReject}
+            />
+          </>
+        )}
+
+        {/* ── Detail Modal ── */}
+        {isDetailOpen && (
+          <ClaimDetailModal
+            claim={selectedClaim}
+            loading={detailLoading}
+            onClose={closeDetail}
+            onApprove={openApprove}
+            onReject={openReject}
+          />
+        )}
+
+        {/* ── Approve Modal ── */}
+        {isApproveOpen && (
+          <ApproveClaimModal
+            claim={approveTarget}
+            notes={approveNotes}
+            setNotes={setApproveNotes}
+            onConfirm={confirmApprove}
+            onClose={closeApprove}
+            loading={approveLoading}
+            actionError={actionError}
+          />
+        )}
+
+        {/* ── Reject Modal ── */}
+        {isRejectOpen && (
+          <RejectClaimModal
+            claim={rejectTarget}
+            notes={rejectNotes}
+            setNotes={setRejectNotes}
+            notesError={rejectNotesError}
+            onConfirm={confirmReject}
+            onClose={closeReject}
+            loading={rejectLoading}
+            actionError={actionError}
+          />
+        )}
+
+      </div>
+    </AdminLayout>
+  );
 };
 
 export default ManageClaims;

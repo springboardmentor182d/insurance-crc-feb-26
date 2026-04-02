@@ -53,6 +53,7 @@ class Claim(Base):
         Numeric(12, 2), nullable=True
     )
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    review_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     fraud_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     submitted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
