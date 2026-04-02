@@ -11,7 +11,7 @@ def create_claim(db: Session, user_id: int, payload):
         user_id=user_id,
         claim_amount=payload.claim_amount,
         description=payload.description,
-        status=ClaimStatus.PENDING,
+        status=ClaimStatus.pending
         submitted_at=datetime.utcnow(),
     )
 

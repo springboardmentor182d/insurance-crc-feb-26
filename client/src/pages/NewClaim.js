@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import Sidebar from "../layout/Sidebar";
+import Sidebar from "../layout/user/Sidebar";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://127.0.0.1:8000/api/v1/claims";
+const API = "http://127.0.0.1:8000/api/v1/claims/";
 
 export default function NewClaim() {
   const navigate = useNavigate();
@@ -21,76 +21,101 @@ export default function NewClaim() {
     additional: "",
   });
 
+  const [files, setFiles] = useState([]);
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ SUBMIT
+  // FILE HANDLING
+  const handleFileChange = (e) => {
+    const selected = Array.from(e.target.files);
+    setFiles((prev) => [...prev, ...selected]);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const dropped = Array.from(e.dataTransfer.files);
+    setFiles((prev) => [...prev, ...dropped]);
+  };
+
+  const handleRemove = (index) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
+  // ✅ FINAL SUBMIT
   const handleSubmit = async () => {
     try {
-      const res = await fetch(API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          policy_id: Number(form.policy_id),
-          claim_amount: Number(form.amount),
-          description: form.description,
-        }),
+      const formData = new FormData();
+
+      formData.append("policy_id", form.policy_id);
+      formData.append("claim_amount", form.amount);
+      formData.append("description", form.description || "");
+
+      files.forEach((file) => {
+        formData.append("files", file);
       });
 
-      if (!res.ok) throw new Error("Failed");
+      const response = await fetch(API, {
+        method: "POST",
+        body: formData,
+      });
 
-      alert("✅ Claim Submitted!");
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error(data);
+        alert("Submission Failed ❌");
+        return;
+      }
+
+      // ✅ SUCCESS → navigate instead of warning
+      alert("Claim Submitted Successfully ✅");
       navigate("/claims");
-    } catch (err) {
-      alert("❌ Submission Failed");
+
+    } catch (error) {
+      console.error(error);
+      alert("Error submitting claim ❌");
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-50">
-      
       {/* SIDEBAR */}
       <Sidebar />
 
-      {/* MAIN */}
-      <div className="flex-1 p-8 overflow-y-auto">
-
-        {/* HEADER */}
+      {/* MAIN CONTENT */}
+      <div className="flex-1 ml-64 p-8 overflow-y-auto">
         <h1 className="text-2xl font-bold mb-1">File New Claim</h1>
         <p className="text-gray-500 mb-6">
           Complete the form below to submit your claim
         </p>
 
         {/* STEPPER */}
-        <div className="bg-white p-6 rounded-xl border mb-6 flex items-center justify-between">
-          
-          {/* STEP 1 */}
+        <div className="bg-white p-6 rounded-xl border mb-6 flex items-center">
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 flex items-center justify-center rounded-full ${step >= 1 ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
               1
             </div>
-            <span className="text-sm">Claim Details</span>
+            <span>Claim Details</span>
           </div>
 
           <div className="flex-1 h-[2px] bg-gray-300 mx-4"></div>
 
-          {/* STEP 2 */}
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 flex items-center justify-center rounded-full ${step >= 2 ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
               2
             </div>
-            <span className="text-sm">Incident Information</span>
+            <span>Incident Information</span>
           </div>
 
           <div className="flex-1 h-[2px] bg-gray-300 mx-4"></div>
 
-          {/* STEP 3 */}
           <div className="flex items-center gap-3">
             <div className={`w-8 h-8 flex items-center justify-center rounded-full ${step >= 3 ? "bg-blue-600 text-white" : "bg-gray-200"}`}>
               3
             </div>
-            <span className="text-sm">Documents & Review</span>
+            <span>Documents & Review</span>
           </div>
         </div>
 
@@ -99,40 +124,45 @@ export default function NewClaim() {
           <div className="bg-white p-6 rounded-xl border">
             <h3 className="font-semibold mb-4">Claim Details</h3>
 
-            <label className="block mb-2">Select Policy *</label>
+            <label>Select Policy *</label>
             <select
               name="policy_id"
+              value={form.policy_id}
               onChange={handleChange}
               className="w-full border p-3 rounded mb-4"
+              required
             >
-              <option value="">Choose a policy</option>
-              <option value="1">Auto Policy</option>
-              <option value="2">Home Policy</option>
+              <option value="">Choose</option>
+              <option value="1">Auto</option>
+              <option value="2">Home</option>
             </select>
 
-            <label className="block mb-2">Incident Date *</label>
+            <label>Date *</label>
             <input
               type="date"
               name="date"
-              className="w-full border p-3 rounded mb-4"
+              value={form.date}
               onChange={handleChange}
+              className="w-full border p-3 rounded mb-4"
             />
 
-            <label className="block mb-2">Incident Time</label>
+            <label>Time</label>
             <input
               type="time"
               name="time"
-              className="w-full border p-3 rounded mb-4"
+              value={form.time}
               onChange={handleChange}
+              className="w-full border p-3 rounded mb-4"
             />
 
-            <label className="block mb-2">Estimated Claim Amount *</label>
+            <label>Amount *</label>
             <input
               type="number"
               name="amount"
-              placeholder="0.00"
-              className="w-full border p-3 rounded mb-4"
+              value={form.amount}
               onChange={handleChange}
+              className="w-full border p-3 rounded mb-4"
+              required
             />
 
             <div className="flex justify-end">
@@ -151,46 +181,28 @@ export default function NewClaim() {
           <div className="bg-white p-6 rounded-xl border">
             <h3 className="font-semibold mb-4">Incident Information</h3>
 
-            <label className="block mb-2">Incident Location *</label>
             <input
               name="location"
-              placeholder="Street address, city, state"
-              className="w-full border p-3 rounded mb-4"
+              placeholder="Location"
+              value={form.location}
               onChange={handleChange}
+              className="w-full border p-3 rounded mb-4"
             />
 
-            <label className="block mb-2">Description of Incident *</label>
             <textarea
               name="description"
-              placeholder="Please provide details..."
-              className="w-full border p-3 rounded mb-4"
+              placeholder="Description"
+              value={form.description}
               onChange={handleChange}
+              className="w-full border p-3 rounded mb-4"
             />
 
-            <label className="block mb-2">
-              <input type="checkbox" className="mr-2" />
-              Police report filed for this incident
-            </label>
-
-            <label className="block mb-2">Police Report Number</label>
-            <input
-              name="report_number"
-              className="w-full border p-3 rounded mb-4"
-              onChange={handleChange}
-            />
-
-            <label className="block mb-2">Witnesses (if any)</label>
-            <textarea
-              name="witnesses"
-              className="w-full border p-3 rounded mb-4"
-              onChange={handleChange}
-            />
-
-            <label className="block mb-2">Additional Information</label>
             <textarea
               name="additional"
-              className="w-full border p-3 rounded mb-4"
+              placeholder="Additional Info"
+              value={form.additional}
               onChange={handleChange}
+              className="w-full border p-3 rounded mb-4"
             />
 
             <div className="flex justify-between">
@@ -210,17 +222,38 @@ export default function NewClaim() {
           <div className="bg-white p-6 rounded-xl border">
             <h3 className="font-semibold mb-4">Documents & Review</h3>
 
-            <p className="text-gray-500 mb-4">
-              Review your claim before submitting
-            </p>
+            <div
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              className="border-2 border-dashed p-10 text-center mb-6 rounded-lg bg-gray-50"
+            >
+              Drag & Drop or
+              <label className="text-blue-600 cursor-pointer ml-2">
+                Choose Files
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
 
-            <pre className="bg-gray-100 p-4 rounded mb-4">
-              {JSON.stringify(form, null, 2)}
-            </pre>
+            {files.map((file, i) => (
+              <div key={i} className="flex justify-between bg-gray-100 p-2 mb-2 rounded">
+                <span>{file.name}</span>
+                <button onClick={() => handleRemove(i)}>Remove</button>
+              </div>
+            ))}
+
+            <div className="bg-gray-50 p-4 rounded mb-4">
+              <p>Policy: {form.policy_id}</p>
+              <p>Amount: {form.amount}</p>
+              <p>Description: {form.description}</p>
+            </div>
 
             <div className="flex justify-between">
               <button onClick={() => setStep(2)}>Previous</button>
-
               <button
                 onClick={handleSubmit}
                 className="bg-green-600 text-white px-6 py-2 rounded"
@@ -230,7 +263,6 @@ export default function NewClaim() {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

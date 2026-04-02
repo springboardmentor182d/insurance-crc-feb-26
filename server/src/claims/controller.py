@@ -1,154 +1,122 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+﻿from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
+from sqlalchemy import or_
+from typing import List
 
-<<<<<<< HEAD
 from src.database.core import get_db
 from src.database.admin_dashboard.models.claims import Claim, ClaimStatus
-from src.claims.schema import ClaimCreateRequest
-=======
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from pydantic import BaseModel
-from sqlalchemy.orm import Session, joinedload
->>>>>>> 8e4b66ad0c7dfd042e2fd6d882788e4e1d90f620
 
-router = APIRouter(prefix="/api/v1/claims", tags=["Claims"])
-
-
-<<<<<<< HEAD
-# ✅ CREATE CLAIM
-@router.post("")
-def create_claim(payload: ClaimCreateRequest, db: Session = Depends(get_db)):
-=======
-class ClaimCreateRequest(BaseModel):
-    policy_id: int
-    claim_amount: float
-    description: str | None = None
-
-
+# ✅ ROUTER
 router = APIRouter(prefix="/claims", tags=["Claims"])
 
 
-def run_fraud_checks_background(claim_id: int) -> None:
-    with SessionLocal() as session:
-        run_fraud_checks(claim_id, session)
+# ✅ STATUS MAP (UI friendly)
+def map_status(status):
+    if status == "pending":
+        return "IN_REVIEW"
+    if status == "approved":
+        return "APPROVED"
+    if status == "paid":
+        return "PAID"
+    if status == "rejected":
+        return "REJECTED"
+    return status
 
 
-def _to_title(value: str | None) -> str:
-    if not value:
-        return ""
-    return value.replace("_", " ").title()
-
-
-def _enum_value(value) -> str:
-    return getattr(value, "value", str(value))
-
-
-def _serialize_claim(claim: Claim) -> dict[str, str]:
-    raw_status = _enum_value(claim.status).lower()
-    status_map = {
-        "pending": "Pending",
-        "approved": "Resolved",
-        "rejected": "Rejected",
-        "fraudulent": "Fraudulent",
-    }
-    claim_type = (
-        _to_title(_enum_value(claim.policy.policy_type))
-        if claim.policy is not None
-        else "Policy"
-    )
-
-    return {
-        "id": claim.claim_number or f"CLM-{claim.id}",
-        "type": claim_type,
-        "date": claim.submitted_at.date().isoformat() if claim.submitted_at else "",
-        "amount": f"${float(claim.claim_amount):,.2f}",
-        "status": status_map.get(raw_status, _to_title(raw_status)),
-    }
-
-
-@router.get("")
-def list_claims(
-    db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id),
-):
-    claims = (
-        db.query(Claim)
-        .options(joinedload(Claim.policy))
-        .filter(Claim.user_id == current_user_id)
-        .order_by(Claim.submitted_at.desc())
-        .all()
-    )
-    return [_serialize_claim(claim) for claim in claims]
-
-
-@router.post("", status_code=status.HTTP_201_CREATED)
+# ✅ CREATE CLAIM
+@router.post("/")
 def create_claim(
-    payload: ClaimCreateRequest,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id),
+    policy_id: int = Form(...),
+    claim_amount: float = Form(...),
+    description: str = Form(None),
+    files: List[UploadFile] = File([]),
+    db: Session = Depends(get_db)
 ):
-    policy = db.get(Policy, payload.policy_id)
-    if not policy:
-        raise HTTPException(status_code=404, detail="Policy not found")
->>>>>>> 8e4b66ad0c7dfd042e2fd6d882788e4e1d90f620
+    try:
+        claim = Claim(
+            policy_id=policy_id,
+            user_id=1,  # TODO: replace with actual logged-in user
+            claim_amount=claim_amount,
+            description=description,
+            status=ClaimStatus.pending  # ✅ FIXED
+        )
 
-    claim = Claim(
-        policy_id=payload.policy_id,
-        user_id=1,
-        claim_amount=payload.amount,
-        description=payload.description,
+        db.add(claim)
+        db.flush()
 
-        incident_date=payload.date,
-        incident_time=payload.time,
-        location=payload.location,
-        report_number=payload.report_number,
-        witnesses=payload.witnesses,
-        additional_info=payload.additional,
+        # Generate claim number
+        claim.claim_number = f"CLM-{datetime.utcnow().year}-{claim.id:05d}"
 
-        status=ClaimStatus.PENDING.value  # ✅ important
-    )
+        # File handling (basic)
+        for file in files:
+            print("Uploaded:", file.filename)
 
-    db.add(claim)
-    db.flush()
+        db.commit()
+        db.refresh(claim)
 
-    claim.claim_number = f"CLM-{datetime.utcnow().year}-{claim.id:05d}"
+        return {
+            "id": claim.id,
+            "claim_number": claim.claim_number,
+            "status": map_status(claim.status.value if hasattr(claim.status, "value") else claim.status)
+        }
 
-    db.commit()
-
-    return {
-        "id": claim.id,
-        "claim_number": claim.claim_number,
-        "status": claim.status
-    }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ✅ GET ALL CLAIMS
-@router.get("")
-def get_claims(db: Session = Depends(get_db)):
+@router.get("/")
+def get_claims(
+    status: str = None,
+    search: str = None,
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    try:
+        query = db.query(Claim).options(
+            joinedload(Claim.policy),
+            joinedload(Claim.adjuster)  # safe if relationship exists
+        )
 
-    claims = db.query(Claim).all()
+        # FILTER
+        if status:
+            status = status.lower()
+            if status == "in_review":
+                status = "pending"
+            query = query.filter(Claim.status == status)
 
-    return [
-        {
-            "id": c.id,
-            "claim_number": c.claim_number,
-            "claim_amount": c.claim_amount,
-            "status": c.status,
-            "submitted_at": c.submitted_at,
-        }
-        for c in claims
-    ]
+        # SEARCH
+        if search:
+            query = query.filter(
+                or_(
+                    Claim.claim_number.ilike(f"%{search}%"),
+                    Claim.description.ilike(f"%{search}%")
+                )
+            )
 
+        # PAGINATION
+        offset = (page - 1) * limit
+        claims = query.offset(offset).limit(limit).all()
 
-# ✅ GET CLAIM DETAILS
-@router.get("/{claim_id}")
-def get_claim(claim_id: int, db: Session = Depends(get_db)):
+        return [
+            {
+                "id": c.id,
+                "claim_number": c.claim_number,
+                "claim_amount": float(c.claim_amount),
+                "status": map_status(c.status.value if hasattr(c.status, "value") else c.status),
+                "submitted_at": c.submitted_at,
+                "processed_at": c.processed_at,
+                "description": c.description,
+                "policy": {
+                    "policy_number": c.policy.policy_number if c.policy else None,
+                    "policy_type": c.policy.policy_type if c.policy else None,
+                }
+            }
+            for c in claims
+        ]
 
-    claim = db.get(Claim, claim_id)
-
-    if not claim:
-        raise HTTPException(status_code=404, detail="Not found")
-
-    return claim
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

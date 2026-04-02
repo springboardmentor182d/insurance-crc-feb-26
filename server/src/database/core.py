@@ -19,9 +19,6 @@ def get_db():
     try:
         yield db
     finally:
-<<<<<<< HEAD
-        db.close()
-=======
         db.close()
 
 
@@ -35,4 +32,3 @@ def create_tables() -> None:
     import src.entities.policy_document  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
->>>>>>> 8e4b66ad0c7dfd042e2fd6d882788e4e1d90f620
