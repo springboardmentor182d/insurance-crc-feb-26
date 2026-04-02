@@ -7,6 +7,7 @@ const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+console.log("API_BASE_URL:", API_BASE_URL);
 
 let refreshPromise = null;
 

@@ -37,7 +37,7 @@ const normalizeFeatures = (features) => {
   return [];
 };
 
-const PolicyCard = ({ policy, selected, onToggleSelect, onGetQuote, isAdded  }) => {
+const PolicyCard = ({ policy, selected, onToggleSelect, onGetQuote, isAdded }) => {
   const deductibleLabel =
     policy.deductible_amount != null
       ? formatCurrency(policy.deductible_amount)
@@ -52,11 +52,10 @@ const PolicyCard = ({ policy, selected, onToggleSelect, onGetQuote, isAdded  }) 
 
   return (
     <div
-      className={`relative flex flex-col border-2 rounded-xl bg-white shadow-sm transition-all ${
-        selected
-          ? 'border-blue-600 ring-2 ring-blue-100'
-          : 'border-gray-200 hover:border-blue-300'
-      }`}
+      className={`relative flex flex-col border-2 rounded-xl bg-white shadow-sm transition-all ${selected
+        ? 'border-blue-600 ring-2 ring-blue-100'
+        : 'border-gray-200 hover:border-blue-300'
+        }`}
     >
       <div className="flex items-start justify-between p-4 border-b border-gray-100">
         <div className="flex items-start space-x-3">
@@ -82,9 +81,8 @@ const PolicyCard = ({ policy, selected, onToggleSelect, onGetQuote, isAdded  }) 
         <button
           type="button"
           onClick={onToggleSelect}
-          className={`w-6 h-6 flex items-center justify-center rounded-md border ${
-            selected ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'
-          }`}
+          className={`w-6 h-6 flex items-center justify-center rounded-md border ${selected ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'
+            }`}
           aria-label={selected ? 'Deselect policy' : 'Select policy'}
         >
           {selected && <span className="text-white text-xs">OK</span>}
@@ -201,7 +199,12 @@ const BrowsePolicies = () => {
     const loadAlreadyAdded = async () => {
       try {
         const active = await fetchActivePolicies();
-        const ids = new Set(active.map((p) => p.policy_id).filter(Boolean));
+        const ids = new Set(
+          active
+            .filter((p) => p.status === "ACTIVE")   // 🔥 FIX
+            .map((p) => p.policy_id)
+            .filter(Boolean)
+        );
         setAlreadyAddedIds(ids);
       } catch {
         // silently ignore
@@ -304,7 +307,7 @@ const BrowsePolicies = () => {
       } else {
         setQuoteError(
           requestError?.response?.data?.detail ||
-            'Failed to add quote to active policies.',
+          'Failed to add quote to active policies.',
         );
       }
     } finally {
@@ -361,11 +364,10 @@ const BrowsePolicies = () => {
                   key={filter.id}
                   type="button"
                   onClick={() => setActiveCategory(filter.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                    activeCategory === filter.id
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${activeCategory === filter.id
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                    }`}
                 >
                   {filter.label}
                 </button>

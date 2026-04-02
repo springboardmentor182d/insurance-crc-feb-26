@@ -8,45 +8,36 @@ from src.entities.active_policy import ActivePolicy
 from src.active_policies.models import ActivePoliciesSummary
 
 
-def get_pending_policies(db):
-    return db.query(ActivePolicy).filter(ActivePolicy.status == "PENDING").all()
 
 EXPIRING_SOON_DAYS = 30
 
 
-def list_active_policies(db: Session, user_id: int) -> List[ActivePolicy]:
-    """
-    Return all active policies for the given user.
 
-    A policy is considered active if:
-    - status is 'ACTIVE'
-    - end_date is today or in the future
-    """
-    today = date.today()
+
+
+def list_active_policies(db: Session, user_id: int):
     return (
         db.query(ActivePolicy)
-        .options(selectinload(ActivePolicy.documents))
         .filter(
             ActivePolicy.user_id == user_id,
-            ActivePolicy.status == "ACTIVE",
-            ActivePolicy.end_date >= today,
+            
         )
-        .order_by(ActivePolicy.end_date.asc())
         .all()
     )
 
-
 def compute_summary(policies: List[ActivePolicy]) -> ActivePoliciesSummary:
-    """Aggregate summary metrics for the dashboard cards."""
+    """Aggregate summary metrics for ACTIVE policies only."""
     today = date.today()
     expiring_threshold = today + timedelta(days=EXPIRING_SOON_DAYS)
 
-    active_count = len(policies)
+    active_policies = [p for p in policies if p.status == "ACTIVE"]  # 🔥 FIX
+
+    active_count = len(active_policies)
     expiring_soon_count = 0
     total_coverage = Decimal("0")
     annual_premium = Decimal("0")
 
-    for p in policies:
+    for p in active_policies:
         # Expiring soon
         if p.end_date is not None and today <= p.end_date <= expiring_threshold:
             expiring_soon_count += 1
@@ -63,4 +54,3 @@ def compute_summary(policies: List[ActivePolicy]) -> ActivePoliciesSummary:
         total_coverage=total_coverage,
         annual_premium=annual_premium,
     )
-

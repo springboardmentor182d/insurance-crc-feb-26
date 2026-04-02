@@ -2,12 +2,17 @@ import { useEffect, useState } from "react";
 import AdminLayout from "../../layout/admin/AdminLayout";
 import { fetchPendingPolicies } from "../../api/adminApi";
 import { approvePolicy, rejectPolicy } from "../../api/adminApi";
+
 const PolicyApprovals = () => {
     const [policies, setPolicies] = useState([]);
 
     const loadPolicies = () => {
         fetchPendingPolicies().then(setPolicies);
     };
+    const [selectedPolicy, setSelectedPolicy] = useState(null);
+    const [actionType, setActionType] = useState(null); // APPROVE / REJECT
+    const [reason, setReason] = useState("");
+
 
     useEffect(() => {
         loadPolicies();
@@ -18,15 +23,22 @@ const PolicyApprovals = () => {
 
         return () => clearInterval(interval);
     }, []);
-    const handleApprove = async (id) => {
-        await approvePolicy(id);
-        loadPolicies(); // refresh data
-    };
+    const handleConfirmAction = async () => {
+        if (!selectedPolicy) return;
 
-    const handleReject = async (id) => {
-        await rejectPolicy(id);
+        if (actionType === "APPROVE") {
+            await approvePolicy(selectedPolicy.id);
+        } else {
+            await rejectPolicy(selectedPolicy.id, reason);
+        }
+
+        setSelectedPolicy(null);
+        setReason("");
+        setActionType(null);
         loadPolicies();
     };
+
+    
     return (
         <AdminLayout>
             <div className="p-6">
@@ -76,14 +88,20 @@ const PolicyApprovals = () => {
                                     <td className="p-3 flex gap-2">
                                         <button
                                             className="bg-green-600 text-white px-3 py-1 rounded"
-                                            onClick={() => handleApprove(p.id)}
+                                            onClick={() => {
+                                                setSelectedPolicy(p);
+                                                setActionType("APPROVE");
+                                            }}
                                         >
                                             Approve
                                         </button>
 
                                         <button
                                             className="bg-red-500 text-white px-3 py-1 rounded"
-                                            onClick={() => handleReject(p.id)}
+                                            onClick={() => {
+                                                setSelectedPolicy(p);
+                                                setActionType("REJECT");
+                                            }}
                                         >
                                             Reject
                                         </button>
@@ -94,6 +112,94 @@ const PolicyApprovals = () => {
                     </tbody>
                 </table>
             </div>
+            {selectedPolicy && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl w-full max-w-lg p-6 shadow-lg">
+
+                        <h2 className="text-xl font-semibold mb-4">
+                            {actionType === "APPROVE" ? "Approve Policy" : "Reject Policy"}
+                        </h2>
+
+                        {/* USER DETAILS */}
+
+
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-500">User Details</p>
+
+                            <p className="font-semibold">{selectedPolicy.user?.name}</p>
+                            <p className="text-sm text-gray-500">{selectedPolicy.user?.email}</p>
+
+                            <p className="text-sm mt-2">Age: {selectedPolicy.user?.age}</p>
+                            <p className="text-sm">Income: ₹{selectedPolicy.user?.income}</p>
+                        </div>
+
+
+                        {/* POLICY DETAILS */}
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-500">Policy</p>
+                            <p className="font-semibold">{selectedPolicy.product_name}</p>
+
+                            <p className="text-sm text-gray-500 mt-2">Category</p>
+                            <p>{selectedPolicy.category}</p>
+
+                            <p className="text-sm text-gray-500 mt-2">Coverage</p>
+                            <p>${selectedPolicy.coverage_amount}</p>
+
+                            <p className="text-sm text-gray-500 mt-2">Premium</p>
+                            <p>${selectedPolicy.premium_annual}</p>
+                        </div>
+                        <div className="mb-4">
+                            <p className="text-sm text-gray-500">Eligibility</p>
+
+                            {selectedPolicy.is_eligible ? (
+                                <span className="text-green-600 font-semibold">
+                                    ✅ Eligible
+                                </span>
+                            ) : (
+                                <span className="text-red-600 font-semibold">
+                                    ❌ Not Eligible
+                                </span>
+                            )}
+                        </div>
+
+                        {/* REASON INPUT (ONLY FOR REJECT) */}
+                        {actionType === "REJECT" && (
+                            <div className="mb-4">
+                                <label className="text-sm text-gray-500">Reason</label>
+                                <textarea
+                                    value={reason}
+                                    onChange={(e) => setReason(e.target.value)}
+                                    className="w-full border rounded-lg p-2 mt-1"
+                                    placeholder="Enter rejection reason..."
+                                />
+                            </div>
+                        )}
+
+                        {/* ACTION BUTTONS */}
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setSelectedPolicy(null)}
+                                className="px-4 py-2 border rounded-lg"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={handleConfirmAction}
+                                disabled={!selectedPolicy.is_eligible}
+                                className={`px-4 py-2 text-white rounded-lg ${selectedPolicy.is_eligible
+                                        ? actionType === "APPROVE"
+                                            ? "bg-green-600"
+                                            : "bg-red-500"
+                                        : "bg-gray-400 cursor-not-allowed"
+                                    }`}
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 };
