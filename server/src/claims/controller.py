@@ -1,121 +1,122 @@
-﻿from __future__ import annotations
-
-from datetime import datetime
-
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
-from pydantic import BaseModel
+﻿from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.orm import Session, joinedload
+from datetime import datetime
+from sqlalchemy import or_
+from typing import List
 
-from src.auth import get_current_user_id
-from src.database.core import get_db, SessionLocal
-from src.database.admin_dashboard.enums.activity import ActivitySeverity, ActivityType
-from src.database.admin_dashboard.models import ActivityLog, Claim, ClaimStatus, Policy
-from src.services.fraud_engine import run_fraud_checks
+from src.database.core import get_db
+from src.database.admin_dashboard.models.claims import Claim, ClaimStatus
 
-
-class ClaimCreateRequest(BaseModel):
-    policy_id: int
-    claim_amount: float
-    description: str | None = None
-
-
+# ✅ ROUTER
 router = APIRouter(prefix="/claims", tags=["Claims"])
 
 
-def run_fraud_checks_background(claim_id: int) -> None:
-    with SessionLocal() as session:
-        run_fraud_checks(claim_id, session)
+# ✅ STATUS MAP (UI friendly)
+def map_status(status):
+    if status == "pending":
+        return "IN_REVIEW"
+    if status == "approved":
+        return "APPROVED"
+    if status == "paid":
+        return "PAID"
+    if status == "rejected":
+        return "REJECTED"
+    return status
 
 
-def _to_title(value: str | None) -> str:
-    if not value:
-        return ""
-    return value.replace("_", " ").title()
-
-
-def _enum_value(value) -> str:
-    return getattr(value, "value", str(value))
-
-
-def _serialize_claim(claim: Claim) -> dict[str, str]:
-    raw_status = _enum_value(claim.status).lower()
-    status_map = {
-        "pending": "Pending",
-        "approved": "Resolved",
-        "rejected": "Rejected",
-        "fraudulent": "Fraudulent",
-    }
-    claim_type = (
-        _to_title(_enum_value(claim.policy.policy_type))
-        if claim.policy is not None
-        else "Policy"
-    )
-
-    return {
-        "id": claim.claim_number or f"CLM-{claim.id}",
-        "type": claim_type,
-        "date": claim.submitted_at.date().isoformat() if claim.submitted_at else "",
-        "amount": f"${float(claim.claim_amount):,.2f}",
-        "status": status_map.get(raw_status, _to_title(raw_status)),
-    }
-
-
-@router.get("")
-def list_claims(
-    db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id),
-):
-    claims = (
-        db.query(Claim)
-        .options(joinedload(Claim.policy))
-        .filter(Claim.user_id == current_user_id)
-        .order_by(Claim.submitted_at.desc())
-        .all()
-    )
-    return [_serialize_claim(claim) for claim in claims]
-
-
-@router.post("", status_code=status.HTTP_201_CREATED)
+# ✅ CREATE CLAIM
+@router.post("/")
 def create_claim(
-    payload: ClaimCreateRequest,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db),
-    current_user_id: int = Depends(get_current_user_id),
+    policy_id: int = Form(...),
+    claim_amount: float = Form(...),
+    description: str = Form(None),
+    files: List[UploadFile] = File([]),
+    db: Session = Depends(get_db)
 ):
-    policy = db.get(Policy, payload.policy_id)
-    if not policy:
-        raise HTTPException(status_code=404, detail="Policy not found")
-
-    claim = Claim(
-        policy_id=payload.policy_id,
-        user_id=current_user_id,
-        status=ClaimStatus.PENDING,
-        claim_amount=payload.claim_amount,
-        description=payload.description,
-        submitted_at=datetime.utcnow(),
-    )
-    db.add(claim)
-    db.flush()
-
-    claim.claim_number = f"CLM-{datetime.utcnow().year}-{claim.id:05d}"
-
-    db.add(
-        ActivityLog(
-            user_id=current_user_id,
-            title=f"Claim {claim.claim_number} submitted",
-            action_type=ActivityType.CLAIM_SUBMITTED,
-            severity=ActivitySeverity.INFO,
-            entity_type="claim",
-            entity_id=claim.id,
+    try:
+        claim = Claim(
+            policy_id=policy_id,
+            user_id=1,  # TODO: replace with actual logged-in user
+            claim_amount=claim_amount,
+            description=description,
+            status=ClaimStatus.pending  # ✅ FIXED
         )
-    )
 
-    db.commit()
+        db.add(claim)
+        db.flush()
 
-    background_tasks.add_task(run_fraud_checks_background, claim.id)
+        # Generate claim number
+        claim.claim_number = f"CLM-{datetime.utcnow().year}-{claim.id:05d}"
 
-    return {
-        "id": claim.id,
-        "claim_number": claim.claim_number,
-        "status": claim.status.value,
-    }
+        # File handling (basic)
+        for file in files:
+            print("Uploaded:", file.filename)
+
+        db.commit()
+        db.refresh(claim)
+
+        return {
+            "id": claim.id,
+            "claim_number": claim.claim_number,
+            "status": map_status(claim.status.value if hasattr(claim.status, "value") else claim.status)
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ✅ GET ALL CLAIMS
+@router.get("/")
+def get_claims(
+    status: str = None,
+    search: str = None,
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    try:
+        query = db.query(Claim).options(
+            joinedload(Claim.policy),
+            joinedload(Claim.adjuster)  # safe if relationship exists
+        )
+
+        # FILTER
+        if status:
+            status = status.lower()
+            if status == "in_review":
+                status = "pending"
+            query = query.filter(Claim.status == status)
+
+        # SEARCH
+        if search:
+            query = query.filter(
+                or_(
+                    Claim.claim_number.ilike(f"%{search}%"),
+                    Claim.description.ilike(f"%{search}%")
+                )
+            )
+
+        # PAGINATION
+        offset = (page - 1) * limit
+        claims = query.offset(offset).limit(limit).all()
+
+        return [
+            {
+                "id": c.id,
+                "claim_number": c.claim_number,
+                "claim_amount": float(c.claim_amount),
+                "status": map_status(c.status.value if hasattr(c.status, "value") else c.status),
+                "submitted_at": c.submitted_at,
+                "processed_at": c.processed_at,
+                "description": c.description,
+                "policy": {
+                    "policy_number": c.policy.policy_number if c.policy else None,
+                    "policy_type": c.policy.policy_type if c.policy else None,
+                }
+            }
+            for c in claims
+        ]
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

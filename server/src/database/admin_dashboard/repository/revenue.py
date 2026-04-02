@@ -1,8 +1,9 @@
 ﻿from __future__ import annotations
-
+print("✅ revenue.py loaded")
 from collections import defaultdict
 from datetime import datetime, timezone
 from decimal import Decimal
+
 
 from sqlalchemy import select
 
