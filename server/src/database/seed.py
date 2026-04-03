@@ -26,6 +26,8 @@ from src.database.admin_dashboard.models import (  # noqa: E402
     UserPreferences,
     UserRole,
 )
+from src.auth.db_models import AuthCredential  # noqa: E402
+from src.auth.security import hash_password  # noqa: E402
 from src.database.core import SessionLocal, create_tables  # noqa: E402
 from src.database.manage_policies.models import PolicyProfile  # noqa: E402
 from src.database.seeds import seed_fraud_rules  # noqa: E402
@@ -394,6 +396,21 @@ def _upsert_active_policy(
     return active_policy
 
 
+def _ensure_password_credentials(db, *, user_id: int, password: str) -> AuthCredential:
+    credentials = db.execute(
+        select(AuthCredential).where(AuthCredential.user_id == user_id)
+    ).scalar_one_or_none()
+
+    if credentials is None:
+        credentials = AuthCredential(
+            user_id=user_id,
+            password_hash=hash_password(password),
+        )
+        db.add(credentials)
+
+    return credentials
+
+
 def seed_database() -> None:
     create_tables()
     seed_fraud_rules()
@@ -552,7 +569,7 @@ def seed_database() -> None:
             policy_id=policy_health.id,
             user_id=customer_one.id,
             adjuster_id=adjuster_one.id,
-            status=ClaimStatus.PENDING,
+            status=ClaimStatus.pending,
             claim_amount=Decimal("42000.00"),
             approved_amount=None,
             description="Emergency hospitalization reimbursement for dengue treatment and diagnostics.",
@@ -567,7 +584,7 @@ def seed_database() -> None:
             policy_id=policy_auto.id,
             user_id=customer_one.id,
             adjuster_id=adjuster_one.id,
-            status=ClaimStatus.APPROVED,
+            status=ClaimStatus.approved,
             claim_amount=Decimal("18000.00"),
             approved_amount=Decimal("16500.00"),
             description="Rear bumper and tail light repair reimbursement after a low-speed collision.",
@@ -582,7 +599,7 @@ def seed_database() -> None:
             policy_id=policy_home.id,
             user_id=customer_two.id,
             adjuster_id=adjuster_two.id,
-            status=ClaimStatus.REJECTED,
+            status=ClaimStatus.rejected,
             claim_amount=Decimal("25000.00"),
             approved_amount=None,
             description="Kitchen water leakage claim reported after the home policy had already lapsed.",
@@ -597,7 +614,7 @@ def seed_database() -> None:
             policy_id=policy_life.id,
             user_id=customer_two.id,
             adjuster_id=adjuster_two.id,
-            status=ClaimStatus.FRAUDULENT,
+            status=ClaimStatus.fraudulent,
             claim_amount=Decimal("250000.00"),
             approved_amount=None,
             description="High-value life event claim with inconsistent beneficiary evidence and duplicate attachments.",
@@ -612,7 +629,7 @@ def seed_database() -> None:
             policy_id=policy_life.id,
             user_id=customer_two.id,
             adjuster_id=adjuster_one.id,
-            status=ClaimStatus.APPROVED,
+            status=ClaimStatus.approved,
             claim_amount=Decimal("50000.00"),
             approved_amount=Decimal("42000.00"),
             description="Critical illness rider payout supported by oncologist reports and discharge summary.",
@@ -689,6 +706,9 @@ def seed_database() -> None:
         _upsert_preferences(db, user_id=admin.id)
         _upsert_preferences(db, user_id=customer_one.id)
         _upsert_preferences(db, user_id=customer_two.id)
+        _ensure_password_credentials(db, user_id=admin.id, password="Password1")
+        _ensure_password_credentials(db, user_id=customer_one.id, password="Password1")
+        _ensure_password_credentials(db, user_id=customer_two.id, password="Password1")
     
         _upsert_active_policy(
             db,

@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getPreferences, updatePreferences } from '../features/preferences/services/preferencesService';
+import { TOKEN_KEYS } from '../data/constants';
 
 const ThemeContext = createContext({ theme: 'light', toggleTheme: () => {} });
 
 export const useTheme = () => useContext(ThemeContext);
+
+const hasSessionToken = () => Boolean(localStorage.getItem(TOKEN_KEYS.ACCESS));
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(
@@ -21,6 +24,10 @@ export const ThemeProvider = ({ children }) => {
   // On mount: sync theme from backend
   useEffect(() => {
     const loadTheme = async () => {
+      if (!hasSessionToken()) {
+        return;
+      }
+
       try {
         const data = await getPreferences();
         if (data?.theme === 'light' || data?.theme === 'dark') {
@@ -35,6 +42,11 @@ export const ThemeProvider = ({ children }) => {
 
   const toggleTheme = async (newTheme) => {
     setTheme(newTheme);
+
+    if (!hasSessionToken()) {
+      return;
+    }
+
     try {
       await updatePreferences({ theme: newTheme });
     } catch {

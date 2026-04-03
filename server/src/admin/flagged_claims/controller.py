@@ -51,7 +51,7 @@ def list_flagged_claims(
     status_value = _normalize_status(status_filter)
 
     base_filters = [
-        or_(Claim.fraud_score > 0, Claim.status == ClaimStatus.FRAUDULENT)
+        or_(Claim.fraud_score > 0, Claim.status == ClaimStatus.fraudulent)
     ]
 
     if status_value and status_value != "all":
@@ -125,18 +125,18 @@ def flagged_claims_stats(
     current_user=Depends(require_admin),
 ):
     total_stmt = select(func.count()).select_from(Claim).where(
-        or_(Claim.fraud_score > 0, Claim.status == ClaimStatus.FRAUDULENT)
+        or_(Claim.fraud_score > 0, Claim.status == ClaimStatus.fraudulent)
     )
     pending_stmt = select(func.count()).select_from(Claim).where(
-        Claim.status == ClaimStatus.PENDING,
+        Claim.status == ClaimStatus.pending,
         Claim.fraud_score.is_not(None),
         Claim.fraud_score > 0,
     )
     fraud_stmt = select(func.count()).select_from(Claim).where(
-        Claim.status == ClaimStatus.FRAUDULENT
+        Claim.status == ClaimStatus.fraudulent
     )
     cleared_stmt = select(func.count()).select_from(Claim).where(
-        Claim.status == ClaimStatus.APPROVED,
+        Claim.status == ClaimStatus.approved,
         Claim.fraud_score.is_not(None),
         Claim.fraud_score > 0,
     )
@@ -164,7 +164,7 @@ def confirm_fraud(
     if not claim:
         raise HTTPException(status_code=404, detail="Claim not found")
 
-    claim.status = ClaimStatus.FRAUDULENT
+    claim.status = ClaimStatus.fraudulent
     claim.processed_at = datetime.utcnow()
 
     db.add(
@@ -192,7 +192,7 @@ def clear_claim(
         raise HTTPException(status_code=404, detail="Claim not found")
 
     claim.fraud_score = 0.0
-    claim.status = ClaimStatus.PENDING
+    claim.status = ClaimStatus.pending
 
     db.execute(delete(FraudFlag).where(FraudFlag.claim_id == claim_id))
 

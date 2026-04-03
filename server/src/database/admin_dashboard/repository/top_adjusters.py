@@ -39,7 +39,7 @@ def get_top_adjusters_snapshot(limit: int = 3) -> list[dict[str, float | int | s
 
         item = agg[name]
         item.total_claims += 1
-        if status == ClaimStatus.APPROVED:
+        if status == ClaimStatus.approved:
             item.approved_claims += 1
         if submitted_at is not None and processed_at is not None:
             duration_days = (processed_at - submitted_at).total_seconds() / 86400

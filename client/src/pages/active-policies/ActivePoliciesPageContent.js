@@ -39,6 +39,7 @@ const ActivePolicyCard = ({
   onDownloadDocument,
   onViewDetails,
   onDownloadPolicySummary,
+  onFileClaim,
   isExporting,
 }) => {
   const deductibleLabel =
@@ -180,7 +181,14 @@ const ActivePolicyCard = ({
         </button>
         <button
           type="button"
-          className="inline-flex items-center rounded-full border border-transparent px-4 py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
+          onClick={() => onFileClaim(policy)}
+          disabled={!policy.policyId}
+          title={
+            policy.policyId
+              ? 'Start a claim for this policy'
+              : 'This policy is not linked to a claimable plan yet'
+          }
+          className="inline-flex items-center rounded-full border border-transparent px-4 py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
         >
           File Claim
         </button>
@@ -224,6 +232,7 @@ const ActivePoliciesPageContent = ({
   onDownloadDocument,
   onViewDetails,
   onDownloadPolicySummary,
+  onFileClaim,
 }) => (
   <div className="max-w-6xl mx-auto p-8">
     <div className="mb-6 flex items-center justify-between gap-4">
@@ -285,6 +294,7 @@ const ActivePoliciesPageContent = ({
           onDownloadDocument={onDownloadDocument}
           onViewDetails={onViewDetails}
           onDownloadPolicySummary={onDownloadPolicySummary}
+          onFileClaim={onFileClaim}
           isExporting={exportingPolicyId === policy.id}
         />
       ))}

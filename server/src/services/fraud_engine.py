@@ -84,7 +84,7 @@ def _check_excessive_amount(
         .join(Policy, Claim.policy_id == Policy.id)
         .where(
             Claim.approved_amount.is_not(None),
-            Claim.status == ClaimStatus.APPROVED,
+            Claim.status == ClaimStatus.approved,
             Policy.policy_type == claim.policy.policy_type,
         )
     )
@@ -283,7 +283,7 @@ def run_fraud_checks(claim_id: int, db: Session) -> list[FraudFlag]:
         .values(
             fraud_score=fraud_score,
             status=(
-                ClaimStatus.FRAUDULENT
+                ClaimStatus.fraudulent
                 if fraud_score >= 0.80
                 else claim.status
             ),

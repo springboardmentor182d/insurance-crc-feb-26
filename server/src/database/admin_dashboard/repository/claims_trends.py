@@ -42,11 +42,11 @@ def get_claims_trends_snapshot() -> list[dict[str, int | str]]:
 
     for submitted_at, status in rows:
         key = (submitted_at.year, submitted_at.month)
-        if status == ClaimStatus.APPROVED:
+        if status == ClaimStatus.approved:
             counts[key]["approved"] += 1
-        elif status == ClaimStatus.REJECTED:
+        elif status == ClaimStatus.rejected:
             counts[key]["rejected"] += 1
-        elif status == ClaimStatus.FRAUDULENT:
+        elif status == ClaimStatus.fraudulent:
             counts[key]["fraudulent"] += 1
 
     result: list[dict[str, int | str]] = []

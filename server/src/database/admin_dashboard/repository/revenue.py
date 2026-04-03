@@ -1,5 +1,4 @@
 ﻿from __future__ import annotations
-print("✅ revenue.py loaded")
 from collections import defaultdict
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -40,7 +39,7 @@ def get_revenue_snapshot() -> list[dict[str, float | str]]:
 
         expense_rows = session.execute(
             select(Claim.processed_at, Claim.approved_amount).where(
-                Claim.status == ClaimStatus.APPROVED,
+                Claim.status == ClaimStatus.approved,
                 Claim.processed_at.is_not(None),
                 Claim.approved_amount.is_not(None),
                 Claim.processed_at >= start_window,

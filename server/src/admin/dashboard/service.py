@@ -72,6 +72,8 @@ def admin_signup(data: RegisterRequest, db: Session) -> dict[str, str]:
         role=UserRole.ADMIN,
     )
     db.add(new_admin)
+    db.flush()
+    AuthService(db)._set_password(new_admin.id, data.password)
     db.commit()
     db.refresh(new_admin)
     return {"message": "Admin created successfully"}

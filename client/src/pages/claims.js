@@ -1,75 +1,79 @@
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import "./claims.css";
 import Sidebar from "../layout/user/Sidebar";
-import { useNavigate } from "react-router-dom";
+import apiClient from "../utils/apiClient";
+
+const formatPolicyType = (value) => {
+  if (!value) return "-";
+  return String(value)
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
 
 export default function Claims() {
   const [claims, setClaims] = useState([]);
-  const [status, setStatus] = useState("");   // ✅ filter
-  const [search, setSearch] = useState("");   // ✅ search
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
 
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ✅ API CALL (FILTER + SEARCH)
   useEffect(() => {
-    let url = "http://localhost:8000/api/v1/claims";
+    const loadClaims = async () => {
+      try {
+        const response = await apiClient.get("/claims", {
+          params: {
+            ...(status ? { status } : {}),
+            ...(search ? { search } : {}),
+          },
+        });
 
-    const params = [];
+        setClaims(Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        console.error(error);
+        setClaims([]);
+      }
+    };
 
-    if (status) params.push(`status=${status}`);
-    if (search) params.push(`search=${search}`);
-
-    if (params.length > 0) {
-      url += "?" + params.join("&");
-    }
-
-    fetch(url)
-      .then(res => res.json())
-      .then(data => setClaims(data))
-      .catch(err => console.error(err));
-
+    loadClaims();
   }, [status, search]);
 
-  // ✅ STATS (FIXED)
   const total = claims.length;
-  const pending = claims.filter(c => c.status === "IN_REVIEW").length;
-  const approved = claims.filter(c => c.status === "APPROVED").length;
-  const paid = claims.filter(c => c.status === "PAID").length;
+  const pending = claims.filter((claim) => claim.status === "IN_REVIEW").length;
+  const approved = claims.filter((claim) => claim.status === "APPROVED").length;
+  const paid = claims.filter((claim) => claim.status === "PAID").length;
 
-  // ✅ STATUS LABEL
   const statusMap = {
     IN_REVIEW: "In Review",
     APPROVED: "Approved",
     PAID: "Paid",
     REJECTED: "Rejected",
-    FRAUDULENT: "Rejected"
+    FRAUDULENT: "Rejected",
   };
 
   return (
     <div className="flex h-screen">
-
-      {/* SIDEBAR */}
       <Sidebar />
 
-      {/* MAIN */}
       <div className="flex-1 ml-64 overflow-y-auto claims-page">
-
-        {/* HEADER */}
         <div className="header">
           <div>
             <h1>Claims Management</h1>
             <p>Track and manage your insurance claims</p>
           </div>
 
-          <button
-            className="btn"
-            onClick={() => navigate("/claims/new")}
-          >
+          <button className="btn" onClick={() => navigate("/claims/new")}>
             + File New Claim
           </button>
         </div>
 
-        {/* CARDS */}
+        {location.state?.message && (
+          <div className="flash-message">{location.state.message}</div>
+        )}
+
         <div className="cards">
           <div className="card">
             <p>Total Claims</p>
@@ -92,14 +96,13 @@ export default function Claims() {
           </div>
         </div>
 
-        {/* SEARCH + FILTER */}
         <div className="search-box">
           <input
             placeholder="Search claims..."
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
 
-          <select onChange={(e) => setStatus(e.target.value)}>
+          <select onChange={(event) => setStatus(event.target.value)}>
             <option value="">All Status</option>
             <option value="in_review">In Review</option>
             <option value="approved">Approved</option>
@@ -108,7 +111,6 @@ export default function Claims() {
           </select>
         </div>
 
-        {/* TABLE */}
         <div className="table-card">
           <table>
             <thead>
@@ -125,71 +127,63 @@ export default function Claims() {
             </thead>
 
             <tbody>
-              {claims.map((c) => (
+              {claims.map((claim) => (
                 <tr
-                  key={c.id}
-                  onClick={() => navigate(`/claims/${c.id}`)}
+                  key={claim.id}
+                  onClick={() => navigate(`/claims/${claim.id}`)}
                   style={{ cursor: "pointer" }}
                 >
-                  {/* Claim ID */}
                   <td>
-                    {c.claim_number}
-                    <div className="sub">
-                      {c.policy?.policy_number || "-"}
-                    </div>
+                    {claim.claim_number}
+                    <div className="sub">{claim.policy?.policy_number || "-"}</div>
                   </td>
 
-                  {/* TYPE */}
                   <td>
                     <span className="badge gray">
-                      {c.policy?.policy_type || "-"}
+                      {formatPolicyType(claim.policy?.policy_type)}
                     </span>
                   </td>
 
-                  {/* DESCRIPTION */}
-                  <td>{c.description || "-"}</td>
-
-                  {/* DATE */}
                   <td>
-                    {c.submitted_at
-                      ? new Date(c.submitted_at).toLocaleDateString()
+                    <div>{claim.description || "-"}</div>
+                    {claim.admin_message && claim.status !== "IN_REVIEW" && (
+                      <div className="decision-note">{claim.admin_message}</div>
+                    )}
+                  </td>
+
+                  <td>
+                    {claim.submitted_at
+                      ? new Date(claim.submitted_at).toLocaleDateString()
                       : "-"}
                   </td>
 
-                  {/* AMOUNT */}
-                  <td>${c.claim_amount || 0}</td>
+                  <td>${claim.claim_amount || 0}</td>
 
-                  {/* STATUS */}
                   <td>
-                    <span className={`status ${c.status.toLowerCase()}`}>
-                      {statusMap[c.status] || c.status}
+                    <span className={`status ${claim.status.toLowerCase()}`}>
+                      {statusMap[claim.status] || claim.status}
                     </span>
                   </td>
 
-                  {/* LAST UPDATE */}
                   <td>
-                    {c.processed_at
-                      ? new Date(c.processed_at).toLocaleDateString()
+                    {claim.processed_at
+                      ? new Date(claim.processed_at).toLocaleDateString()
                       : "-"}
                   </td>
 
-                  {/* ARROW */}
                   <td
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/claims/${c.id}`);
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/claims/${claim.id}`);
                     }}
                   >
-                    ➡️
+                    View
                   </td>
-
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
-
       </div>
     </div>
   );

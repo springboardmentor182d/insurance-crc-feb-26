@@ -51,7 +51,7 @@ def get_admin_stats_snapshot() -> dict[str, float | int]:
         fraudulent_claims_stmt = (
             select(func.count())
             .select_from(Claim)
-            .where(Claim.status == ClaimStatus.FRAUDULENT)
+            .where(Claim.status == ClaimStatus.fraudulent)
         )
         fraudulent_claims = int(session.execute(fraudulent_claims_stmt).scalar_one())
 
@@ -94,7 +94,7 @@ def get_admin_stats_snapshot() -> dict[str, float | int]:
             select(func.count())
             .select_from(Claim)
             .where(
-                Claim.status == ClaimStatus.FRAUDULENT,
+                Claim.status == ClaimStatus.fraudulent,
                 Claim.submitted_at >= current_start,
                 Claim.submitted_at < now,
             )
@@ -103,7 +103,7 @@ def get_admin_stats_snapshot() -> dict[str, float | int]:
             select(func.count())
             .select_from(Claim)
             .where(
-                Claim.status == ClaimStatus.FRAUDULENT,
+                Claim.status == ClaimStatus.fraudulent,
                 Claim.submitted_at >= previous_start,
                 Claim.submitted_at < current_start,
             )

@@ -31,6 +31,15 @@
   cursor: pointer;
 }
 
+.flash-message {
+  margin-top: 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
 /* CARDS */
 .cards {
   display: grid;
@@ -151,6 +160,11 @@ tbody tr:hover {
   color: #92400e;
 }
 
+.status.in_review {
+  background: #fef3c7;
+  color: #92400e;
+}
+
 .status.approved {
   background: #d1fae5;
   color: #065f46;
@@ -161,8 +175,21 @@ tbody tr:hover {
   color: #1e40af;
 }
 
+.status.rejected,
+.status.fraudulent {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 /* SUBTEXT */
 .sub {
   font-size: 12px;
   color: #9ca3af;
+}
+
+.decision-note {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.5;
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Sidebar from '../layout/user/Sidebar';
 import {
@@ -56,6 +57,7 @@ const normalizePolicyDocument = (document) => ({
 
 const normalizeActivePolicy = (policy) => ({
   id: policy.id,
+  policyId: policy.policy_id,
   policyNumber: policy.policy_number,
   status: policy.status,
   category: policy.category,
@@ -104,6 +106,7 @@ const computeFallbackSummary = (policies) => ({
 });
 
 const ActivePolicies = () => {
+  const navigate = useNavigate();
   const [policies, setPolicies] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -481,6 +484,22 @@ const ActivePolicies = () => {
     }
   };
 
+  const handleFileClaim = (policy) => {
+    if (!policy.policyId) {
+      setError(
+        'This policy is not linked to a claimable plan yet. Please use a catalog policy or relink this policy before filing a claim.',
+      );
+      return;
+    }
+
+    setError(null);
+    navigate(`/claims/new?policyId=${policy.policyId}`, {
+      state: {
+        policy,
+      },
+    });
+  };
+
   const handleDeletePolicy = async (id) => {
     const confirmed = window.confirm('Delete this active policy?');
     if (!confirmed) return;
@@ -544,6 +563,7 @@ const ActivePolicies = () => {
           onDownloadDocument={handleDownloadDocument}
           onViewDetails={handleOpenPolicyDetails}
           onDownloadPolicySummary={handleDownloadPolicySummary}
+          onFileClaim={handleFileClaim}
         />
 
         <PolicyDetailsModal
