@@ -23,7 +23,7 @@ api_router.include_router(fraud_rules_router)
 api_router.include_router(flagged_claims_router)
 api_router.include_router(policy_approvals_router,prefix="/admin/policy-approvals", tags=["Policy Approvals"])
 api_router.include_router(users_router, prefix="/users", tags=["Users"])
-api_router.include_router(users_router, prefix="/api/users", tags=["Users"])
+
 api_router.include_router(manage_policies_router, prefix="/admin", tags=["Admin Policies"])
 api_router.include_router(browse_policies_router, prefix="/api/policies", tags=["Policies"])
 api_router.include_router(active_policies_router, prefix="/api/policies", tags=["Policies"])

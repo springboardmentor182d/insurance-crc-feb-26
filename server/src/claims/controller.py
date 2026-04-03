@@ -39,7 +39,7 @@ def create_claim(
             user_id=1,  # TODO: replace with actual logged-in user
             claim_amount=claim_amount,
             description=description,
-            status=ClaimStatus.pending  # ✅ FIXED
+            status=ClaimStatus.PENDING  # ✅ FIXED
         )
 
         db.add(claim)

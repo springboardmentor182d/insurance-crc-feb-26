@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from src.database.admin_dashboard.models.claims import Claim
+from src.database.admin_dashboard.models.claims import Claim, ClaimStatus
 
 
 # 🔹 CREATE CLAIM
@@ -11,7 +11,7 @@ def create_claim(db: Session, user_id: int, payload):
         user_id=user_id,
         claim_amount=payload.claim_amount,
         description=payload.description,
-        status=ClaimStatus.pending
+        status=ClaimStatus.PENDING,
         submitted_at=datetime.utcnow(),
     )
 

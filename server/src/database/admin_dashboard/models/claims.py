@@ -22,12 +22,11 @@ from src.database.core import Base
 
 # ✅ FIXED ENUM (lowercase to match DB)
 class ClaimStatus(str, Enum):
-    pending = "pending"
-    approved = "approved"
-    paid = "paid"
-    rejected = "rejected"
-    fraudulent = "fraudulent"
-
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    PAID = "PAID"
+    REJECTED = "REJECTED"
+    FRAUDULENT = "FRAUDULENT"
 
 class Claim(Base):
     __tablename__ = "claims"
@@ -58,7 +57,7 @@ class Claim(Base):
             values_callable=lambda x: [e.value for e in x],
         ),
         nullable=False,
-        default=ClaimStatus.pending,
+        default=ClaimStatus.PENDING,
     )
 
     claim_amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)

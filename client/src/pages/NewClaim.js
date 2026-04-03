@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import Sidebar from "../layout/user/Sidebar";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../utils/apiClient";
 
-const API = "http://127.0.0.1:8000/api/v1/claims/";
 
 export default function NewClaim() {
   const navigate = useNavigate();
@@ -56,20 +56,12 @@ export default function NewClaim() {
         formData.append("files", file);
       });
 
-      const response = await fetch(API, {
-        method: "POST",
-        body: formData,
+      const response = await apiClient.post("/claims/", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error(data);
-        alert("Submission Failed ❌");
-        return;
-      }
-
-      // ✅ SUCCESS → navigate instead of warning
       alert("Claim Submitted Successfully ✅");
       navigate("/claims");
 

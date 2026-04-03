@@ -160,10 +160,15 @@ const PolicyApprovals = () => {
                         </thead>
 
                         <tbody>
-                            {policies.length === 0 ? (
+                            {filteredPolicies.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="p-10 text-center text-gray-500">
-                                        🚫 No policies to approve
+                                    <td colSpan="100%" className="p-10 text-center text-gray-500">
+
+                                        {statusFilter === "PENDING" && "🚫 No Pending Policies"}
+                                        {statusFilter === "UNDER_REVIEW" && "🚫 No Policies Under Review"}
+                                        {statusFilter === "ACTIVE" && "🚫 No Approved Policies"}
+                                        {statusFilter === "REJECTED" && "🚫 No Rejected Policies"}
+
                                     </td>
                                 </tr>
                             ) : (
@@ -297,7 +302,7 @@ const PolicyApprovals = () => {
                                 <p className="text-sm text-gray-500">{selectedPolicy.user?.email}</p>
 
                                 <p className="text-sm mt-2">Age: {selectedPolicy.user?.age}</p>
-                                <p className="text-sm">Income: ₹{selectedPolicy.user?.income}</p>
+
                             </div>
 
 
