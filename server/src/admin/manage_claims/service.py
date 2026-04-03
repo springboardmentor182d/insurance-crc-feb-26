@@ -20,11 +20,11 @@ from src.database.admin_dashboard.models import ActivityLog, Claim, ClaimStatus,
 
 # ✅ FIXED ENUM USAGE (LOWERCASE)
 ACTIONABLE_STATUSES = {
-    "approved": ClaimStatus.APPROVED,
-    "rejected": ClaimStatus.REJECTED,
+    "approved": ClaimStatus.approved,
+    "rejected": ClaimStatus.rejected,
 }
 
-TERMINAL_STATUSES = {ClaimStatus.APPROVED, ClaimStatus.REJECTED}
+TERMINAL_STATUSES = {ClaimStatus.approved, ClaimStatus.rejected}
 
 FILTERABLE_STATUSES = {"under_review", "approved", "rejected"}
 
@@ -69,7 +69,7 @@ def _to_iso_date(value):
 
 def _admin_status(status):
     raw_status = _enum_value(status).lower()
-    if raw_status == ClaimStatus.PENDING.value:
+    if raw_status == ClaimStatus.pending.value:
         return "under_review"
     return raw_status
 
@@ -80,7 +80,7 @@ def fetch_all_claims(db: Session, status_filter: str | None = None):
     claims = (
         db.query(Claim)
         .options(joinedload(Claim.user), joinedload(Claim.policy))
-        .filter(Claim.status != ClaimStatus.FRAUDULENT)
+        .filter(Claim.status != ClaimStatus.fraudulent)
         .order_by(Claim.submitted_at.desc())
         .all()
     )
@@ -91,28 +91,16 @@ def fetch_all_claims(db: Session, status_filter: str | None = None):
         claims = [c for c in claims if _admin_status(c.status) == normalized_filter]
 
     return {
-   
-    "stats": {
-        "total": len(claims),
-        "under_review": sum(1 for c in claims if c.status.value == "PENDING"),
-        "approved": sum(1 for c in claims if c.status.value == "APPROVED"),
-        "rejected": sum(1 for c in claims if c.status.value == "REJECTED"),
-    },
-    "claims": [
-        {
-            "claim_id": c.claim_number,
-            "user_name": c.user.full_name if c.user else None,
-            "user_email": c.user.email if c.user else None,
-            "policy_type": c.policy.policy_type if c.policy else None,
-            "policy_number": c.policy.policy_number if c.policy else None,
-            "incident_type": c.description,
-           "submitted_date": c.submitted_at.isoformat() if c.submitted_at else None,
-            "amount": float(c.claim_amount),
-            "status": c.status.value,
-        }
-        for c in claims
-    ]
-}
+        "claims": [
+            {
+                "claim_id": c.claim_number,
+                "user_name": c.user.full_name if c.user else "",
+                "amount": float(c.claim_amount),
+                "status": _admin_status(c.status),
+            }
+            for c in claims
+        ]
+    }
 
 
 def fetch_claim_detail(db: Session, claim_id: str):
