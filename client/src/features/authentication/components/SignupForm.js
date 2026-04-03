@@ -37,7 +37,7 @@ const SignupForm = () => {
       name: form.name,
       email: form.email,
       password: form.password,
-      date_of_birth: form.dob || null,
+      dob: form.dob || null,
     });
   };
 

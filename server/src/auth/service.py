@@ -115,6 +115,7 @@ class AuthService:
         full_name = data.name.strip()
         first_name, _, remaining = full_name.partition(" ")
         last_name = remaining.strip() or None
+        print("Incoming DOB:", data.date_of_birth)
 
         user = User(
             email=data.email,
@@ -122,6 +123,8 @@ class AuthService:
             last_name=last_name,
             full_name=full_name,
             role=UserRole.CUSTOMER,
+            date_of_birth=data.date_of_birth ,
+            
         )
         self.db.add(user)
         self.db.flush()

@@ -7,6 +7,7 @@ const apiClient = axios.create({
     "Content-Type": "application/json",
   },
 });
+console.log("API_BASE_URL:", API_BASE_URL);
 
 let refreshPromise = null;
 
@@ -35,7 +36,6 @@ const getLoginRoute = () => {
     return ROUTES.LOGIN;
   }
 };
-
 const redirectToLogin = () => {
   const loginRoute = getLoginRoute();
   clearStoredAuth();
@@ -87,8 +87,14 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     const requestUrl = originalRequest?.url || "";
     const isAuthRequest = AUTH_ROUTES.some((route) => requestUrl.includes(route));
+    if (error.response?.status === 401 && !isAuthRequest) {
 
-    if (error.response?.status === 401 && !isAuthRequest && !originalRequest?._retry) {
+      if (originalRequest._retry) {
+        // Already retried → logout
+        redirectToLogin();
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       try {
@@ -99,15 +105,17 @@ apiClient.interceptors.response.use(
         }
 
         const newAccessToken = await refreshPromise;
+
         originalRequest.headers = originalRequest.headers || {};
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
         return apiClient(originalRequest);
+
       } catch (refreshError) {
         redirectToLogin();
         return Promise.reject(refreshError);
       }
     }
-
     if (error.response?.status === 401) {
       const token = localStorage.getItem(TOKEN_KEYS.ACCESS);
       if (!token || isAuthRequest) {

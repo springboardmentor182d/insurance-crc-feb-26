@@ -65,7 +65,7 @@ class User(Base):
         onupdate=func.now(),
         nullable=False,
     )
-
+    active_policies = relationship("ActivePolicy", back_populates="user")
     policies: Mapped[List["Policy"]] = relationship("Policy", back_populates="user")
     claims: Mapped[List["Claim"]] = relationship("Claim", back_populates="user")
     activity_logs: Mapped[List["ActivityLog"]] = relationship(

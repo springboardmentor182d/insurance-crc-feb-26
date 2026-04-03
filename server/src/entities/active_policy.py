@@ -12,7 +12,7 @@ class ActivePolicy(Base):
     # Relations
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     policy_id = Column(Integer, ForeignKey("policies.id"), nullable=True, index=True)
-
+    user = relationship("User", back_populates="active_policies")
     # Identification
     policy_number = Column(String, nullable=False)
     status = Column(String, nullable=False, default="ACTIVE")  # ACTIVE, EXPIRED, CANCELLED, etc.

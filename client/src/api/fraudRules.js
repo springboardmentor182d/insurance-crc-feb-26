@@ -19,11 +19,9 @@ export const deleteFraudRule = async (id) => {
   const { data } = await apiClient.delete(`/admin/fraud-rules/${id}`);
   return data;
 };
-
-export const toggleFraudRule = async ({ id, is_active }) => {
+export const toggleFraudRule = async ({ id }) => {
   const { data } = await apiClient.patch(
-    `/admin/fraud-rules/${id}/toggle`,
-    { is_active }
+    `/admin/fraud-rules/${id}/toggle`
   );
   return data;
 };

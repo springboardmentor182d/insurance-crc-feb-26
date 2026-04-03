@@ -26,8 +26,13 @@ def upgrade() -> None:
     #   ProgrammingError: type "fraud_severity" does not exist
     # Solution: explicitly create the type before the table, then use create_type=False
     # so SQLAlchemy does not attempt a redundant CREATE TYPE inline during table creation.
-    op.execute("CREATE TYPE fraud_severity AS ENUM ('LOW', 'MEDIUM', 'HIGH')")
-
+    op.execute("""
+DO $$ BEGIN
+    CREATE TYPE fraud_severity AS ENUM ('LOW', 'MEDIUM', 'HIGH');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+""")
     op.add_column(
         "fraud_rules",
         sa.Column("trigger_count", sa.Integer(), nullable=False, server_default="0"),

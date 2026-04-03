@@ -6,6 +6,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from src.database.core import get_db
 
 from src.active_policies.models import (
     ActivePoliciesSummary,
@@ -29,49 +32,7 @@ ALLOWED_DOCUMENT_CONTENT_TYPES = {
 }
 ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
 
-
-class ActivePolicyCreate(BaseModel):
-    policy_id: int | None = None
-    policy_number: str
-    status: str = "ACTIVE"
-    category: str
-    insurer_name: str
-    product_name: str
-    premium_annual: float
-    coverage_amount: float
-    deductible_amount: float | None = None
-    start_date: date
-    end_date: date
-    tags: str | None = None
-    warning_text: str | None = None
-
-
-class ActivePolicyUpdate(BaseModel):
-    policy_number: str
-    status: str = "ACTIVE"
-    category: str
-    insurer_name: str
-    product_name: str
-    premium_annual: float
-    coverage_amount: float
-    deductible_amount: float | None = None
-    start_date: date
-    end_date: date
-    tags: str | None = None
-    warning_text: str | None = None
-
-
-def _serialize_document(document: PolicyDocument) -> PolicyDocumentResponse:
-    return PolicyDocumentResponse.model_validate(document)
-
-
 def _serialize_policy(policy: ActivePolicy) -> ActivePolicyResponse:
-    today = date.today()
-    expiring_threshold = today + timedelta(days=EXPIRING_SOON_DAYS)
-    is_expiring_soon = (
-        policy.end_date is not None and today <= policy.end_date <= expiring_threshold
-    )
-
     return ActivePolicyResponse(
         id=policy.id,
         user_id=policy.user_id,
@@ -88,42 +49,30 @@ def _serialize_policy(policy: ActivePolicy) -> ActivePolicyResponse:
         end_date=policy.end_date,
         tags=policy.tags,
         warning_text=policy.warning_text,
-        is_expiring_soon=is_expiring_soon,
-        documents=[_serialize_document(document) for document in policy.documents],
+        is_expiring_soon=False,
+        documents=[],  # you can enhance later
         created_at=policy.created_at,
         updated_at=policy.updated_at,
     )
+class ActivePolicyCreate(BaseModel):
+  policy_id: int | None = None
+  policy_number: str
+  
+  category: str
+  insurer_name: str
+  product_name: str
+  premium_annual: float
+  coverage_amount: float
+  deductible_amount: float | None = None
+  start_date: date
+  end_date: date
+  tags: str | None = None
+  warning_text: str | None = None
 
 
-def _get_user_active_policy(db: Session, current_user_id: int, active_policy_id: int) -> ActivePolicy:
-    policy = (
-        db.query(ActivePolicy)
-        .filter(
-            ActivePolicy.id == active_policy_id,
-            ActivePolicy.user_id == current_user_id,
-        )
-        .first()
-    )
-    if not policy:
-        raise HTTPException(status_code=404, detail="Active policy not found")
-    return policy
 
 
-def _validate_document(upload: UploadFile) -> None:
-    file_name = upload.filename or ""
-    file_extension = Path(file_name).suffix.lower()
-    content_type = (upload.content_type or "").lower()
-
-    if (
-        content_type not in ALLOWED_DOCUMENT_CONTENT_TYPES
-        and file_extension not in ALLOWED_DOCUMENT_EXTENSIONS
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail=f"{file_name or 'Uploaded file'} must be a PDF, JPG, or PNG document",
-        )
-
-
+    
 @router.get("/active", response_model=List[ActivePolicyResponse])
 def get_active_policies(
     current_user_id: int = Depends(get_current_user_id),
@@ -175,7 +124,7 @@ def add_external_policy(
         user_id=current_user_id,
         policy_id=payload.policy_id,
         policy_number=payload.policy_number,
-        status=payload.status,
+        status="PENDING",
         category=payload.category,
         insurer_name=payload.insurer_name,
         product_name=payload.product_name,
@@ -235,7 +184,20 @@ def update_active_policy(
     db.commit()
     db.refresh(policy)
     return _serialize_policy(policy)
+def _get_user_active_policy(db: Session, user_id: int, policy_id: int) -> ActivePolicy:
+    policy = (
+        db.query(ActivePolicy)
+        .filter(
+            ActivePolicy.id == policy_id,
+            ActivePolicy.user_id == user_id
+        )
+        .first()
+    )
 
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+
+    return policy
 
 @router.get(
     "/active/{active_policy_id}/documents",

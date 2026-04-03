@@ -55,6 +55,10 @@ const Sidebar = () => {
             <FiFileText size={18} />
             Manage Policies
           </NavLink>
+          <NavLink to="/admin/policy-approvals" className={navClass}>
+            <FiFileText size={18} />
+            Policy Approvals
+          </NavLink>
 
           <NavLink to="/admin/manage-claims" className={navClass}>
             <ClipboardList size={18} />
