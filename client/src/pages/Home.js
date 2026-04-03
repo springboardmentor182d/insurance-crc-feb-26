@@ -1,7 +1,1 @@
-import { Navigate } from "react-router-dom";
-
-function Home() {
-  return <Navigate to="/profile" />;
-}
-
-export default Home;
+export default function Home(){ return <div>Home</div>; }
