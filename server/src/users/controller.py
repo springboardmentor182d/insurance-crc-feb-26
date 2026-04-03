@@ -1,34 +1,41 @@
-from fastapi import APIRouter, Depends
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from src.database.core import get_db
+from src.users.service import create_user, login_user
+from pydantic import BaseModel
 
-from database.core import get_db
-from auth.service import get_current_user 
-from entities.user import User
-from users.models import UserResponse, UserUpdate
-import users.service as service
+router = APIRouter()
 
-router = APIRouter(prefix="/users", tags=["Users"])
-
-
-@router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
-    """Get the currently logged in user."""
-    return service.get_me(current_user)
+class SignupRequest(BaseModel):
+    name: str
+    email: str
+    password: str
 
 
-@router.get("/{user_id}", response_model=UserResponse)
-def get_user(
-    user_id: int,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return service.get_user(user_id, db)
+class LoginRequest(BaseModel):
+    email: str
+    password: str
 
 
-@router.put("/me", response_model=UserResponse)
-def update_me(
-    payload: UserUpdate,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    return service.update_user(current_user.id, payload, db)
+@router.post("/signup")
+def signup(data: SignupRequest, db: Session = Depends(get_db)):
+
+    user = create_user(db, data.name, data.email, data.password)
+
+    return {"message": "User created", "email": user.email}
+
+
+@router.post("/login")
+def login(data: LoginRequest, db: Session = Depends(get_db)):
+
+    user = login_user(db, data.email, data.password)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    return {
+        "message": "Login successful",
+        "email": user.email,
+        "role": user.role
+    }

@@ -1,21 +1,14 @@
-from pydantic import BaseModel
-from typing import Optional
 
+from sqlalchemy import Column, Integer, String
+from .database import Base
 
-class TodoCreate(BaseModel):
-    title: str
+class User(Base):
 
+    __tablename__ = "users"
 
-class TodoUpdate(BaseModel):
-    title: Optional[str] = None
-    completed: Optional[bool] = None
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    email = Column(String, unique=True)
+    password = Column(String)
 
-
-class TodoResponse(BaseModel):
-    id: int
-    user_id: int
-    title: str
-    completed: bool
-
-    class Config:
-        from_attributes = True
+# update s

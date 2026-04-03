@@ -1,27 +1,34 @@
-from sqlalchemy.orm import Session
-from fastapi import HTTPException
 
-from entities.user import User
-from users.models import UserResponse, UserUpdate
+from src.entities.user import User
 
+def create_user(db, name, email, password):
+    
+    role = "admin" if email == "admin@gmail.com" else "user"
 
-def get_user(user_id: int, db: Session) -> UserResponse:
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return UserResponse.model_validate(user)
+    user = User(
+        name=name,
+        email=email,
+        password=password,
+        role=role
+    )
 
-
-def update_user(user_id: int, payload: UserUpdate, db: Session) -> UserResponse:
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(user, field, value)
+    db.add(user)
     db.commit()
     db.refresh(user)
-    return UserResponse.model_validate(user)
+
+    return user
 
 
-def get_me(current_user: User) -> UserResponse:
-    return UserResponse.model_validate(current_user)
+def login_user(db, email, password):
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if not user:
+        return None
+
+    if user.password != password:
+        return None
+
+    return user
+
+# update 

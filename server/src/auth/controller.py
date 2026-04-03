@@ -1,18 +1,21 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 
-from database.core import get_db
-from auth.models import RegisterRequest, LoginRequest, TokenResponse
-import auth.service as service
+from fastapi import APIRouter
+from fastapi.responses import RedirectResponse
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter()
 
 
-@router.post("/register", response_model=TokenResponse)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)):
-    return service.register(payload, db)
+@router.get("/auth/google")
+def google_login():
 
+    google_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        "?client_id=YOUR_GOOGLE_CLIENT_ID"
+        "&response_type=code"
+        "&scope=openid email profile"
+        "&redirect_uri=http://127.0.0.1:8000/auth/google/callback"
+    )
 
-@router.post("/login", response_model=TokenResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    return service.login(payload, db)
+    return RedirectResponse(google_url)
+# update 
+

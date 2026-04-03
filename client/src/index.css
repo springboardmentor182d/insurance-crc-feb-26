@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 /* Global Styles */
 * {
@@ -23,3 +24,8 @@ html, body, #root {
   height: 100%;
   width: 100%;
 }
+=======
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+>>>>>>> 368f40f01d9956174af2656fe25f7b64f9aa89e5

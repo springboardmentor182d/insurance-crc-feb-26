@@ -1,17 +1,13 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
 
+from pydantic import BaseModel
 
-class UserResponse(BaseModel):
-    id: int
-    full_name: Optional[str]
+class SignupRequest(BaseModel):
+    name: str
     email: str
-    is_verified: bool
-
-    class Config:
-        from_attributes = True
+    password: str
 
 
-class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
-    email: Optional[EmailStr] = None
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+# update 
