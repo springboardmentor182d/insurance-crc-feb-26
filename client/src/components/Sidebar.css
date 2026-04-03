@@ -1,0 +1,34 @@
+/* Sidebar.css */
+.sidebar {
+  width: 200px;
+  background-color: #f0f0f0;
+  padding: 15px;
+  height: 100vh;
+  border-right: 1px solid #E0E0E0;
+}
+
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin: 10px 0;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #333;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.sidebar li:hover {
+  color: #1B5E20; /* Matching your theme's dark green */
+  background-color: #E8F5E9;
+}
+
+.sidebar li.active {
+  background-color: #1B5E20;
+  color: white;
+}
