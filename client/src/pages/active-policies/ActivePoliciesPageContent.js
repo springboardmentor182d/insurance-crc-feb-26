@@ -37,6 +37,7 @@ const ActivePolicyCard = ({
   onDownloadDocument,
   onViewDetails,
   onDownloadPolicySummary,
+  onFileClaim,
   isExporting,
 }) => {
   const deductibleLabel =
@@ -187,7 +188,9 @@ const ActivePolicyCard = ({
         </button>
         <button
           type="button"
-          className="inline-flex items-center rounded-full border border-transparent px-4 py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100"
+          onClick={() => onFileClaim(policy)}
+          disabled={policy.status !== "ACTIVE" || !policy.policyId}
+          className="inline-flex items-center rounded-full border border-transparent px-4 py-2 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           File Claim
         </button>
@@ -231,6 +234,7 @@ const ActivePoliciesPageContent = ({
   onDownloadDocument,
   onViewDetails,
   onDownloadPolicySummary,
+  onFileClaim,
 }) => {
   const pendingPolicies = policies.filter(p => p.status === "PENDING");
   const [viewMode, setViewMode] = useState("ACTIVE");
@@ -318,6 +322,7 @@ const ActivePoliciesPageContent = ({
               onDownloadDocument={onDownloadDocument}
               onViewDetails={onViewDetails}
               onDownloadPolicySummary={onDownloadPolicySummary}
+              onFileClaim={onFileClaim}
               isExporting={exportingPolicyId === policy.id}
             />
           ))
@@ -334,6 +339,7 @@ const ActivePoliciesPageContent = ({
               onDownloadDocument={onDownloadDocument}
               onViewDetails={onViewDetails}
               onDownloadPolicySummary={onDownloadPolicySummary}
+              onFileClaim={onFileClaim}
               isExporting={exportingPolicyId === policy.id}
             />
           ))

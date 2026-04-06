@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Sidebar from '../layout/user/Sidebar';
 import {
@@ -56,6 +57,7 @@ const normalizePolicyDocument = (document) => ({
 
 const normalizeActivePolicy = (policy) => ({
   id: policy.id,
+  policyId: policy.policy_id,
   policyNumber: policy.policy_number,
   status: policy.status,
   category: policy.category,
@@ -104,6 +106,7 @@ const computeFallbackSummary = (policies) => ({
 });
 
 const ActivePolicies = () => {
+  const navigate = useNavigate();
   const [policies, setPolicies] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -481,6 +484,28 @@ const ActivePolicies = () => {
     }
   };
 
+  const handleFileClaim = (policy) => {
+    if (!policy?.policyId) {
+      setError('This policy cannot be used for a claim because it is not linked to a policy record yet.');
+      return;
+    }
+
+    navigate('/claims/new', {
+      state: {
+        selectedPolicy: {
+          activePolicyId: policy.id,
+          policyId: policy.policyId,
+          policyNumber: policy.policyNumber,
+          productName: policy.productName,
+          category: policy.category,
+          insurerName: policy.insurerName,
+          coverageAmount: policy.coverageAmount,
+          premiumAnnual: policy.premiumAnnual,
+        },
+      },
+    });
+  };
+
   const handleDeletePolicy = async (id) => {
     const confirmed = window.confirm('Delete this active policy?');
     if (!confirmed) return;
@@ -544,6 +569,7 @@ const ActivePolicies = () => {
           onDownloadDocument={handleDownloadDocument}
           onViewDetails={handleOpenPolicyDetails}
           onDownloadPolicySummary={handleDownloadPolicySummary}
+          onFileClaim={handleFileClaim}
         />
 
         <PolicyDetailsModal

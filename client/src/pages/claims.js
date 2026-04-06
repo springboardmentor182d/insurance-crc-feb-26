@@ -2,32 +2,37 @@ import React, { useEffect, useState } from "react";
 import "./claims.css";
 import Sidebar from "../layout/user/Sidebar";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../utils/apiClient";
 
 export default function Claims() {
   const [claims, setClaims] = useState([]);
   const [status, setStatus] = useState("");   // ✅ filter
   const [search, setSearch] = useState("");   // ✅ search
 
+  const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   // ✅ API CALL (FILTER + SEARCH)
   useEffect(() => {
-    let url = "http://localhost:8000/api/v1/claims";
+    const loadClaims = async () => {
+      try {
+        setError("");
 
-    const params = [];
+        const params = {};
+        if (status) params.status = status;
+        if (search) params.search = search;
 
-    if (status) params.push(`status=${status}`);
-    if (search) params.push(`search=${search}`);
+        const { data } = await apiClient.get("/claims", { params });
+        setClaims(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+        setClaims([]);
+        setError(err.response?.data?.detail || "Failed to load claims");
+      }
+    };
 
-    if (params.length > 0) {
-      url += "?" + params.join("&");
-    }
-
-    fetch(url)
-      .then(res => res.json())
-      .then(data => setClaims(data))
-      .catch(err => console.error(err));
-
+    loadClaims();
   }, [status, search]);
 
   // ✅ STATS (FIXED)
@@ -68,6 +73,12 @@ export default function Claims() {
             + File New Claim
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* CARDS */}
         <div className="cards">

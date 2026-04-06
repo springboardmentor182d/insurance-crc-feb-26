@@ -30,7 +30,7 @@ const FlaggedClaims = () => {
       pageSize: 8
     });
 
-  const claims = listQuery.data?.items || [];
+  const claims = useMemo(() => listQuery.data?.items ?? [], [listQuery.data?.items]);
   const stats = statsQuery.data;
 
   // ✅ Sorting

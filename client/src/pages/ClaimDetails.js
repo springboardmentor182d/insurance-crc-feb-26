@@ -1,26 +1,51 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../layout/user/Sidebar";
 import { useParams, useNavigate } from "react-router-dom";
-
-const API = "http://127.0.0.1:8000/api/v1/claims";
+import apiClient from "../utils/apiClient";  // ✅ Use authenticated client
 
 export default function ClaimDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [claim, setClaim] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`${API}/${id}`)
-      .then(res => res.json())
-      .then(data => {
+    const loadClaim = async () => {
+      try {
+        setError("");
+        const { data } = await apiClient.get(`/claims/${id}`);  // ✅ Use apiClient with auth
         console.log("DB DATA:", data); // 🔥 debug
         setClaim(data);
-      })
-      .catch(err => console.error(err));
+      } catch (err) {
+        console.error(err);
+        setError(err.response?.data?.detail || "Failed to load claim details");
+      }
+    };
+
+    loadClaim();
   }, [id]);
 
   if (!claim) return <p className="p-6">Loading...</p>;
+
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar />
+        <div className="flex-1 ml-64 p-8">
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-4">
+            Error: {error}
+          </div>
+          <button
+            onClick={() => navigate("/claims")}
+            className="text-blue-600"
+          >
+            ← Back to Claims
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -123,7 +148,7 @@ export default function ClaimDetails() {
                 </div>
 
                 <div>
-                  <p className="font-semibold">Status</p>
+                  <p className="font-semibold">Current Status</p>
                   <p className="text-gray-500 text-sm">
                     {claim.status}
                   </p>
@@ -131,10 +156,21 @@ export default function ClaimDetails() {
 
                 {claim.processed_at && (
                   <div>
-                    <p className="font-semibold">Processed</p>
+                    <p className="font-semibold">
+                      {claim.status === "APPROVED" ? "✅ Approved" : claim.status === "REJECTED" ? "❌ Rejected" : "Processed"}
+                    </p>
                     <p className="text-gray-500 text-sm">
                       {new Date(claim.processed_at).toLocaleDateString()}
                     </p>
+                  </div>
+                )}
+
+                {claim.review_notes && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                    <p className="font-semibold text-sm mb-2">
+                      {claim.status === "APPROVED" ? "Approval Notes:" : "Review Notes:"}
+                    </p>
+                    <p className="text-sm text-gray-700">{claim.review_notes}</p>
                   </div>
                 )}
 

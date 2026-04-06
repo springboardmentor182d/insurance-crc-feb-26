@@ -7,14 +7,13 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from src.api import api_router
-from src.database.core import SessionLocal, engine, Base
+from src.database.core import SessionLocal, engine, Base, create_tables
 from src.database.seeds import seed_fraud_rules
 from src.exceptions import setup_exception_handlers
 from src.logging import setup_logging
-from src.claims.controller import router as claims_router
 
-# ✅ Create tables
-Base.metadata.create_all(bind=engine)
+# ✅ Create tables (with all models imported)
+create_tables()
 
 # ✅ Setup logging
 setup_logging()
@@ -71,4 +70,3 @@ async def root():
 
 # ✅ ROUTERS (FIXED - NO DUPLICATION)
 app.include_router(api_router, prefix="/api/v1")
-app.include_router(claims_router, prefix="/api/v1")

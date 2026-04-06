@@ -140,7 +140,6 @@ const PolicyApprovals = () => {
 
 
                 </div>
-                <h1 className="text-3xl font-semibold mb-6"></h1>
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <table className="w-full">
                         <thead className="bg-gray-50 text-gray-500 text-sm uppercase">

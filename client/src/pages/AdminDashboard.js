@@ -9,7 +9,7 @@ import RecentActivity from "../features/admin/dashboard/components/RecentActivit
 import ActionCard from "../features/admin/dashboard/components/ActionCard";
 import "../features/admin/dashboardColors.css";
 import { useNavigate } from "react-router-dom";
-import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiClipboard, FiCheckCircle } from "react-icons/fi";
+import { FiUsers, FiFileText, FiShield, FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
 
 
 

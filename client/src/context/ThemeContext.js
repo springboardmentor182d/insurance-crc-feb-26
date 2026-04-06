@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { getPreferences, updatePreferences } from '../features/preferences/services/preferencesService';
+import { TOKEN_KEYS } from '../data/constants';
 
 const ThemeContext = createContext({ theme: 'light', toggleTheme: () => {} });
 
@@ -9,6 +10,14 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(
     () => localStorage.getItem('bv_theme') || 'light'
   );
+
+  const hasStoredSession = () => {
+    const accessToken = localStorage.getItem(TOKEN_KEYS.ACCESS);
+    const storedUser = localStorage.getItem(TOKEN_KEYS.USER);
+
+    return Boolean(accessToken && storedUser && storedUser !== 'undefined');
+  };
+
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -20,6 +29,10 @@ export const ThemeProvider = ({ children }) => {
 
   // On mount: sync theme from backend
   useEffect(() => {
+    if (!hasStoredSession()) {
+      return;
+    }
+
     const loadTheme = async () => {
       try {
         const data = await getPreferences();

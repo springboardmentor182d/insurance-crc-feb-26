@@ -22,7 +22,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(
 )
 
 if not SECRET_KEY:
-    raise ValueError("❌ SECRET_KEY not set in environment variables")
+    raise ValueError("SECRET_KEY not set in environment variables")
 
 # ── Security ──
 security = HTTPBearer()
@@ -51,7 +51,7 @@ def verify_token(token: str) -> Optional[dict]:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError as e:
-        print("❌ JWT ERROR:", str(e))  # Debug (remove in prod)
+        print("JWT ERROR:", str(e))  # Debug (remove in prod)
         return None
 
 

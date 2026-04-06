@@ -32,12 +32,14 @@ function DashboardPage() {
       try {
         const activePolicies = await fetchActivePolicies();
         const policiesPayload = Array.isArray(activePolicies) ? activePolicies : [];
-        const normalizedPolicies = policiesPayload.map((policy) => ({
-          id: policy.id,
-          policy_type: policy.category || 'Policy',
-          policy_number: policy.policy_number,
-          premium_amount: Number(policy.premium_annual || 0),
-        }));
+        const normalizedPolicies = policiesPayload
+          .filter((policy) => policy?.status === 'ACTIVE')
+          .map((policy) => ({
+            id: policy.id,
+            policy_type: policy.category || 'Policy',
+            policy_number: policy.policy_number,
+            premium_amount: Number(policy.premium_annual || 0),
+          }));
         setPolicies(normalizedPolicies);
 
         const cRes = await apiClient.get('/claims');

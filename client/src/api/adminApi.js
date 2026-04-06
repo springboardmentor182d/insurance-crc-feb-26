@@ -2,7 +2,7 @@ import apiClient from "../utils/apiClient";
 
 
 export const fetchPendingPolicies = async () => {
-    const { data } = await apiClient.get("/admin/policy-approvals");
+    const { data } = await apiClient.get("/admin/policy-approvals/");
     return data;
 };
 

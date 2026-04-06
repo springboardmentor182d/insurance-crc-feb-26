@@ -8,6 +8,7 @@ from pydantic import BaseModel
 router = APIRouter()
 
 
+@router.get("")
 @router.get("/")
 def get_pending_policies(db: Session = Depends(get_db)):
    

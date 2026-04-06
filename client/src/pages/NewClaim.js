@@ -1,15 +1,22 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Sidebar from "../layout/user/Sidebar";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import apiClient from "../utils/apiClient";
+import { fetchActivePolicies } from "../features/policies/services/policiesService";
 
 
 export default function NewClaim() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preselectedPolicy = location.state?.selectedPolicy || null;
 
   const [step, setStep] = useState(1);
+  const [availablePolicies, setAvailablePolicies] = useState([]);
+  const [loadingPolicies, setLoadingPolicies] = useState(true);
+  const [policiesError, setPoliciesError] = useState("");
 
   const [form, setForm] = useState({
+    active_policy_id: preselectedPolicy?.activePolicyId ? String(preselectedPolicy.activePolicyId) : "",
     policy_id: "",
     date: "",
     time: "",
@@ -23,8 +30,74 @@ export default function NewClaim() {
 
   const [files, setFiles] = useState([]);
 
+  useEffect(() => {
+    const loadPolicies = async () => {
+      try {
+        setLoadingPolicies(true);
+        setPoliciesError("");
+
+        const data = await fetchActivePolicies();
+        const policies = (Array.isArray(data) ? data : [])
+          .filter((policy) => policy?.status === "ACTIVE" && policy?.policy_id)
+          .map((policy) => ({
+            activePolicyId: String(policy.id),
+            policyId: String(policy.policy_id),
+            label: `${policy.product_name} (${policy.policy_number})`,
+            productName: policy.product_name,
+            policyNumber: policy.policy_number,
+            category: policy.category,
+          }));
+
+        setAvailablePolicies(policies);
+
+        if (preselectedPolicy?.policyId) {
+          setForm((prev) => ({
+            ...prev,
+            active_policy_id: String(preselectedPolicy.activePolicyId),
+            policy_id: String(preselectedPolicy.policyId),
+          }));
+        } else if (policies.length === 1 && !preselectedPolicy) {
+          setForm((prev) => ({
+            ...prev,
+            active_policy_id: policies[0].activePolicyId,
+            policy_id: policies[0].policyId,
+          }));
+        }
+      } catch (error) {
+        console.error(error);
+        setPoliciesError("Failed to load active policies for claim filing.");
+      } finally {
+        setLoadingPolicies(false);
+      }
+    };
+
+    loadPolicies();
+  }, [preselectedPolicy]);
+
+  const selectedPolicy = useMemo(
+    () =>
+      availablePolicies.find((policy) => policy.activePolicyId === form.active_policy_id) ||
+      null,
+    [availablePolicies, form.active_policy_id],
+  );
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    if (name === "active_policy_id") {
+      const matchedPolicy = availablePolicies.find(
+        (policy) => policy.activePolicyId === value,
+      );
+
+      setForm((prev) => ({
+        ...prev,
+        active_policy_id: value,
+        policy_id: matchedPolicy?.policyId || "",
+      }));
+      return;
+    }
+
+    setForm({ ...form, [name]: value });
   };
 
   // FILE HANDLING
@@ -46,8 +119,14 @@ export default function NewClaim() {
   // ✅ FINAL SUBMIT
   const handleSubmit = async () => {
     try {
+      if (!form.active_policy_id || !form.policy_id) {
+        alert("Please select an active policy before filing a claim.");
+        return;
+      }
+
       const formData = new FormData();
 
+      formData.append("active_policy_id", form.active_policy_id);
       formData.append("policy_id", form.policy_id);
       formData.append("claim_amount", form.amount);
       formData.append("description", form.description || "");
@@ -56,7 +135,7 @@ export default function NewClaim() {
         formData.append("files", file);
       });
 
-      const response = await apiClient.post("/claims/", formData, {
+      await apiClient.post("/claims/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -118,16 +197,34 @@ export default function NewClaim() {
 
             <label>Select Policy *</label>
             <select
-              name="policy_id"
-              value={form.policy_id}
+              name="active_policy_id"
+              value={form.active_policy_id}
               onChange={handleChange}
-              className="w-full border p-3 rounded mb-4"
+              className="w-full border p-3 rounded mb-2"
               required
+              disabled={loadingPolicies}
             >
-              <option value="">Choose</option>
-              <option value="1">Auto</option>
-              <option value="2">Home</option>
+              <option value="">
+                {loadingPolicies ? "Loading active policies..." : "Choose an active policy"}
+              </option>
+              {availablePolicies.map((policy) => (
+                <option key={policy.activePolicyId} value={policy.activePolicyId}>
+                  {policy.label}
+                </option>
+              ))}
             </select>
+
+            {selectedPolicy && (
+              <p className="mb-4 text-sm text-gray-500">
+                Filing claim for {selectedPolicy.productName} / Policy #{selectedPolicy.policyNumber}
+              </p>
+            )}
+
+            {policiesError && (
+              <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {policiesError}
+              </div>
+            )}
 
             <label>Date *</label>
             <input
@@ -159,7 +256,13 @@ export default function NewClaim() {
 
             <div className="flex justify-end">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  if (!form.active_policy_id || !form.policy_id) {
+                    alert("Please select an active policy before continuing.");
+                    return;
+                  }
+                  setStep(2);
+                }}
                 className="bg-blue-600 text-white px-6 py-2 rounded"
               >
                 Next
@@ -239,7 +342,7 @@ export default function NewClaim() {
             ))}
 
             <div className="bg-gray-50 p-4 rounded mb-4">
-              <p>Policy: {form.policy_id}</p>
+              <p>Policy: {selectedPolicy ? `${selectedPolicy.productName} (${selectedPolicy.policyNumber})` : "Not selected"}</p>
               <p>Amount: {form.amount}</p>
               <p>Description: {form.description}</p>
             </div>

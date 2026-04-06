@@ -70,6 +70,20 @@ class ActivePolicyCreate(BaseModel):
   warning_text: str | None = None
 
 
+class ActivePolicyUpdate(BaseModel):
+  policy_number: str
+  status: str
+  category: str
+  insurer_name: str
+  product_name: str
+  premium_annual: float
+  coverage_amount: float
+  deductible_amount: float | None = None
+  start_date: date
+  end_date: date
+  tags: str | None = None
+  warning_text: str | None = None
+
 
 
     

@@ -22,11 +22,11 @@ from src.database.core import Base
 
 # ✅ FIXED ENUM (lowercase to match DB)
 class ClaimStatus(str, Enum):
-    PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    PAID = "PAID"
-    REJECTED = "REJECTED"
-    FRAUDULENT = "FRAUDULENT"
+    PENDING = "pending"
+    APPROVED = "approved"
+    PAID = "paid"
+    REJECTED = "rejected"
+    FRAUDULENT = "fraudulent"
 
 class Claim(Base):
     __tablename__ = "claims"
@@ -103,6 +103,12 @@ class Claim(Base):
 
     fraud_flags: Mapped[list["FraudFlag"]] = relationship(
         "FraudFlag",
+        back_populates="claim",
+        cascade="all, delete-orphan",
+    )
+
+    documents: Mapped[list["ClaimDocument"]] = relationship(
+        "ClaimDocument",
         back_populates="claim",
         cascade="all, delete-orphan",
     )
