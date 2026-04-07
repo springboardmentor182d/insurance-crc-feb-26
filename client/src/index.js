@@ -2,24 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
-
-
-const container = document.getElementById('root');
-
-
-if (container) {
-  const root = ReactDOM.createRoot(container);
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-} else {
-  console.error("Error:");
-}
-import './index.css';
-import App from './App';
-import { BrowserRouter } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
 
 class AppErrorBoundary extends React.Component {
@@ -59,17 +41,19 @@ class AppErrorBoundary extends React.Component {
   }
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const container = document.getElementById('root');
 
-
-root.render(
-  <React.StrictMode>
-    <BrowserRouter>
+if (container) {
+  const root = ReactDOM.createRoot(container);
+  root.render(
+    <React.StrictMode>
       <AppErrorBoundary>
         <App />
       </AppErrorBoundary>
-    </BrowserRouter>
-  </React.StrictMode>
-);
+    </React.StrictMode>
+  );
+} else {
+  console.error('Unable to find root element with id "root".');
+}
 
 reportWebVitals();
