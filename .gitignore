@@ -1,90 +1,67 @@
-<<<<<<< Updated upstream
-node_modules
-############################
-# 🔹 Python (FastAPI)
-############################
-venv/
-=======
-<<<<<<< HEAD
-# Dependencies
+# Logs
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node / React
 node_modules/
 client/node_modules/
 server/node_modules/
+build/
+dist/
+dist-ssr/
+node_modules
+*.local
 
-# Environment Variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-client/.env
-server/.env
-*.env
-
-# Python Virtual Environments
+# Python
+venv/
+.venv/
 server/venv/
 server/.venv/
->>>>>>> Stashed changes
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+
+# Environment files
 .env
 .env.*
+client/.env
+server/.env
+*.env
+
+# Databases
+*.db
 *.sqlite3
 
-############################
-# 🔹 Node / React
-############################
-node_modules/
-build/
-dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-############################
-# 🔹 VS Code
-############################
-.vscode/
-
-############################
-# 🔹 System Files
-############################
-.DS_Store
-Thumbs.db
-<<<<<<< Updated upstream
-
-############################
-# 🔹 Coverage / Testing
-############################
+# Coverage / tests
 .coverage
 htmlcov/
 .pytest_cache/
 
-############################
-# 🔹 Logs
-############################
-*.log
-
-
-# Database
-*.db
-
-# Python cache
-__pycache__/
-*.py[cod]
-
-# OS files
+# Editor / OS files
+.vscode/
+.vscode/*
+!.vscode/extensions.json
+.idea
 .DS_Store
 Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-node_modules/
+# Misc
 package-lock.json
-.env
 =======
 =======
 node_modules
 >>>>>>> c18de50 (added my feature folder and code)
 >>>>>>> Stashed changes
+=======
+>>>>>>> origin/main
