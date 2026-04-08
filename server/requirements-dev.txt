@@ -3,3 +3,4 @@ pytest-asyncio
 httpx
 black
 flake8
+python-dotenv
