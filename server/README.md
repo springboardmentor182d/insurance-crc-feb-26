@@ -21,7 +21,7 @@ FastAPI-based backend server for the Insurance Claims Review and Compliance (CRC
    - Copy `.env.example` to `.env` (if exists) or update `.env` directly
    - Set your PostgreSQL connection string:
      ```env
-     DATABASE_URL=postgresql://username:password@localhost:5432/insurance_crc_db
+     DATABASE_URL=postgresql://insurance_user:Nitu@123@localhost:5432/insurance_db
      ```
 
 3. **Install Python Dependencies**

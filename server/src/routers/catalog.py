@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List
 
-from .. import models, schemas
+from src.auth import models
+from src import schemas
 from ..database import get_db
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])

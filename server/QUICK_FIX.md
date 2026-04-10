@@ -56,7 +56,7 @@ If you already created `insurance_user` with a different password:
 1. **Open:** `server\.env`
 2. **Update DATABASE_URL:**
    ```env
-   DATABASE_URL=postgresql://insurance_user:YOUR_ACTUAL_PASSWORD@localhost:5432/insurance_crc_db
+   DATABASE_URL=postgresql://insurance_user:Nitu@123@localhost:5432/insurance_db
    ```
    Replace `YOUR_ACTUAL_PASSWORD` with the password you used in PostgreSQL
 

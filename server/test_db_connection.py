@@ -61,7 +61,7 @@ def run_database_connection_check():
             print("   ⚠️  No tables found. Run 'python -c \"from src.database import init_db; init_db()\"' to create tables")
         
         print("\n6. Querying sample data...")
-        from src import models
+        from src.auth import models
         db = database.SessionLocal()
         try:
             user_count = db.query(models.User).count()

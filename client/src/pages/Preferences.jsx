@@ -27,7 +27,7 @@ function Preferences() {
   const handleSave = async () => {
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/preferences/save/${userId}`,
+        `http://13.61.5.205:8000/preferences/save/${userId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -60,7 +60,7 @@ function Preferences() {
       setLoadingAI(true);
 
       const res = await fetch(
-        "http://127.0.0.1:8000/ai/recommendation",
+        "http://13.61.5.205:8000/ai/recommendation",
         {
           method: "POST",
           headers: {

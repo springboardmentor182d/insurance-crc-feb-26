@@ -19,30 +19,20 @@ function Profile() {
   // =========================
   // FETCH USER DATA
   // =========================
-  useEffect(() => {
   const fetchUser = () => {
-    const userId = localStorage.getItem("userId") || 1;
+  fetch("http://13.61.5.205:8000/admin/users")
+    .then(res => res.json())
+    .then(data => {
+      console.log("DATA:", data);
 
-    fetch(`http://127.0.0.1:8000/users/${userId}`)
-      .then(res => res.json())
-      .then(data => setUser(data));
-  };
-
-  fetchUser();
-
-  const interval = setInterval(fetchUser, 2000); // auto refresh
-
-  return () => clearInterval(interval);
-
-}, []);
-
-  // =========================
-  // LOADING STATE
-  // =========================
-  if (user === null) {
-    return <div className="p-10 text-lg">Loading...</div>;
-  }
-
+      if (data.length > 0) {
+        setUser(data[0]); // first user
+      } else {
+        setUser({});
+      }
+    })
+    .catch(err => console.error(err));
+};
   // =========================
   // SIDEBAR ITEM
   // =========================
