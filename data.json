@@ -1,0 +1,21 @@
+{
+  "kpis": {
+    "total_policies": 3250,
+    "active_policies": 2890,
+    "claims": 420,
+    "revenue": 1250000
+  },
+  "monthly_revenue": [120000,150000,170000,140000,200000,220000],
+  "policy_distribution": {
+    "Health": 1200,
+    "Life": 900,
+    "Vehicle": 700,
+    "Travel": 450
+  },
+  "recent_policies": [
+    {"id":"POL1001","customer":"Ravi Kumar","type":"Health","status":"Active"},
+    {"id":"POL1002","customer":"Anita Sharma","type":"Life","status":"Pending"},
+    {"id":"POL1003","customer":"Arjun Patel","type":"Vehicle","status":"Claimed"},
+    {"id":"POL1004","customer":"Meena Rao","type":"Travel","status":"Active"}
+  ]
+}
